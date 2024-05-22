@@ -1,0 +1,207 @@
+		   .........................................
+                   : Koli's  XCC - Retargetable C Compiler :
+		   '''''''''''''''''''''''''''''''''''''''''
+	           Primary documentation and design document
+Timestamps:
+	28oct2023 17:00 UTC+5       Start of development. Progressing slowly,
+	                            but surely.
+	08apr2024 16:26 UTC+5       Packaging up 1st public release, marked
+	                            by xcc lexing itself into AST at least
+				    without fatal errors. Still got a long way
+				    to go!
+	09apr2024 00:21 UTC+5       Packaging Interim release 1. Some bugfixes.
+	09apr2024 15:30 UTC+5       Packaging Interim 1b. No changes.
+	14apr2024 01:00 UTC+5       Packaging Publicrelease 2. Changelog got lost.
+	16apr2024 16:11 UTC+5       Packaging Publicrelease 3. Changelog got lost.
+	19apr2024 22:49 UTC+5       Second major crisis after I already forgot what
+	                            (there clearly already was one befure but what 
+				    it was got lost and forgotten, sadly) - 
+				    I have to once again descend into code of 
+				    Lexer this time to change how Typedeclarations
+				    and Variabledeclarations are returned. Turns out,
+				    current format breaks at declarations with commas.
+	20apr2024 00:39 UTC+5       Packaging Publicrelease 4 and it's Interim 1.
+	                            Publicrelease 4 was packaged a tiny bit after
+				    the crisis, Interim 1 was packaged right before
+				    I gone to sleep.
+				    Some support for multiple symbols per definition
+	20apr2024 13:30 UTC+5       Packaging Publicrelase5. Proper support for
+	                            multiple symbols per definition.
+	21apr2024 23:04 UTC+5       Publicrelease 5 Interim 1. Changelog lost.
+	22apr2024 22:37 UTC+5       Publicrelease 5 Interim 2. Next to no changes.
+	24apr2024 11:02 UTC+5       Publicrelease 6. Next to no changes.
+	26apr2024 16:53 UTC+5       Publicrelease 7. Starting Semanticparser.
+	26apr2024 20:45 UTC+5       Publicrelease 7 Interim 1. Minor changes.
+	29apr2024 01:28 UTC+5       Publicrelease 7 Interim 2. After a rather 
+	                            long break, finally getting Semanticpreparser 
+				    together.
+	29apr2024 17:11 UTC+5       Publicrelease 7 Interim 3. Last before Symbolgen
+	                            rewrite.
+	30apr2024 02:00 UTC+5       Publicrelease 7 Interim 4. Straight from hell of
+	                            major refactoring.
+	01may2024                   Development seems to slow down. I may go more into
+	                            documenting things rather than to actually implement 
+				    them.
+	04may2024 03:10             Publicrelease 8.
+	04may2024 15:22             Publicrelease 8 Interim 1.
+	04may2024 21:23             Publicrelease 8 Interim 2.
+	05may2024 17:35             Publicrelease 8 Interim 3.
+	06may2024 03:42             Publicrelease 8 Interim 4.
+	07may2024 02:58             Publicrelease 8 Interim 5.
+	07may2024 16:57             Publicrelease 8 Interim 6.
+
+	09may2024 03:12             Publicrelease 9. Charaterized by going for 
+	                            developing Semanticparser and IR Generator 
+				    simultaneously and first properly generated 
+				    code.
+	09may2024 19:59             Publicrelease 9 Interim 1. Changelog lost.
+	10may2024 01:03             Publicrelease 9 Interim 2. Changelog lost.
+	14may2024 00:46             Publicrelease 9 Interim 3. Changelog lost.
+	17may2024 12:48             Publicrelease 9 Interim 4, marked by officially
+	                            ceasing decelopment.
+	20may2024 08:56             Thou shalt never die! Officially development still
+	                            ceased, in reality quietly continuing.
+	20may2024 21:09             Publicrelease 9 Interim 4b.
+	                            Just before I start rewriting `xcc` so it would
+								compile itsef without resoring to Lexicalpreparser.
+
+
+C Grammar deviations:
+
+	• Logical AND/OR operators `&&` and `||` are lower priority compared to 
+	  assignments.
+	   So on their C++ locations.
+	• No Lexer hack. 
+	   In reality it means when you're declaring a variable
+	   of a typedef'd type you need to write out implied `auto` storage
+	   duration specifier, elseways Lexer will treat it as calling the
+	   type as a function.
+
+Stages:
+	¤ Embedder
+		Responsible for handling `#include`. Did separate from 
+		preprocessor for now unknown reasons.
+		Also handles comments. Don't ask why.
+	¤ Preprocessor
+		Handles directives other than `#include`.
+	(Single-stage compiler begins here){
+	¤ Tokenizer
+		Convers preprocessed code into list of tokens.
+	¤ Lexer
+		Generates Primary AST. Doesn't resolves types or symbols.
+	¤ Lexicalpostparser
+		Postprocessing Primary AST to the shape used later on
+	¤ Semanticpreparser
+		Mostly functions for working with Primary AST. Has a stub for
+		SppParse which is the Preparser itself but not really used
+	¤ Symbol list generator
+		. Generates list of symbols by traversing Primary AST.
+		| Double pass - so forward-referencing types
+		| inside type definition works. First stages compiles definition 
+		| list, second stage resolves types inside type definitons.
+		| As development was progressing, wild third stage appeared!
+		' Third stage compiles structures
+		It's substages:
+		• Registering symbols and structures
+		• Compiling structures
+		• Resolving structures used as `struct identifier`
+	¤ Semantic parser
+		Converts Primary AST into Secondary AST which has all the type 
+		information present + some structures converted into 
+		lower-level ones.
+	¤ Semanticpostparser
+		The heavyweight optimization with unused subroutine removal
+		and single-static-assignment trees and alike.
+	¤ IR Generator
+		Generates Intermediate representation from Secondary AST, eased
+		by all the type annotations provided by Semantic parser.
+	¤ (absent/platform-dependent) IR Optimizer
+		Likely to actually be Optimizing IR Generator.
+		(Although 'optimizing' may be too much - the heavyweight 
+		 optimization has to be provided as Semanticpostparser.)
+	¤ IR Compiler
+		Compiles IR into assembly. Has all the heavy-weight stuff 
+		needed to do so - register allocators and optimizers of all kind.
+		(Jam-1 frontend won't have register allocator, neither it's the
+		 intention - I intend to keep *no* register allocators in use.)
+	}; // Single-stage compiler ends here
+	¤ Assembler
+		No comments - your usual assembler
+	¤ Linker
+		Same here.
+	¤ Singlestage
+		Original intention was (and is) to create compiler that can run
+		on 16-bit machines without heavily limiting compiled programs
+		size, hence keeping each stage in it's own executable file, as
+		well keeping intermediate result ondisk, swapping in and out
+		as needed.
+		However, developing such beast is equally hellish, so I decided
+		to keep developing the usual way of having just a C compiler
+		without bothering with swapping and splitting into multiple
+		executables until I finalize everything.
+
+Things to be done:
+	¤ Tokenizer:
+	    Numbers, currrently done as passthrough to `atoi()`
+	¤ Lexer: 
+	    Expressions - identifiers and constants, strings
+	    More declarations
+	    Proper statements
+	    Debug some statements parsed as function calls, if that's a thing?
+	     Apparently vanished.
+	¤ Symbol generator:
+	    Create, make double-pass
+	¤ Semantic parser:
+	    Create
+	    Sort out types
+	¤ IR Generator:
+	    Create
+	¤ IR Compiler:
+	    Create
+	    Register allocator
+	¤ Assembler:
+	    Create proxy to Sharman's CAsm
+	     possibly to flatassembler
+	¤ Linker:
+	    Try to adapt CC65's linker
+	¤ Packer/simulator:
+	    Maybe not make it?
+
+
+IR Generator notes:
+	IgCompile(tSpNode* self){
+		switch(self->type){
+			case `assign`:
+				return {
+					assemble(left),
+					assemble(right),
+					v.store.(right.type)
+				};
+			case `switch`:
+				preserve(IgCurrentbreak){
+					IgCurrentbreak=GIrInstruction.CreateCnop();
+					// move on with compilation
+					compiled->last->next=IgCurrentbreak;
+				}
+			case `break`:
+				return GIrInstructon.CreateJump(IgCurrentbreak);
+		}
+	}
+	
+
+Sorted<ascending>(time) todo list:
++	`switch`
++	`case`
+ 	`break`
+		Partially done - break itself is fine, but it's target isn't kept
++ 	`default`
+	Lx:strings
+? 	`printf()` being parsed as `declare auto int functioncall() printf`
+		Doing function call bypass in LxParseDeclaration didn't work, refactoring code
+		Doing some weird things, doesn't errors out anymore, just quietly parses... Compiler development is weird.
++	Weird thingy where xcc-singlestage would segfault with stdout buffers still filled with data. Fixed by killing buffering.
+	You can't get away with just one expression parser. You will need a separate one for type expressions.
+
+
+
+	
