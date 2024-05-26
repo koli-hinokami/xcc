@@ -657,6 +657,46 @@ tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory v
 	mtGType_GetBasetype(self)->valuecategory=val;
 	return self;
 }
+tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from C-side types to IR-side types
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_Transform: entered \n");
+#endif
+	if(!self)printf("ss: [E] mtGType_Transform: nullptr \n");
+	if(self->complexbasetype)mtGType_Transform(self->complexbasetype);
+	if(self->atomicbasetype==eGAtomictype_Function){
+		mtListnode_Foreach(
+			self->functionarguments,
+			(void(*)(void*))mtGType_Transform
+		);
+	};
+	switch(self->atomicbasetype){
+		case eGAtomictype_Char            :self->atomicbasetype=eGAtomictype_Uint8       ;break;
+		case eGAtomictype_Signedchar      :self->atomicbasetype=eGAtomictype_Int8        ;break;
+		case eGAtomictype_Unsignedchar    :self->atomicbasetype=eGAtomictype_Uint8       ;break;
+		case eGAtomictype_Short           :self->atomicbasetype=eGAtomictype_Int16       ;break;
+		case eGAtomictype_Unsignedshort   :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Int             :self->atomicbasetype=eGAtomictype_Int16       ;break;
+		case eGAtomictype_Unsigned        :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Long            :self->atomicbasetype=eGAtomictype_Int32       ;break;
+		case eGAtomictype_Unsignedlong    :self->atomicbasetype=eGAtomictype_Uint32      ;break;
+		case eGAtomictype_Longlong        :self->atomicbasetype=eGAtomictype_Int64       ;break;
+		case eGAtomictype_Unsignedlonglong:self->atomicbasetype=eGAtomictype_Uint64      ;break;
+		case eGAtomictype_Boolean         :self->atomicbasetype=eGAtomictype_Uint8       ;break;
+		case eGAtomictype_Float           :self->atomicbasetype=eGAtomictype_Float32     ;break;
+		case eGAtomictype_Double          :self->atomicbasetype=eGAtomictype_Float64     ;break;
+		case eGAtomictype_Longdouble      :self->atomicbasetype=eGAtomictype_Float80     ;break;
+
+		case eGAtomictype_Pointer         :self->atomicbasetype=eGAtomictype_Nearpointer ;break;
+		case eGAtomictype_Array           :self->atomicbasetype=eGAtomictype_Neararray   ;break;
+		case eGAtomictype_Function        :self->atomicbasetype=eGAtomictype_Nearfunction;break;
+		case eGAtomictype_Sizet           :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Intptr          :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Intnearptr      :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Intfarptr       :self->atomicbasetype=eGAtomictype_Uint32      ;break;
+		default: break;
+	};
+	return self;
+};
 tGSymbol* mtGSymbol_Create(){
 	return calloc(sizeof(tGSymbol),1);
 };
@@ -963,6 +1003,11 @@ void GInitializePerfile(){
 	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 };
 void GError(){
+	fprintf(stderr,"SS: [E] Error occured, terminating \n");
+	exit(1);
+};
+void GFatal(){
+	fprintf(stderr,"SS: [F] Fatal error occured, terminating \n");
 	exit(1);
 };
 void GFinalize(){

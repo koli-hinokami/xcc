@@ -116,9 +116,11 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 			//	break;
 			case tLexem_Identifier:
 				if(name)*name=i->identifier;
+				mtGType_Transform(temptype);
 				return temptype;
 			case tLexem_Nullexpression:
 				if(name)*name=nullptr;
+				mtGType_Transform(temptype);
 				return temptype;
 			default:
 				printf("SPP:[E] SppGeneratetype: Internal inconsistency: unexcepted lexem %i:%s while parsing a type\n",i->type,TokenidtoName[i->type]);
@@ -363,36 +365,24 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 		case eGAtomictype_Float80:
 			return 10;
 		// C-side types
-		case eGAtomictype_Char:
-			return 1;
-		case eGAtomictype_Signedchar:
-			return 1;
-		case eGAtomictype_Unsignedchar:
-			return 1;
-		case eGAtomictype_Short:
-			return 2;
-		case eGAtomictype_Unsignedshort:
-			return 2;
-		case eGAtomictype_Int:
-			return 2;
-		case eGAtomictype_Unsigned:
-			return 2;
-		case eGAtomictype_Long:
-			return 4;
-		case eGAtomictype_Unsignedlong:
-			return 4;
-		case eGAtomictype_Longlong:
-			return 8;
-		case eGAtomictype_Unsignedlonglong:
-			return 8;
-		case eGAtomictype_Boolean:
-			return 1;
-		case eGAtomictype_Float:
-			return 4;
-		case eGAtomictype_Double:
-			return 8;
-		case eGAtomictype_Longdouble:
-			return 10;
+		case eGAtomictype_Char:             //return 1;
+		case eGAtomictype_Signedchar:       //return 1;
+		case eGAtomictype_Unsignedchar:     //return 1;
+		case eGAtomictype_Short:            //return 2;
+		case eGAtomictype_Unsignedshort:    //return 2;
+		case eGAtomictype_Int:              //return 2;
+		case eGAtomictype_Unsigned:         //return 2;
+		case eGAtomictype_Long:             //return 4;
+		case eGAtomictype_Unsignedlong:     //return 4;
+		case eGAtomictype_Longlong:         //return 8;
+		case eGAtomictype_Unsignedlonglong: //return 8;
+		case eGAtomictype_Boolean:          //return 1;
+		case eGAtomictype_Float:            //return 4;
+		case eGAtomictype_Double:           //return 8;
+		case eGAtomictype_Longdouble:       //return 10;
+			printf("spp:[F] mtGType_Sizeof: Calculating size of an C-side type \n");
+			// You're supposed to have all types transformed into target types by now
+			GFatal();
 		default:
 			assert(false);
 	};

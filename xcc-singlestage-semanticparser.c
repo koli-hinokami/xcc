@@ -333,6 +333,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				);
 			};	break;
 			case tLexem_Expressionstatement: {
+				// TODO: Unallocate 'free-after-use' subexpressions
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Expressionstatement,
@@ -607,6 +608,28 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					}
 				);
 				assert(false);
+			};
+			case tLexem_Sizeof: {
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Integerconstant,
+						.returnedtype=mtGType_Transform(
+							mtGType_SetValuecategory(
+								mtGType_CreateAtomic(
+									eGAtomictype_Sizet
+								),
+								eGValuecategory_Rightvalue
+							)
+						),
+						.constant=mtGType_Sizeof(
+							SppGeneratetype(
+								self->left->returnedtype,
+								self->left->left,
+								nullptr
+							)
+						)
+					}
+				);
 			};
 		};
 		{	// Expressions - arithmetic operators
