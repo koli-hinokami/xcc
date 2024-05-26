@@ -2,12 +2,20 @@
 
 CC = gcc
 CFLAGS = -g -O0 -Wall -Wno-char-subscripts \
--D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
--DqszGVersion=\"1.0.1.0\" \
--DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
+ -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
+ -DqszGVersion=\"1.0.1.0\" \
+ -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
 #-D__buildlab__=\"$(USER)\"
 TIMESTAMP = `date +%y%m%d-%H%M`
-DEPS = hyperheader.h xcc.h softpipe.h cstrings.h basictypes.h lists.h Makefile
+DEPS = \
+	hyperheader.h \
+	xcc.h \
+	softpipe.h \
+	cstrings.h \
+	basictypes.h \
+	lists.h \
+	Makefile
+
 
 #build: xcc xcc-preprocess xcc-tokenizer xcc-lexer
 #run: build
