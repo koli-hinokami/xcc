@@ -17,7 +17,7 @@ tLnFlagdefinition tLfFlags[] = {
 };
 
 char* szLnOutputfile = "";
-char* szLnRundirectiory = "";
+char* szLnRundirectory = "";
 
 intptr_t tLnArgsGetflag(char* flag){
 	//printf("DBG:tLnArgsGetflag(\"%s\")\n",flag);
@@ -104,10 +104,11 @@ void runprogram(char* program, char** argv){
 	};
 	//printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
 }
-char* trimextension(char* file){
+char * /* dynamic */ trimextension(char* /* borrows */ file){
 	//Gives you ownership of dynamic memory, borrows argument
 	int len=(int)(mtString_FindcharLast(file,'.')-file);
 	char* str=malloc(len+1);
+	assert(str);
 	memcpy(str,file,len);
 	*(str+len)=0;
 	return str;
@@ -116,12 +117,12 @@ void parsefile(char* program, char* filename, char* ext1, char* ext2, char* args
 	char* argv[5];
 	fflush(stdout);
 	
-	argv[0]=mtString_Join(szLnRundirectiory,program);
+	argv[0]=mtString_Join(szLnRundirectory,program);
 	argv[1]=mtString_Join(filename,ext1);
 	argv[2]=mtString_Join(filename,ext2);
 	argv[3]=0;
 	argv[4]=0;
-	runprogram(mtString_Join(szLnRundirectiory,program),(char**)(&argv));
+	runprogram(mtString_Join(szLnRundirectory,program),(char**)(&argv));
 	free(argv[1]);
 	free(argv[2]);
 	fflush(stdout);
@@ -188,11 +189,12 @@ int main (int argc,char* argv[]) {
 	int aindex=1;
 	//Command-line options
 	printf("Ln: [T] Program name is: %s\n", argv[0]);
-	szLnRundirectiory = mtString_Clone(argv[0]);
-	if(mtString_FindcharLast(szLnRundirectiory,'/')){
-		mtString_FindcharLast(szLnRundirectiory,'/')[1]=0;
+	szLnRundirectory = mtString_Clone(argv[0]);
+	if(mtString_FindcharLast(szLnRundirectory,'/')){
+		mtString_FindcharLast(szLnRundirectory,'/')[1]=0;
 	}else{
-		szLnRundirectiory="";
+		free(szLnRundirectory);
+		szLnRundirectory=mtString_Clone("");
 	};
 	printf("Ln: [T] Options:\n");
 	for(;aindex<argc;aindex++){
@@ -222,5 +224,5 @@ int main (int argc,char* argv[]) {
 		if(argv[aindex][0]=='-')break;
 		compile(argv[aindex]);
 	};
-
+	free(szLnRundirectory);
 };
