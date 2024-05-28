@@ -83,8 +83,8 @@ void runprogram(char* program, char** argv){
 			waitpid(pid,&err,null);
 			if(err){
 				fprintf(stderr,"Ln: [M] Exitcode [%i: %s∙%i %s] on program \"%s\"\n",err,err>=256?"user":"posix",err>=256?err/256:err,
-					 err==  139?"segfault"
-					:err==  134?"failed assertion"
+					 err==  EOVERFLOW?"segfault"
+					:err==  ENOTSUP?"failed assertion"
 					:err==1*256?"generic user error"
 					:err==4*256?"internal debug"
 					:err==5*256?"internal debug"
