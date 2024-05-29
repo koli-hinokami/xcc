@@ -423,15 +423,15 @@ char *TokenidtoName[]={
 	"tToken_Keywordvoid          ",// 170
 	"tToken_Keywordvolatile      ",// 171
 	"tToken_Keywordwhile         ",// 172
-	"tToken_Undefined            ",// 173
-	"tToken_Undefined            ",// 174
-	"tToken_Undefined            ",// 175
-	"tToken_Undefined            ",// 176
-	"tToken_Undefined            ",// 177
-	"tToken_Undefined            ",// 178
-	"tToken_Undefined            ",// 179
-	"tToken_Undefined            ",// 180
-	"tToken_Undefined            ",// 181
+	"tToken_Keywordint8t         ",// 173
+	"tToken_Keywordint16t        ",// 174
+	"tToken_Keywordint32t        ",// 175
+	"tToken_Keywordint64t        ",// 176
+	"tToken_Keyworduint8t        ",// 177
+	"tToken_Keyworduint16t       ",// 178
+	"tToken_Keyworduint32t       ",// 179
+	"tToken_Keyworduint64t       ",// 180
+	"tToken_Keywordsizet         ",// 181
 	"tToken_Undefined            ",// 182
 	"tToken_Undefined            ",// 183
 	"tToken_Undefined            ",// 184
@@ -3511,7 +3511,7 @@ typedef struct tToken {
 	char string[];
 #endif
 } tToken, *ptToken;
-typedef enum eGSegment {
+typedef enum eGSegment { // Acts as addressing mode as well
 	//none code data udata rodata stack tls
 	meGSegment_Relative,	//none
 	meGSegment_Code,	//code  == cs
@@ -3525,7 +3525,7 @@ typedef enum eGSegment {
 	                       // (fp-relative) -> stack (ss-relative)
 	meGSegment_Far,		// program-defined bank/segment
 	meGSegment_Count
-} eGSegment;
+} eGSegment, eGAddressingmode;
 char* meGSegment_ToStringTable[]= {
 	"relative",
 	"code",

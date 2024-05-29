@@ -12,7 +12,7 @@ typedef struct {
 
 tLnFlagdefinition tLfFlags[] = {
 //	 last    s-ch.  str   given   def.   assigned  
-	{false,  true,  "m",  false,  false, false    },
+	{false,  true,  "m",  false,  false, false    }, // Mode - use multistage
 	{true,   false, "",   false,  false, false    }
 };
 
@@ -134,7 +134,7 @@ void compile(char* file){
 	char* filename = trimextension(file);
 	parsefile("xcc-embedder"   ,filename,".c"  ,".cem",0);
 	parsefile("xcc-preprocess" ,filename,".cem",".cpr",0);
-	if(tLnArgsGetflag("m")){
+	if(!tLnArgsGetflag("m")){
 		//Use singlestage compiler
 		parsefile("xcc-singlestage",filename,".cpr",".obj",0);
 	}else{
