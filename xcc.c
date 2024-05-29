@@ -145,9 +145,11 @@ void compile(char* file){
 		parsefile("xcc-untypedef"  ,filename,".clx",".cut",0);
 		parsefile("xcc-unstruct"   ,filename,".cut",".blx",0);
 		parsefile("xcc-irmaker"    ,filename,".blx",".ir" ,0);
-		parsefile("xcc-ircompiler" ,filename,".ir" ,".asm",0);
-		parsefile("xcc-asm"        ,filename,".asm",".obj",0);
 	}
+	// IR Compiler and assembler currently are used by Singlestage compiler
+	// as well
+	parsefile("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
+	parsefile("xcc-asm"        ,filename,".asm",".obj",0);
 	parsefile("xcc-ld"        ,filename,".obj",".exe",0);
 	
 	free(filename);

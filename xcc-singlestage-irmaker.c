@@ -230,12 +230,13 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 
 };
 void IgParse(tSpNode* self){
+	assert(self);
 	printf("IG: [T] Entered with node %i•%s \n",self->type,TokenidtoName[self->type]);
 	switch(self->type){
 		case tSplexem_Nulldeclaration:
 			break;
 		case tSplexem_Declarationlist:
-			IgParse(self->left);
+			if(self->left) IgParse(self->left);
 			if(self->right)IgParse(self->right);
 			break;
 		case tSplexem_Functiondeclaration:
@@ -245,3 +246,35 @@ void IgParse(tSpNode* self){
 			assert(false);
 	};
 };
+// void IgDumpir(ptGInstruction code[passedbypointer meGSegment_Count] /* The code */, FILE* targetfile)
+void IgDumpir(tGInstruction** code, FILE* file){ 
+	// Print IR as text into file given as argument
+	fprintf(
+		file,
+		"; --- XCC Retargetable C Crosscompiler - Intermediate representation dump ---\n"
+		"; --------------------------- CAsm format on Jam-1 --------------------------\n"
+		"\t.architecture 8BitPipeline-xcc-ir\n"
+		"\t.include lib\\ircompiler.inc\n"
+		"\t.include lib\\libc.inc\n"
+		//"\tircompiler_pre\n"
+	);
+	for(int i=0;i<meGSegment_Count;i++){
+		if(i!=meGSegment_Relative){
+			fprintf(file,"\t.segment %s\n",meGSegment_ToStringTable[i]);
+			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){
+				fprintf(
+					file,
+					"l_%p:\tv.%s.%s.%s %i,l_%p \n",
+					j,
+					TokenidtoName_Compact[j->opcode.opr],
+					meGSegment_ToStringTable[j->opcode.segment],
+					meGAtomictype_ToStringTable[j->opcode.isize],
+					j->immediate,
+					j->jumptarget
+				);
+			};
+		};
+	};
+	//fprintf(file,"\tircompiler_post\n");
+};
+

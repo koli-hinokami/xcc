@@ -3526,6 +3526,18 @@ typedef enum eGSegment {
 	meGSegment_Far,		// program-defined bank/segment
 	meGSegment_Count
 } eGSegment;
+char* meGSegment_ToStringTable[]= {
+	"relative",
+	"code",
+	"rodata",
+	"data",
+	"udata",
+	"tls",
+	"stack",
+	"frame",
+	"far",
+	0
+};
 typedef enum eGAtomictype {
 	eGAtomictype_Void             = 0,
 	eGAtomictype_Structure        = 1,
@@ -3629,10 +3641,62 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Void                      , "void" },
 	{ 0, 0 }
 };
-
+char* meGAtomictype_ToStringTable[] = {
+	"void"            ,
+	"structure"       ,
+	"enumeration"     ,
+	"unresolved"      ,
+	"union"           ,
+	"pointer"         ,
+	"array"           ,
+	"function"        ,
+	"nearpointer"     ,
+	"neararray"       ,
+	"nearfunction"    ,
+	"farpointer"      ,
+	"fararray"        ,
+	"farfunction"     ,
+	"int8"            ,
+	"uint8"           ,
+	"int16"           ,
+	"uint16"          ,
+	"int24"           ,
+	"uint24"          ,
+	"int32"           ,
+	"uint32"          ,
+	"int48"           ,
+	"uint48"          ,
+	"int64"           ,
+	"uint64"          ,
+	"int80"           ,
+	"uint80"          ,
+	"float32"         ,
+	"float64"         ,
+	"float80"         ,
+	"char"            ,
+	"signedchar"      ,
+	"unsignedchar"    ,
+	"short"           ,
+	"unsignedshort"   ,
+	"int"             ,
+	"unsigned"        ,
+	"long"            ,
+	"unsignedlong"    ,
+	"longlong"        ,
+	"unsignedlonglong",
+	"boolean"         ,
+	"float"           ,
+	"double"          ,
+	"longdouble"      ,
+	"intptr"          ,
+	"intnearptr"      ,
+	"intfarptr"       ,
+	"sizet"           ,
+};
 typedef struct tGOpcode { 
 	short opr;
 	enum eGAtomictype isize;
+	enum eGSegment segment;
 } tGOpcode;
 typedef struct tGInstruction {
 	tGOpcode opcode; 

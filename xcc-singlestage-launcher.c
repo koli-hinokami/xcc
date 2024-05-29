@@ -7,14 +7,14 @@
 //	printf("\n");
 //	printf("L:   Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
 //};
-//char* LnTrimextension(char* file){
-//	//Gives you ownership of dynamic memory, borrows argument
-//	int len=(int)(mtString_FindcharLast(file,'.')-file);
-//	char* str=malloc(len+1);
-//	memcpy(str,file,len);
-//	*(str+len)=0;
-//	return str;
-//};
+char* LnTrimextension(char* file){
+	//Gives you ownership of dynamic memory, borrows argument
+	int len=(int)(mtString_FindcharLast(file,'.')-file);
+	char* str=malloc(len+1);
+	memcpy(str,file,len);
+	*(str+len)=0;
+	return str;
+};
 //void LnParsefile(char* program, char* filename, char* ext1, char* ext2, char* args){
 //	char* argv[5];
 //	argv[0]=program;
@@ -131,7 +131,7 @@ void LnCompile(char* file){
 		LfPrint_SpNode(GSecondaryast);
 		fprintf(stderr,"L:  [M] Done printing Secondary AST \n");
 	};
-	exit(4);
+	//exit(4);
 	/// The question is where `struct`s go
 	// Compile
 	fprintf(stderr,"L:  [M] IR Generator\n");
@@ -142,6 +142,11 @@ void LnCompile(char* file){
 	printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
 	printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
 	fprintf(stderr,"L:  [M] Done printing IR\n");
+	fprintf(stderr,"L:  [M] Emitting IR\n");
+	FILE* dstfile = fopen(mtString_Join(LnTrimextension(file),".ir"),"w");
+	IgDumpir(GCompiled, dstfile);
+	fprintf(stderr,"L:  [M] Done emitting IR\n");
+	fclose(dstfile);
 	fprintf(stderr,"L:  [M] Codegen\n");
 	// Write object file
 	fprintf(stderr,"L:  [M] Done compiling\n");
