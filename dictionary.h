@@ -93,13 +93,13 @@ tDictionaryentry_Value mtListdictionary_Getitem_Clojure(
 	)->value;
 };
 // ----------------- tArraydictionary --------------------
-tDictionaryentry_Value mtArraydictionary_Getitem(
-	tArraydictionary* self, 
-	tDictionaryentry_Key item
-){
-	printf("ul: [F] dictionary.h: Unimplemented function mtArraydictionary_Getitem\n");
-	fprintf(stderr,"ul: [F] dictionary.h: Unimplemented function mtArraydictionary_Getitem\n");
-	exit(1);
-};
+//tDictionaryentry_Value mtArraydictionary_Getitem(
+//	tArraydictionary* self, 
+//	tDictionaryentry_Key item
+//){
+//	printf("ul: [F] dictionary.h: Unimplemented function mtArraydictionary_Getitem\n");
+//	fprintf(stderr,"ul: [F] dictionary.h: Unimplemented function mtArraydictionary_Getitem\n");
+//	exit(1);
+//};
 
 #endif // qvListlibraryIncluded

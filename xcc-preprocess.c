@@ -322,7 +322,7 @@ int main(int argc, char* argv[], char** envp){
 	src = fopen(argv[1],"r");
 	dst = fopen(argv[2],"w");
 	//Do the main preprocessing job
-	preprocess(src,dst);
+	preprocess( /* src,dst */ );
 	PrLogmacroses();
 	/*
 	char shortbuffer,shortbuffer2;

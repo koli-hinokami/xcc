@@ -121,7 +121,7 @@ void handledirective(){
 	char command[256];
 	char arguments[256];
 	int i;
-	int commentongoing;
+	int commentongoing = 0;
 	for(i=0;(commandbuffer[i++]=fetchcharater())!='\n';commandbuffer[i+1]=0);
 	commandbuffer[  i]=0;
 	commandbuffer[--i]=0;
@@ -300,7 +300,7 @@ int main(int argc, char* argv[], char** envp){
 	src = fopen(argv[1],"r");
 	dst = fopen(argv[2],"w");
 	//Do the main preprocessing job
-	preprocess(src,dst);
+	preprocess( /* src,dst */ );
 	/*
 	char shortbuffer,shortbuffer2;
 	char buffer[16];
