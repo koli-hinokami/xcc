@@ -331,9 +331,12 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 		// Internal types
 		case eGAtomictype_Union: // Temporary type - gets converted to struct later on
 			return self->structsize;
-		case eGAtomictype_Pointer:
+		case eGAtomictype_Nearpointer:
 			return 2;
-		case eGAtomictype_Array:
+		case eGAtomictype_Farpointer:
+			return 4;
+		case eGAtomictype_Neararray:
+		case eGAtomictype_Fararray:
 			return mtGType_Sizeof(self->complexbasetype);
 		case eGAtomictype_Function:
 			assert(false);
@@ -383,9 +386,29 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			printf("spp:[F] mtGType_Sizeof: Calculating size of an C-side type \n");
 			// You're supposed to have all types transformed into target types by now
 			GFatal();
-		default:
-			assert(false);
+		default: {
+				// Resolve atomic type to string
+				char* str = "unknown";
+				for(
+					GAtomictypetostring_Entry * ptr = GAtomictypetostring;
+					ptr->str;
+					ptr++
+				){
+					if(ptr->atomictype==self->atomicbasetype){
+						str = ptr->str;
+						break;
+					};
+				};
+				printf("spp:[F] mtGType_Sizeof: Unrecognized atomic type %i•%s \n",
+					self->atomicbasetype,str
+				);
+				assert(false);
+			};
+			break;
 	};
+	printf("spp:[F] mtGType_Sizeof: Absolutely incomprehensible control flow occured \n");
+	assert(false);
+	return 9999;
 };
 void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespace* name_space){
 	assert(self);

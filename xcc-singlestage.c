@@ -663,7 +663,11 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 #endif
 	if(!self)printf("ss: [E] mtGType_Transform: nullptr \n");
 	if(self->complexbasetype)mtGType_Transform(self->complexbasetype);
-	if(self->atomicbasetype==eGAtomictype_Function){
+	if(
+		  (self->atomicbasetype==eGAtomictype_Function)
+		||(self->atomicbasetype==eGAtomictype_Nearfunction)
+		||(self->atomicbasetype==eGAtomictype_Farfunction)
+	){
 		mtListnode_Foreach(
 			self->functionarguments,
 			(void(*)(void*))mtGType_Transform
@@ -800,7 +804,21 @@ void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 tGType* mtGType_CreatePointer(tGType* self){
 	tGType* temp = mtGType_Create();
 	temp->atomicbasetype = eGAtomictype_Pointer;
-	temp->complexbasetype = self;
+	temp->complexbasetype = mtGType_Clone(self);
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_CreateNearpointer(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Nearpointer;
+	temp->complexbasetype = mtGType_Clone(self);
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_CreateFarpointer(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Farpointer;
+	temp->complexbasetype = mtGType_Clone(self);
 	// TODO: Far pointers
 	return temp;
 };
