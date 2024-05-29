@@ -510,6 +510,10 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Uint64;
 			break;
+		case tToken_Keywordsizet:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Sizet;
+			break;
 		case tToken_Keywordbool:
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Boolean;

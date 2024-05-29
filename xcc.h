@@ -105,6 +105,7 @@ enum tTokentype {
 	tToken_Keyworduint16t           = 178,  //uint16_t
 	tToken_Keyworduint32t           = 179,  //uint32_t
 	tToken_Keyworduint64t           = 180,  //uint64_t
+	tToken_Keywordsizet             = 181,  //size_t
 	//tToken_                       = 256,  //      String tokens
 	tToken_Identifier               = 256,  //Generic identifier
 	tToken_String                   = 257,  //String
@@ -246,7 +247,7 @@ enum tTokentype {
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
 	//tToken_                       = 2048,         //      Machine instructions?
-};				
+};
 typedef short eTokentype,tTokentype;
 char *TokenidtoName[]={
 	"tToken_Null                 ",// 0 ,
@@ -813,10 +814,10 @@ char *TokenidtoName[]={
 	"tLexem_Booleanfalse         ",// 561
 	"tLexem_Whilestatement       ",// 562
 	"tLexem_Forstatement         ",// 563
-	"tLexem_Nulldeclaration	     ",// 564
-	"tLexem_Nullexpression	     ",// 565
+	"tLexem_Nulldeclaration      ",// 564
+	"tLexem_Nullexpression       ",// 565
 	"tLexem_Multiply             ",// 566
-	"tLexem_Divide	             ",// 567
+	"tLexem_Divide               ",// 567
 	"tLexem_Modulo               ",// 568
 	"tLexem_Switchstatement      ",// 569
 	"tLexem_Switchcase           ",// 570
@@ -3429,62 +3430,63 @@ char *TokenidtoName_Compact[]={
 	"?"                           ,// 1587
 };
 struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
-	{"alignas"		,tToken_Keywordalignas		},
-	{"alignof"		,tToken_Keywordalignof		},
-	{"auto"			,tToken_Keywordauto		},
-	{"bool"			,tToken_Keywordbool		},
-	{"break"		,tToken_Keywordbreak		},
-	{"case"			,tToken_Keywordcase		},
-	{"char"			,tToken_Keywordchar		},
-	{"const"		,tToken_Keywordconst		},
-	{"constexpr"		,tToken_Keywordconstexpr	},
-	{"continue"		,tToken_Keywordcontinue		},
-	{"default"		,tToken_Keyworddefault		},
-	{"do"			,tToken_Keyworddo		},
-	{"double"		,tToken_Keyworddouble		},
-	{"else"			,tToken_Keywordelse		},
-	{"enum"			,tToken_Keywordenum		},
-	{"extern"		,tToken_Keywordextern		},
-	{"false"		,tToken_Keywordfalse		},
-	{"float"		,tToken_Keywordfloat		},
-	{"for"			,tToken_Keywordfor		},
-	{"goto"			,tToken_Keywordgoto		},
-	{"if"			,tToken_Keywordif		},
-	{"int8_t"		,tToken_Keywordint8t		},
-	{"int16_t"		,tToken_Keywordint16t		},
-	{"int32_t"		,tToken_Keywordint32t		},
-	{"int64_t"		,tToken_Keywordint64t		},
-	{"inline"		,tToken_Keywordinline		},
-	{"int"			,tToken_Keywordint		},
-	{"long"			,tToken_Keywordlong		},
-	{"nullptr"		,tToken_Keywordnullptr		},
-//	{"namespace"		,tToken_Keywordnamespace	},
-	{"register"		,tToken_Keywordregister		},
-	{"restrict"		,tToken_Keywordrestrict		},
-	{"return"		,tToken_Keywordreturn		},
-	{"short"		,tToken_Keywordshort		},
-	{"signed"		,tToken_Keywordsigned		},
-	{"sizeof"		,tToken_Keywordsizeof		},
-	{"static"		,tToken_Keywordstatic		},
-	{"static_assert"	,tToken_Keywordstatic_assert	},
-	{"struct"		,tToken_Keywordstruct		},
-	{"switch"		,tToken_Keywordswitch		},
-	{"thread_local"		,tToken_Keywordthread_local	},
-	{"true"			,tToken_Keywordtrue		},
-	{"typedef"		,tToken_Keywordtypedef		},
-	{"typeof"		,tToken_Keywordtypeof		},
-	{"typeof_unqual"	,tToken_Keywordtypeof_unqual	},
-	{"uint8_t"		,tToken_Keyworduint8t		},
-	{"uint16_t"		,tToken_Keyworduint16t		},
-	{"uint32_t"		,tToken_Keyworduint32t		},
-	{"uint64_t"		,tToken_Keyworduint64t		},
-	{"union"		,tToken_Keywordunion		},
-	{"unsigned"		,tToken_Keywordunsigned		},
-	{"void"			,tToken_Keywordvoid		},
-	{"volatile"		,tToken_Keywordvolatile		},
-	{"while"		,tToken_Keywordwhile		},
-	{""			,0				},
-	{(char*)0		,0				},
+	{"alignas"      ,tToken_Keywordalignas          },
+	{"alignof"      ,tToken_Keywordalignof          },
+	{"auto"         ,tToken_Keywordauto             },
+	{"bool"         ,tToken_Keywordbool             },
+	{"break"        ,tToken_Keywordbreak            },
+	{"case"         ,tToken_Keywordcase             },
+	{"char"         ,tToken_Keywordchar             },
+	{"const"        ,tToken_Keywordconst            },
+	{"constexpr"    ,tToken_Keywordconstexpr        },
+	{"continue"     ,tToken_Keywordcontinue         },
+	{"default"      ,tToken_Keyworddefault          },
+	{"do"           ,tToken_Keyworddo               },
+	{"double"       ,tToken_Keyworddouble           },
+	{"else"         ,tToken_Keywordelse             },
+	{"enum"         ,tToken_Keywordenum             },
+	{"extern"       ,tToken_Keywordextern           },
+	{"false"        ,tToken_Keywordfalse            },
+	{"float"        ,tToken_Keywordfloat            },
+	{"for"          ,tToken_Keywordfor              },
+	{"goto"         ,tToken_Keywordgoto             },
+	{"if"           ,tToken_Keywordif               },
+	{"int8_t"       ,tToken_Keywordint8t            },
+	{"int16_t"      ,tToken_Keywordint16t           },
+	{"int32_t"      ,tToken_Keywordint32t           },
+	{"int64_t"      ,tToken_Keywordint64t           },
+	{"inline"       ,tToken_Keywordinline           },
+	{"int"          ,tToken_Keywordint              },
+	{"long"         ,tToken_Keywordlong             },
+	{"nullptr"      ,tToken_Keywordnullptr          },
+//	{"namespace"    ,tToken_Keywordnamespace        },
+	{"register"     ,tToken_Keywordregister         },
+	{"restrict"     ,tToken_Keywordrestrict         },
+	{"return"       ,tToken_Keywordreturn           },
+	{"short"        ,tToken_Keywordshort            },
+	{"signed"       ,tToken_Keywordsigned           },
+	{"sizeof"       ,tToken_Keywordsizeof           },
+	{"size_t"       ,tToken_Keywordsizet            },
+	{"static"       ,tToken_Keywordstatic           },
+	{"static_assert",tToken_Keywordstatic_assert    },
+	{"struct"       ,tToken_Keywordstruct           },
+	{"switch"       ,tToken_Keywordswitch           },
+	{"thread_local" ,tToken_Keywordthread_local     },
+	{"true"         ,tToken_Keywordtrue             },
+	{"typedef"      ,tToken_Keywordtypedef          },
+	{"typeof"       ,tToken_Keywordtypeof           },
+	{"typeof_unqual",tToken_Keywordtypeof_unqual    },
+	{"uint8_t"      ,tToken_Keyworduint8t           },
+	{"uint16_t"     ,tToken_Keyworduint16t          },
+	{"uint32_t"     ,tToken_Keyworduint32t          },
+	{"uint64_t"     ,tToken_Keyworduint64t          },
+	{"union"        ,tToken_Keywordunion            },
+	{"unsigned"     ,tToken_Keywordunsigned         },
+	{"void"         ,tToken_Keywordvoid             },
+	{"volatile"     ,tToken_Keywordvolatile         },
+	{"while"        ,tToken_Keywordwhile            },
+	{""             ,0                              },
+	{(char*)0       ,0                              },
 };
 // Target types
 typedef uint16_t tGTargetNearpointer;
