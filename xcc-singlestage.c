@@ -633,7 +633,11 @@ bool mtGType_Equals(tGType* self,tGType* type){
 		  (self->atomicbasetype==eGAtomictype_Function)
 		&&(type->atomicbasetype==eGAtomictype_Function)
 	){
-		for(tListnode* i;i;i=i->next)
+		for(
+			tListnode *i=self->functionarguments, *j=type->functionarguments;
+			(i!=nullptr)&&(j!=nullptr);
+			i=i->next,j=j->next
+		)
 			if(!mtGType_Equals(i->item,i->item))return false;
 	};
 	if(
