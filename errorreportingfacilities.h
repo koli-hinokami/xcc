@@ -7,12 +7,30 @@
 
 // -------------------- Types --------------------
 typedef struct {
-	char* string;
+	char* /* __needs_free */ string;
 } tErfVframe;
 // ------------------- Globals -------------------
 tList /* <tErfVframe> */ ErfVframes;
 
+// ---------------- Class methods ----------------
 
+tErfVframe* mtErfVframe_Create(){
+	return calloc(sizeof(tErfVframe),1);
+};
+void mtErfVframe_Deallocate(tErfVframe* self){
+	free(self);
+};
+void mtErfVframe_Destroy(tErfVframe* self){
+	free(self->string);
+	mtErfVframe_Deallocate(self);
+};
+tErfVframe* mtErfVframe_Create_String(char* /* takeowns */ str){
+	tErfVframe* i = mtErfVframe_Create();
+	i->string = str;
+	return i;
+};
+
+// ------------------ Functions ------------------
 
 void ErfDumpvframe(int count, tErfVframe* frame){
 	fprintf(stderr,"erf:[M]  • Native frame %p•{%s}\n",
@@ -45,6 +63,17 @@ void ErfDumpstacktrace(){ // Stacktrace
 	};
 	fprintf(stderr,"erf:[M] (end nativestacktrace)\n");
 #endif
+};
+void ErfEnter(char* /* borrows */ string){
+	mtList_Prepend(&ErfVframes,
+		mtErfVframe_Create_String(
+			mtString_Clone(string)
+		)
+	);
+};
+void ErfLeave(void){
+	mtErfVframe_Destroy(mtList_GetFirst(&ErfVframes));
+	mtList_Removefirst(&ErfVframes);
 };
 void ErfError(){
 	fprintf(stderr,"erf:[E] Error occured!\n");
