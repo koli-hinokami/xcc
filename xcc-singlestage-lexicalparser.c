@@ -996,6 +996,64 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 									)
 								}
 							);
+						};	
+						case tToken_Addassign:
+						case tToken_Substractassign:
+						case tToken_Multiplyassign:
+						case tToken_Divideassign:
+						case tToken_Moduloassign:
+						case tToken_Shiftleftassign:
+						case tToken_Shiftrightassign:
+						case tToken_Bitwiseandassign:
+						case tToken_Bitwisexorassign:
+						case tToken_Bitwiseorassign:
+						{
+							// Check lhs operand presence
+							if(i==fetcher->fetchfrom){
+								printf("LX: [E] LxParseExpression: No left-hand operand for assignment \n");
+								return nullptr;
+							};
+							// Parse subexpressions
+							tLxNode* left = LxParseExpression(
+								&(tLxFetcher){
+									.fetchfrom=fetcher->fetchfrom,
+									.fetchto=i
+								}
+							);
+							tLxNode* right=LxParseExpression(
+								&(tLxFetcher){
+									.fetchfrom=i->next,
+									.fetchto=fetcher->fetchto
+								}
+							);
+							// Create temporaries
+							eTokentype tokentype = ((tToken*)i->item)->type;
+							// Return node
+							return mtLxNode_Clone(
+								&(tLxNode){
+									.type=tLexem_Assign,
+									.left=left,
+									.right=mtLxNode_Clone(
+										&(tLxNode){
+											.type=
+												 tokentype==tToken_Addassign        ?tLexem_Add
+												:tokentype==tToken_Substractassign  ?tLexem_Substract
+												:tokentype==tToken_Multiplyassign   ?tLexem_Multiply
+												:tokentype==tToken_Divideassign     ?tLexem_Divide
+												:tokentype==tToken_Moduloassign     ?tLexem_Modulo
+												:tokentype==tToken_Shiftleftassign  ?tLexem_Shiftleft
+												:tokentype==tToken_Shiftrightassign ?tLexem_Shiftright
+												:tokentype==tToken_Bitwiseandassign ?tLexem_Bitwiseand
+												:tokentype==tToken_Bitwisexorassign ?tLexem_Bitwisexor
+												:tokentype==tToken_Bitwiseorassign  ?tLexem_Bitwiseor
+												:0
+											,
+											.left=left,									
+											.right=right
+										}
+									)
+								}
+							);
 						};	break;
 							// leftassociative -> full break out of forloop
 						default: {
@@ -1836,6 +1894,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 #ifdef qvGTraceexpressions
 	printf("LX: [T] LxParseExpression: Precedence 1 - postfix operators\n");
 #endif
+	splitpoint = nullptr;
 	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
 		if(0)printf("LX: [T] LxParseExpression: Debug: %i.%i:%s\n",
 			parenthesation,
@@ -1844,16 +1903,18 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 		);
 		if((((tToken*)i->item)->type)==tToken_Openparentheses){ // Dirty hack
 			if(parenthesation==0)
-				splitpoint=i;
-
+				if(i!=fetcher->fetchfrom)
+					splitpoint=i;
 		};
 		if((((tToken*)i->item)->type)==tToken_Openbrackets){ // Dirty hack 2
 			if(parenthesation==0)
-				splitpoint=i;
+				if(i!=fetcher->fetchfrom)
+					splitpoint=i;
 		};
 		if((((tToken*)i->item)->type)==tToken_Opencurlybraces){ // Dirty hack 3
 			if(parenthesation==0)
-				splitpoint=i;
+				if(i!=fetcher->fetchfrom)
+					splitpoint=i;
 		};
 		switch(((tToken*)i->item)->type){
 			case tToken_Openparentheses: 
@@ -1879,6 +1940,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 						case tToken_Dot:
 						case tToken_Openparentheses:
 						case tToken_Memberbypointer:
+							//if(i!=fetcher->fetchfrom)
 							splitpoint=i;
 							break;
 						default:
@@ -2104,14 +2166,18 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 		if((typeexpr=LxParseType(fetcher))){
 			return typeexpr;
 		};
-
 	};
 	
 	fprintf(stderr,"LX: [E] LxParseExpression: Unrecognized identifier inside expression at lines %i-%i\n",
 		mtLxFetcher_Peek(fetcher)->linenumber,
 		mtLxFetcher_Peeklast(fetcher)->linenumber
 	);
+	printf("LX: [E] LxParseExpression: Unrecognized identifier inside expression at lines %i-%i\n",
+		mtLxFetcher_Peek(fetcher)->linenumber,
+		mtLxFetcher_Peeklast(fetcher)->linenumber
+	);
 	mtLxFetcher_Print(fetcher);
+	ErfError();
 	return nullptr;
 	exit(2);
 	;
