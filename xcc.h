@@ -106,6 +106,9 @@ enum tTokentype {
 	tToken_Keyworduint32t           = 179,  //uint32_t
 	tToken_Keyworduint64t           = 180,  //uint64_t
 	tToken_Keywordsizet             = 181,  //size_t
+	tToken_Keywordintptrt           = 182,  //intptr_t
+	tToken_Keywordintnearptrt       = 183,  //intnearptr_t
+	tToken_Keywordintfarptrt        = 184,  //intfarptr_t
 	//tToken_                       = 256,  //      String tokens
 	tToken_Identifier               = 256,  //Generic identifier
 	tToken_String                   = 257,  //String
@@ -182,7 +185,9 @@ enum tTokentype {
 	tLexem_Namespace                = 580,  //
 	tLexem_Using                    = 581,  //
 	tLexem_Ellipsis                 = 582,  //
-	//tLexem_                       = 582,  //
+	tLexem_Charaterconstant         = 583,  //
+	tLexem_Continuestatement        = 584,  //
+	//tLexem_                       = 586,  //
 	//tToken_                       = 768,  //      String lexems
 	//tToken_                       = 1024, //      Second AST lexems
 	tSplexem_Declarationlist        = 1024, // Same as tLexem_Declaration
@@ -432,9 +437,9 @@ char *TokenidtoName[]={
 	"tToken_Keyworduint32t       ",// 179
 	"tToken_Keyworduint64t       ",// 180
 	"tToken_Keywordsizet         ",// 181
-	"tToken_Undefined            ",// 182
-	"tToken_Undefined            ",// 183
-	"tToken_Undefined            ",// 184
+	"tToken_Keywordintptrt       ",// 182
+	"tToken_Keywordintnearptrt   ",// 183
+	"tToken_Keywordintfarptrt    ",// 184
 	"tToken_Undefined            ",// 185
 	"tToken_Undefined            ",// 186
 	"tToken_Undefined            ",// 187
@@ -2021,10 +2026,10 @@ char *TokenidtoName_Compact[]={
 	"uint16_t"     ,// 178
 	"uint32_t"     ,// 179
 	"uint64_t"     ,// 180
-	"?",// 181
-	"?",// 182
-	"?",// 183
-	"?",// 184
+	"size_t"       ,// 181
+	"intptr_t"     ,// 182
+	"intnearptr_t" ,// 183
+	"intfarptr_t"  ,// 184
 	"?",// 185
 	"?",// 186
 	"?",// 187
@@ -3457,6 +3462,9 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"int64_t"      ,tToken_Keywordint64t           },
 	{"inline"       ,tToken_Keywordinline           },
 	{"int"          ,tToken_Keywordint              },
+	{"intptr_t"     ,tToken_Keywordintptrt          },
+	{"intnearptr_t" ,tToken_Keywordintnearptrt      },
+	{"intfarptr_t"  ,tToken_Keywordintfarptrt       },
 	{"long"         ,tToken_Keywordlong             },
 	{"nullptr"      ,tToken_Keywordnullptr          },
 //	{"namespace"    ,tToken_Keywordnamespace        },

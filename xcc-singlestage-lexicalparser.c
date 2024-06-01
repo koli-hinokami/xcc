@@ -1,6 +1,6 @@
 // ---------------------- Globals ---------------------
 tLxNode* /* <nullptr||.type=switch> */ LxCurrentswitch;
-tLxNode* /* <nullptr||.type=statement> */ LxCurrentbreak;
+tLxNode* /* <nullptr||.type=statement> */ LxCurrentbreak; // Also serves as LxCurrentcontinue
 tList /* <char*> */ LxTypesdeclared;
 bool LxUsedeclaredtypeslist;
 // ------------------ Lexical parsing ------------------
@@ -200,7 +200,14 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 				printf("LX: [D] LxParseStatement: Forloop seen \n");
 				mtLxFetcher_Advance(fetcher);
 				//mtLxFetcher_Print(fetcher);
-				if(mtLxFetcher_Fetch(fetcher)->type==tToken_Openparentheses){
+				{
+					tLxNode* previousbreak = LxCurrentbreak;
+					tLxNode* i = mtLxNode_Create();
+					LxCurrentbreak = i;
+					if(mtLxFetcher_Fetch(fetcher)->type!=tToken_Openparentheses){
+						printf("LX: [F] LxParseStatement: Broken forloop \n");
+						ErfFatal();
+					};
 					printf("LX: [T] LxParseStatement: Forloop: forloopblock \n");
 					tLxFetcher* forblock = mtLxFetcher_FetchuntilParenthesized(
 						fetcher,
@@ -226,17 +233,13 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 					tLxNode* body = LxParseStatement(fetcher);
 					//mtLxFetcher_Advance(localfetcher);
 					//mtLxFetcher_Print(localfetcher);
-					return mtLxNode_Clone(
-						&(tLxNode){
-							.type=tLexem_Forstatement,
-							.initializer = initializer,
-							.condition = cond,
-							.left = iterator,
-							.right = body
-						}
-					);
-				}else{
-					printf("LX: [F] LxParseStatement: Broken for(;;); \n");
+					LxCurrentbreak = previousbreak;
+					i->type=tLexem_Forstatement;
+					i->initializer = initializer;
+					i->condition = cond;
+					i->left = iterator;
+					i->right = body;
+					return i;
 				};
 				break;
 			case tToken_Keywordswitch: {
@@ -291,11 +294,25 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 				mtLxFetcher_Advance(fetcher); // skip `;`
 				return mtLxNode_Clone(
 					&(tLxNode){
-						.type=tLexem_Switchcase,
+						.type=tLexem_Breakstatement,
 						.initializer = LxCurrentbreak
 					}
 				);
 			};	break;
+			case tToken_Keywordcontinue: {
+#ifdef qvGDebug
+				printf("LX: [T] LxParseStatement: `continue` \n");
+#endif
+				mtLxFetcher_Advance(fetcher); // skip `continue`
+				mtLxFetcher_Advance(fetcher); // skip `;`
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type=tLexem_Continuestatement,
+						.initializer = LxCurrentbreak
+					}
+				);
+			};	break;
+
 			case tToken_Keyworddefault: {
 #ifdef qvGDebug
 				printf("LX: [T] LxParseStatement: `default` \n");
@@ -513,6 +530,18 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 		case tToken_Keywordsizet:
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Sizet;
+			break;
+		case tToken_Keywordintptrt:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Intptr;
+			break;
+		case tToken_Keywordintnearptrt:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Intnearptr;
+			break;
+		case tToken_Keywordintfarptrt:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Intfarptr;
 			break;
 		case tToken_Keywordbool:
 			mtLxFetcher_Advance(fetcher);
@@ -1913,7 +1942,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 		};
 		if((((tToken*)i->item)->type)==tToken_Opencurlybraces){ // Dirty hack 3
 			if(parenthesation==0)
-				if(i!=fetcher->fetchfrom)
+				//if(i!=fetcher->fetchfrom)
 					splitpoint=i;
 		};
 		switch(((tToken*)i->item)->type){
@@ -2134,6 +2163,13 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 						.identifier = mtLxFetcher_Peek(fetcher)->string
 					}
 				);
+			case tToken_Charaterconstant:
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type = tLexem_Charaterconstant,
+						.identifier = mtLxFetcher_Peek(fetcher)->string
+					}
+				);
 			case tToken_Keywordnullptr:
 				return mtLxNode_Clone(
 					&(tLxNode){
@@ -2160,6 +2196,24 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				};
 			};	break;
 		};
+	}else if(mtLxFetcher_Peek(fetcher)->type==tToken_String){
+		char* str=mtString_Clone(""); 
+		for(tListnode* i = fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
+			tToken* t = i->item;
+			if(t->type!=tToken_String){
+				printf("LX: [T] LxParseExpression: Broken string literal\n");
+				mtLxFetcher_Print(fetcher);
+				GFatal();
+				return nullptr;
+			};
+			mtString_Append(&str,t->string);
+		};
+		return mtLxNode_Clone(
+			&(tLxNode){
+				.type = tLexem_Stringconstant,
+				.identifier = str
+			}
+		);
 	}else{
 		printf("LX: [T] LxParseExpression: Unrecognized constant - passing through to LxParseType\n");
 		tLxNode* typeexpr;
@@ -2177,7 +2231,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 		mtLxFetcher_Peeklast(fetcher)->linenumber
 	);
 	mtLxFetcher_Print(fetcher);
-	ErfError();
+	GError();
 	return nullptr;
 	exit(2);
 	;
@@ -2942,7 +2996,12 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 		mtLxFetcher_Peek(fetcher)->linenumber,
 		mtLxFetcher_Peeklast(fetcher)->linenumber
 	);
+	printf("LX: [E] LxParseTypeexpression: Unrecognized identifier inside expression at lines %i-%i\n",
+		mtLxFetcher_Peek(fetcher)->linenumber,
+		mtLxFetcher_Peeklast(fetcher)->linenumber
+	);
 	mtLxFetcher_Print(fetcher);
+	GError();
 	return nullptr;
 	exit(2);
 	;
