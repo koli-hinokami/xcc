@@ -132,6 +132,25 @@ void mtLxFetcher_Print(tLxFetcher* self){
 	int j=0; 
 	for(tListnode* i=self->fetchfrom;i!=self->fetchto;i=i->next){
 		tToken* t=i->item;
+		if(t->type==tToken_Integerconstant){
+			printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:%i\n",
+				i->next==self->fetchto?'\'':'|',
+				t->linenumber,
+				j,
+				t->type,
+				TokenidtoName[t->type],
+				(int)t->constant
+			);
+		}else if(t->type==tToken_String){
+			printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:\"%s\"\n",
+				i->next==self->fetchto?'\'':'|',
+				t->linenumber,
+				j,
+				t->type,
+				TokenidtoName[t->type],
+				t->string
+			);
+		}else
 		printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:%s\n",
 			i->next==self->fetchto?'\'':'|',
 			t->linenumber,
@@ -148,11 +167,33 @@ void mtLxFetcher_Print_Limited(tLxFetcher* self){
 	int j=0; 
 	for(tListnode* i=self->fetchfrom;(i!=self->fetchto)&&(j<10);i=i->next){
 		tToken* t=i->item;
-		if((i->next==self->fetchto)||(j>=10)){
-			printf("DBG:[T] ' Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		}else{
-			printf("DBG:[T] | Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		};
+		if(t->type==tToken_Integerconstant){
+			printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:%i\n",
+				i->next==self->fetchto?'\'':'|',
+				t->linenumber,
+				j,
+				t->type,
+				TokenidtoName[t->type],
+				(int)t->constant
+			);
+		}else if(t->type==tToken_String){
+			printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:\"%s\"\n",
+				i->next==self->fetchto?'\'':'|',
+				t->linenumber,
+				j,
+				t->type,
+				TokenidtoName[t->type],
+				t->string
+			);
+		}else
+		printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:%s\n",
+			i->next==self->fetchto?'\'':'|',
+			t->linenumber,
+			j,
+			t->type,
+			TokenidtoName[t->type],
+			t->type==tToken_Identifier?t->string:TokenidtoName_Compact[t->type]
+		);
 		j++;
 	};
 };
