@@ -138,6 +138,7 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 	if(!self)return self;
 	if(!self->returnedtype)return self;
 	if(!mtGType_GetBasetype(self->returnedtype))return self;
+	
 	if(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue){
 		tGType* newtype = mtGType_Deepclone(self->returnedtype);
 		mtGType_GetBasetype(newtype)->valuecategory=eGValuecategory_Rightvalue;
@@ -295,11 +296,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//return nullptr;
 				{
 					char* name;
-					tGType* type = SppGeneratetype(
-						self->returnedtype,
-						self->left,
-						&name
+					tGType* type = mtGType_SetValuecategory(
+						SppGeneratetype(
+							self->returnedtype,
+							self->left,
+							&name
+						),
+						eGValuecategory_Leftvalue
 					);
+
 					tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
 						self->name_space,
 						name,

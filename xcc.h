@@ -3557,10 +3557,10 @@ typedef enum eGAtomictype {
 	eGAtomictype_Array            = 6,
 	eGAtomictype_Function         = 7,
 	eGAtomictype_Nearpointer      = 8,
-	eGAtomictype_Neararray        = 9,
+	//eGAtomictype_Neararray        = 9,
 	eGAtomictype_Nearfunction     = 10,
 	eGAtomictype_Farpointer       = 11,
-	eGAtomictype_Fararray         = 12,
+	//eGAtomictype_Fararray         = 12,
 	eGAtomictype_Farfunction      = 13,
 	// IR-side types (and optionally C-side)
 	eGAtomictype_Int8             = 14,   
@@ -3609,10 +3609,10 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Enumeration               , "enum" },
 	{ eGAtomictype_Unresolved                , "unresolved" },
 	{ eGAtomictype_Nearpointer               , "nearpointer" },
-	{ eGAtomictype_Neararray                 , "neararray" },
+	//{ eGAtomictype_Neararray                 , "neararray" },
 	{ eGAtomictype_Nearfunction              , "nearfunction" },
 	{ eGAtomictype_Farpointer                , "farpointer" },
-	{ eGAtomictype_Fararray                  , "fararray" },
+	//{ eGAtomictype_Fararray                  , "fararray" },
 	{ eGAtomictype_Farfunction               , "farfunction" },
 	{ eGAtomictype_Pointer                   , "pointer" },
 	{ eGAtomictype_Array                     , "array" },
@@ -3775,17 +3775,20 @@ typedef enum eGTypequalifiers {
 	eGTypequalifiers_Restrict = 4,
 } eGTypequalifiers;
 typedef struct tGType {
-	char* unresolvedsymbol;
+	eGValuecategory valuecategory;       // rvalue <-> lvalue
+	eGSegment lvaluesegment;             // lvalues may be not just in dataseg
 	eGAtomictype atomicbasetype;
 	struct tGType * complexbasetype;
-	struct tGNamespace * structure;
+	char* unresolvedsymbol;
 	tList /* LxNode<Declaration> */ * precompiledstructure;
+	struct tGNamespace * structure;
 	void /* tLxNode */ * precompiledenumeration;
-	eGValuecategory valuecategory;
 	eGTypequalifiers typequalifiers;
 	tListnode /* <tGType> */ * functionarguments;
 	tListnode /* <tGType> */ * templatemodifiers;
 	tGTargetSizet structsize;
+	struct tGSymbol * dynamicarraysize;
+	tGTargetSizet arraysize;
 } tGType;
 typedef struct tGNamespace {
 	struct tGNamespace * parentnamespace;

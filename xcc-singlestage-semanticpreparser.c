@@ -335,9 +335,9 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			return 2;
 		case eGAtomictype_Farpointer:
 			return 4;
-		case eGAtomictype_Neararray:
-		case eGAtomictype_Fararray:
-			return mtGType_Sizeof(self->complexbasetype);
+		case eGAtomictype_Array:
+			assert(self->dynamicarraysize==nullptr);
+			return mtGType_Sizeof(self->complexbasetype)*self->arraysize;
 		case eGAtomictype_Function:
 			assert(false);
 		// IR-side types (and optionally C-side)

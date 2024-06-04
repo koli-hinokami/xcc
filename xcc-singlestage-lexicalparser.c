@@ -4,12 +4,6 @@ tLxNode* /* <nullptr||.type=statement> */ LxCurrentbreak; // Also serves as LxCu
 tList /* <char*> */ LxTypesdeclared;
 bool LxUsedeclaredtypeslist;
 // ------------------ Lexical parsing ------------------
-tLxNode* mtLxNode_Create(void){
-	return calloc(sizeof(tLxNode),1);
-};
-tLxNode* mtLxNode_Clone(tLxNode* self){
-	return memcpy(malloc(sizeof(tLxNode)),self,sizeof(tLxNode));
-};
 // --------------------- The Lexer ---------------------
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher);
 tLxNode* LxParseDeclaration(tLxFetcher* fetcher);
