@@ -155,7 +155,7 @@ int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
-	printf("L:      Version 0.9.9.0.universal.jam1-ir\n");
+	printf("L:      Version 0.9.10.0.universal.jam1-ir\n");
 	printf("L:      ----------------------------------------------------\n");
 	int aindex=1; //Command-line options
 	printf("L:  [T] Options:\n");

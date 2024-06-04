@@ -161,7 +161,7 @@ int main (int argc,char* argv[]) {
 	//printf("\n\n");
 	printf("Ln: [M] XCC Retargetable C Compiler\n");
 	printf("Ln:     The frontend\n");
-	printf("Ln:     Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "\n");
+	printf("Ln:     Version 0.9.10.0.universal.jam1-ir\n");
 	// ^ if you are not defining the directives in your Makefile: 
 	//printf("Ln: Version 1.0.1.0.undefined.homelab.160101-0800\n");
 	printf("Ln:     ----------------------------------------------------\n");
