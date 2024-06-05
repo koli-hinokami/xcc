@@ -71,11 +71,13 @@ C Grammar deviations:
 	• Logical AND/OR operators `&&` and `||` are lower priority compared to 
 	  assignments.
 	   So on their C++ locations.
-	• No Lexer hack. 
-	   In reality it means when you're declaring a variable
-	   of a typedef'd type you need to write out implied `auto` storage
-	   duration specifier, elseways Lexer will treat it as calling the
-	   type as a function.
+	//• No Lexer hack. 
+	//   In reality it means when you're declaring a variable
+	//   of a typedef'd type you need to write out implied `auto` storage
+	//   duration specifier, elseways Lexer will treat it as calling the
+	//   type as a function.
+	//Lexer hack is now present
+	• sizeof(char) may not be one, use signed char and unsigned char
 
 Stages:
 	¤ Embedder
