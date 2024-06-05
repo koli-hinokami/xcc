@@ -1,6 +1,10 @@
 // Semantic(al) parser
 tSpNode /* Function declaration */ * SpCurrentfunction;
 
+// -------------------------- Forward declarations --------------------------
+tSpNode* SpInsertimpliedrvaluecast(tSpNode* self);
+
+// ------------------------------- Functions -------------------------------
 tSpNode* mtSpNode_Create(void){
 	return calloc(sizeof(tSpNode),1);
 };
@@ -125,12 +129,16 @@ tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){
 #endif
 	assert(mtGType_IsCastableto(self->returnedtype,type));
 	if(mtGType_Equals(self->returnedtype,type))return self;
-	// TODO: Sanitize lvalue<->rvalue conversions
 	return mtSpNode_Clone(
 		&(tSpNode){
 			.type=tSplexem_Cast,
-			.returnedtype=type,
-			.left=self,
+			.returnedtype=mtGType_SetValuecategory(
+				mtGType_Deepclone(type),
+				eGValuecategory_Rightvalue
+			),
+			.left=SpInsertimpliedrvaluecast(
+				self
+			),
 		}
 	);
 };
@@ -155,7 +163,10 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 			);
 		}else if(newtype->atomicbasetype==eGAtomictype_Function){
 			assert(false);
-		}else if(newtype->atomicbasetype==eGAtomictype_Nearfunction){
+		}else if(
+			  (newtype->atomicbasetype==eGAtomictype_Nearfunction)
+			||(newtype->atomicbasetype==eGAtomictype_Farfunction)
+		){
 			return mtSpNode_Clone(
 				&(tSpNode){
 					.type=tSplexem_Cast,
@@ -176,8 +187,7 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 	};
 	return self;
 };
-//tSpNode* right = SpParsefunctionarguments(self->right,left->returnedtype->functionarguments);
-tSpNode* SpiParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ ** argumentslist){
+tSpNode* SpiParsefunctionarguments(tSpNode* ast, tListnode /* <tGType> */ ** argumentslist){
 #ifdef qvGTrace
 	printf("SP: [T] SpiParsefunctionarguments: entered \n");
 #endif
@@ -197,7 +207,7 @@ tSpNode* SpiParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ ** argu
 				SpInsertimpliedrvaluecast(ast),
 				(tGType*)((*argumentslist)->item)
 			);
-			*argumentslist = (*argumentslist)->item;
+			*argumentslist = (*argumentslist)->next;
 			return i;
 		};
 	}
@@ -395,7 +405,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 		{	// Expressions - terms
 			case tLexem_Integerconstant:
 				{
-					tGType* type = mtGType_CreateAtomic(eGAtomictype_Int);
+					tGType* type = mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int));
 					mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Rightvalue;
 					return mtSpNode_Clone(
 						&(tSpNode){
@@ -557,7 +567,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
 				tGType* returnedtype = mtGType_Deepclone(left->returnedtype);
 				// rvalue T* -> lvalue T
-				assert(returnedtype->atomicbasetype==eGAtomictype_Pointer);
+				assert(mtGType_IsPointer(returnedtype));
 				returnedtype=returnedtype->complexbasetype;
 				mtGType_GetBasetype(returnedtype)->valuecategory=eGValuecategory_Leftvalue;
 				return mtSpNode_Clone(
@@ -577,9 +587,12 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					);
 					assert(false);
 				}
-				assert(left->returnedtype->atomicbasetype==eGAtomictype_Nearpointer);
-				assert(left->returnedtype->complexbasetype->atomicbasetype==eGAtomictype_Nearfunction);
-				tSpNode* right = SpParsefunctionarguments(SpParse(self->right),left->returnedtype->complexbasetype->functionarguments);
+				assert(mtGType_IsPointer(left->returnedtype));
+				assert(mtGType_IsFunction(left->returnedtype->complexbasetype));
+				tSpNode* right = SpParsefunctionarguments(
+					SpParse(self->right),
+					left->returnedtype->complexbasetype->functionarguments
+				);
 				
 				return mtSpNode_Clone(
 					&(tSpNode){
@@ -628,6 +641,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				assert(false);
 			};
 			case tLexem_Sizeof: {
+				//
 #ifdef qvGTrace
 				//printf("SP: [T] SpParse: Sizeof(%s)\n",
 				//	mtLxNode_ToString(self->left)
@@ -709,6 +723,31 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 								eGValuecategory_Rightvalue
 							)
 						)
+					}
+				);
+			};
+			case tLexem_Typecast: {
+				assert(self->left->type == tLexem_Typeexpression);
+				tGType* type = SppGeneratetype(
+					self->left->returnedtype,
+					self->left->left,
+					null
+				);
+				tSpNode* right = SpParse(self->right);
+				assert(mtGType_IsCastableto(right->returnedtype,type));
+				//if(mtGType_Equals(self->returnedtype,type))return self;
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Cast,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_Deepclone(type),
+							eGValuecategory_Rightvalue
+						),
+						.left=SpInsertimpliedrvaluecast(
+							SpParse(
+								self->right
+							)
+						),
 					}
 				);
 			};

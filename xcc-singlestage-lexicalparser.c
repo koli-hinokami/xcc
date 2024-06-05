@@ -97,9 +97,9 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 	 * and so on like some do C just has one for expression.
 	 */
 	// Blockstatement bypass
-	if(mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces){
-		return LxParseBlockstatement(fetcher);
-	}
+	//if(mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces){
+	//	return LxParseBlockstatement(fetcher);
+	//}
 	// Fetch to semicolon the statement boundary
 	tLxFetcher localfetcher = *fetcher;
 	//tLxFetcher* localfetcher2 = nullptr; // pointer
@@ -340,19 +340,19 @@ tLxNode* LxParseBlockstatement2(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher); 
 			return nullptr;
 		};	break;
-		case tToken_Opencurlybraces: {
-			// tLxNode* st1=LxParseBlockstatement(fetcher);
-			mtLxFetcher_Advance(fetcher); // skip `{`
-			tLxNode* st1=LxParseBlockstatement2(fetcher);
-			tLxNode* st2=LxParseBlockstatement2(fetcher);
-			return mtLxNode_Clone(
-				&(tLxNode){
-					.type=tLexem_Blockstatement,
-					.left=st1,
-					.right=st2
-				}
-			);
-		};	break;
+		//case tToken_Opencurlybraces: {
+		//	// tLxNode* st1=LxParseBlockstatement(fetcher);
+		//	mtLxFetcher_Advance(fetcher); // skip `{`
+		//	tLxNode* st1=LxParseBlockstatement2(fetcher);
+		//	tLxNode* st2=LxParseBlockstatement2(fetcher);
+		//	return mtLxNode_Clone(
+		//		&(tLxNode){
+		//			.type=tLexem_Blockstatement,
+		//			.left=st1,
+		//			.right=st2
+		//		}
+		//	);
+		//};	break;
 		default: {
 			tLxNode* st1=LxParseStatement(fetcher);
 			tLxNode* st2=LxParseBlockstatement2(fetcher);
@@ -372,6 +372,16 @@ tLxNode* LxParseBlockstatement(tLxFetcher* fetcher){
 	}else{
 		mtLxFetcher_Advance(fetcher);
 	};
+	if(mtLxFetcher_Peek(fetcher)->type==tToken_Closecurlybraces){
+		mtLxFetcher_Advance(fetcher); // consume '}'
+		return mtLxNode_Clone(
+			&(tLxNode){
+				.type = tLexem_Blockstatement,
+				.left = nullptr,
+				.right = nullptr
+			}
+		);
+	}
 	return LxParseBlockstatement2(fetcher);
 };
 
@@ -3038,7 +3048,7 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 	mtLxFetcher_Print_Limited(fetcher);
 #endif
 	if(mtLxFetcher_Eof(fetcher))return nullptr;
-	printf("LX: [D] LxParseDeclaration(): start token == %i:%s\n",mtLxFetcher_Peek(fetcher)->type,TokenidtoName[mtLxFetcher_Peek(fetcher)->type]);
+	//printf("LX: [D] LxParseDeclaration(): start token == %i:%s\n",mtLxFetcher_Peek(fetcher)->type,TokenidtoName[mtLxFetcher_Peek(fetcher)->type]);
 	switch(mtLxFetcher_Peek(fetcher)->type){
 		case tToken_Semicolon:
 			mtLxFetcher_Advance(fetcher);
@@ -3054,7 +3064,9 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 			);
 			break;
 		case tToken_Keywordtypedef:
+#ifdef qvGTrace
 			printf("LX: [D] LxParseDeclaration: Typedef seen \n");
+#endif
 			mtLxFetcher_Advance(fetcher);
 			tGType* basetype=LxParseBasetype(fetcher);
 			tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
@@ -3082,7 +3094,9 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 			};
 			tGType* basetype;
 			if((basetype=LxParseBasetype(fetcher))){
+#ifdef qvGTrace
 				printf("LX: [T] LxParseDeclaration: Type fetched successfully, trying variable declaration\n");
+#endif
 				//mtLxFetcher_Print(fetcher);
 				tLxNode* initializer = nullptr;
 				// Previously breaked at assignment token
@@ -3097,7 +3111,9 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 				switch(mtLxFetcher_Peek(fetcher)->type){
 					case tToken_Opencurlybraces:
 						// Probably function
+#ifdef qvGTrace
 						printf("LX: [T] LxParseDeclaration: Block statement\n");
+#endif
 						initializer = LxParseBlockstatement(fetcher);
 						return mtLxNode_Clone(
 							&(tLxNode){
@@ -3115,7 +3131,9 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 					case tToken_Assign:
 						// *Probably* initialized declaration
 						// Either way, all three have been merged into 'multideclaration', so parse identically
+#ifdef qvGTrace
 						printf("LX: [T] LxParseDeclaration: Rawvariabledeclaration\n");
+#endif
 						*fetcher = localfetcher;
 						typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
 						mtLxFetcher_Advance(fetcher); // Skip semicolon

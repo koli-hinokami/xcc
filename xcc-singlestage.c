@@ -424,6 +424,14 @@ bool mtGType_IsPointer(tGType* self){
 	)return true;
 	return false;
 };
+bool mtGType_IsFunction(tGType* self){
+	if(
+		  (self->atomicbasetype == eGAtomictype_Function)
+		||(self->atomicbasetype == eGAtomictype_Nearfunction)
+		||(self->atomicbasetype == eGAtomictype_Farfunction)
+	)return true;
+	return false;
+};
 bool mtGType_IsArray(tGType* self){
 	if(
 		  (self->atomicbasetype == eGAtomictype_Array)
@@ -456,6 +464,8 @@ tGType* mtGType_GetBasetype(tGType* self){
 	exit(2);
 };
 bool mtGType_IsCastableto(tGType* self,tGType* type){
+	assert(self);
+	assert(type);
 	if(
 		  (self->atomicbasetype==eGAtomictype_Pointer)
 		&&(
@@ -484,6 +494,8 @@ bool mtGType_IsCastableto(tGType* self,tGType* type){
 	return true;
 };
 bool mtGType_Equals(tGType* self,tGType* type){
+	assert(self);
+	assert(type);
 	if(
 		  (self->atomicbasetype==eGAtomictype_Function)
 		&&(type->atomicbasetype==eGAtomictype_Function)

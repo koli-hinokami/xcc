@@ -27,31 +27,31 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 				SppParsefunctionarguments(expr->right)
 			);
 			break;
-		default: {
-			// Assumming we got them, tailcall to SpGeneratetype
-			assert(expr);
-			switch(expr->type){
-				case tLexem_Typeexpression: {
-					tGType* type = SppGeneratetype(
-						expr->returnedtype,
-						expr->left,
-						nullptr
-					);
-					mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
-					return mtListnode_Cons(type,nullptr);
-				};	break;
-				case tLexem_Nullexpression:
-					printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");
-					return nullptr;
-					break;
-				default:
-					fprintf(stderr,"SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
-					printf("SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
-					printf("SPP:[E] SppParsefunctionarguments: Full ast:\n");
-					LfPrint_LxNode(expr);
-					break;
-			};
+		case tLexem_Typeexpression: {
+			tGType* type = SppGeneratetype(
+				expr->returnedtype,
+				expr->left,
+				nullptr
+			);
+			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
+			return mtListnode_Cons(type,nullptr);
 		};	break;
+		case tLexem_Nullexpression:
+			printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");
+			return nullptr;
+			break;
+		default:
+			fprintf(stderr,"SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
+			printf("SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
+			printf("SPP:[E] SppParsefunctionarguments: Full ast:\n");
+			LfPrint_LxNode(expr);
+			break;
+		//default: {
+		//	// Assumming we got them, tailcall to SpGeneratetype
+		//	assert(expr);
+		//	switch(expr->type){
+		//	};
+		//};	break;
 
 	};
 	return 0;
