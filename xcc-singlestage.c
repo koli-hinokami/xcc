@@ -49,6 +49,7 @@ void LfiPrint_LxNode(char* pr,tLxNode* self);
 void LfiPrint_GType(char* pr, tGType* self);
 tGType* mtGType_Clone(tGType* self);
 char* mtGSymbol_ToString(tGSymbol* self);
+void GError();
 
 // -------------------------- Logging facilities --------------------------
 
@@ -301,6 +302,10 @@ void LfPrint_LxNode(tLxNode* self){
 tGType* mtGType_Create(){
 	return calloc(sizeof(tGType),1);
 }
+tGType* mtGType_Clone(tGType* self){
+	assert(self);
+	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
+}
 tGType* mtGType_CreateAtomic(eGAtomictype type){
 	tGType* i = mtGType_Create();
 	i->atomicbasetype = type;
@@ -379,13 +384,23 @@ tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
 				cont=false;
 		};
 	};
+	if(i->type==tLexem_Nullexpression){
+		temp->arraysizepresent = false;
+	}else if(i->type==tLexem_Integerconstant){
+		temp->arraysizepresent = true;
+		temp->arraysize = i->constant;
+	//}else if(i->type==tLexem_){
+	}else{
+		printf("ss: [E] mtGType_CreateArray_Expr: Unrecognized array size node %i•%s\n",
+			i->type,
+			TokenidtoName[i->type]
+		);
+		GError();
+	};
 	//temp->arraysize = SppEvalconstexpr(expr);
 	// TODO: Far pointers
 	return temp;
 };
-tGType* mtGType_Clone(tGType* self){
-	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
-}
 tGType* mtGType_Deepclone(tGType* self){
 	if(!self)return nullptr;
 	tGType* i = mtGType_Clone(self);
@@ -400,6 +415,14 @@ void mtGType_Destroy(tGType* self){
 		mtGType_Destroy(self->complexbasetype);
 	};
 	mtGType_Deallocate(self);
+};
+bool mtGType_IsPointer(tGType* self){
+	if(
+		  (self->atomicbasetype == eGAtomictype_Pointer)
+		||(self->atomicbasetype == eGAtomictype_Nearpointer)
+		||(self->atomicbasetype == eGAtomictype_Farpointer)
+	)return true;
+	return false;
 };
 bool mtGType_IsArray(tGType* self){
 	if(
@@ -490,6 +513,7 @@ bool mtGType_Equals(tGType* self,tGType* type){
 	return self->atomicbasetype==type->atomicbasetype;
 };
 tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+	printf("ss: [T] mtGType_SetValuecategory: entered \n");
 	mtGType_GetBasetype(self)->valuecategory=val;
 	return self;
 }
@@ -622,7 +646,15 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	}else if(self->atomicbasetype==eGAtomictype_Array){ 
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
-			"[]"
+			mtString_Join(
+				"[",
+				mtString_Join(
+					mtString_FromInteger(
+						self->arraysize
+					),
+					"]"
+				)
+			)
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Function){ 
@@ -645,8 +677,10 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	}else if(self->atomicbasetype==eGAtomictype_Void){ 
 		return mtString_Join(
 			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
 			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:"novalue ",
+			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+			:"unkvalue ",
 			"void"
 		);
 		//printf("void ",self->unresolvedsymbol);
@@ -668,8 +702,10 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		};
 		return mtString_Join(
 			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
 			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:"novalue ",
+			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+			:"unkvalue ",
 			s2
 		);
 	};

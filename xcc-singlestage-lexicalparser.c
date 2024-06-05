@@ -1836,17 +1836,37 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				}
 			);
 		case tToken_Keywordsizeof: // sizeof ( T )
-			return mtLxNode_Clone(
-				&(tLxNode){
-					.type=tLexem_Sizeof,
-					.left=LxParseExpression(
-						&(tLxFetcher){
-							.fetchfrom=fetcher->fetchfrom->next,
-							.fetchto=fetcher->fetchto
-						}
-					)
-				}
-			);
+			mtLxFetcher_Advance(fetcher);
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Openparentheses){
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type=tLexem_Sizeof,
+						.left=LxParseTypeexpression(
+							fetcher
+						)
+					}
+				);
+			}else{
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type=tLexem_Sizeof,
+						.left=LxParseExpression(
+							fetcher
+						)
+					}
+				);
+			};
+			//return mtLxNode_Clone(
+			//	&(tLxNode){
+			//		.type=tLexem_Sizeof,
+			//		.left=LxParseExpression(
+			//			&(tLxFetcher){
+			//				.fetchfrom=fetcher->fetchfrom->next,
+			//				.fetchto=fetcher->fetchto
+			//			}
+			//		)
+			//	}
+			//);
 			break;
 		case tToken_Openparentheses: {
 			//Evaulate parenthesation

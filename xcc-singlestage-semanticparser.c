@@ -455,7 +455,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
 				tGType* returnedtype = mtGType_Deepclone(left->returnedtype);
 				// rvalue T* -> lvalue T
-				assert(returnedtype->atomicbasetype==eGAtomictype_Pointer);
+				if(!mtGType_IsPointer(returnedtype)){
+					printf("SP: [F] Indexing type <%s> failed - unable to convert to pointer\n",mtGType_ToString(returnedtype));
+					GFatal();
+				};
 				returnedtype=returnedtype->complexbasetype;
 				mtGType_GetBasetype(returnedtype)->valuecategory=eGValuecategory_Leftvalue;
 				return mtSpNode_Clone( // cast<lvalue T>(self->left + sizeof(T)*self->right)
@@ -625,6 +628,66 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				assert(false);
 			};
 			case tLexem_Sizeof: {
+#ifdef qvGTrace
+				//printf("SP: [T] SpParse: Sizeof(%s)\n",
+				//	mtLxNode_ToString(self->left)
+				//);
+#endif
+				assert(self->left);
+				if(self->left->type==tLexem_Typeexpression){
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_Transform(
+								mtGType_SetValuecategory(
+									mtGType_CreateAtomic(
+										eGAtomictype_Sizet
+									),
+									eGValuecategory_Rightvalue
+								)
+							),
+							.constant=mtGType_Sizeof(
+								SppGeneratetype(
+									self->left->returnedtype,
+									self->left->left,
+									nullptr
+								)
+							)
+						}
+					);
+				}else{
+					// Expression
+#ifdef qvGTrace
+					//printf("SP: [T] SpParse: Sizeof(%s)\n",
+					//	mtGType_ToString(
+					//		SpParse(
+					//			self->left
+					//		)->returnedtype
+					//	)
+					//);
+#endif
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_Transform(
+								mtGType_SetValuecategory(
+									mtGType_CreateAtomic(
+										eGAtomictype_Sizet
+									),
+									eGValuecategory_Rightvalue
+								)
+							),
+							.constant=mtGType_Sizeof(
+								mtGType_SetValuecategory(
+									SpParse(
+										self->left
+									)->returnedtype,
+									eGValuecategory_Rightvalue
+								)
+							)
+						}
+					);
+				};
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Integerconstant,
@@ -637,10 +700,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							)
 						),
 						.constant=mtGType_Sizeof(
-							SppGeneratetype(
-								self->left->returnedtype,
-								self->left->left,
-								nullptr
+							mtGType_SetValuecategory(
+								SppGeneratetype(
+									self->left->returnedtype,
+									self->left->left,
+									nullptr
+								),
+								eGValuecategory_Rightvalue
 							)
 						)
 					}

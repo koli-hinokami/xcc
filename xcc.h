@@ -3753,7 +3753,8 @@ typedef enum eGValuecategory {
 	eGValuecategory_Null = 0,
 	eGValuecategory_Novalue = 0,
 	eGValuecategory_Leftvalue = 1,
-	eGValuecategory_Rightvalue = 2
+	eGValuecategory_Rightvalue = 2,
+	eGValuecategory_Farleftvalue = 3,
 } eGValuecategory;
 typedef enum eGPointernessmodifier {
 	eGPointernessmodifier_Null = 0,
@@ -3787,6 +3788,7 @@ typedef struct tGType {
 	tListnode /* <tGType> */ * functionarguments;
 	tListnode /* <tGType> */ * templatemodifiers;
 	tGTargetSizet structsize;
+	bool arraysizepresent;
 	struct tGSymbol * dynamicarraysize;
 	tGTargetSizet arraysize;
 } tGType;
