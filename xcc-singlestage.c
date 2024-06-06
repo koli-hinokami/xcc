@@ -524,8 +524,16 @@ bool mtGType_Equals(tGType* self,tGType* type){
 	if(self->valuecategory!=type->valuecategory)return false;
 	return self->atomicbasetype==type->atomicbasetype;
 };
-tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+eGValuecategory mtGType_GetValuecategory(tGType /* modifies */ * self){
+#ifdef qvGTrace
 	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+#endif
+	return mtGType_GetBasetype(self)->valuecategory;
+}
+tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+#endif
 	mtGType_GetBasetype(self)->valuecategory=val;
 	return self;
 }

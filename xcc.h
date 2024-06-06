@@ -221,6 +221,14 @@ enum tTokentype {
 	tSplexem_Equality               = 1052, //
 	tSplexem_Nonequality            = 1053, //
 	tSplexem_Assign                 = 1054, //
+	tSplexem_Lessthan               = 1055, //
+	tSplexem_Predecrement           = 1056, //
+	tSplexem_Postdecrement          = 1057, //
+	tSplexem_Rvaluedecrement        = 1058, //
+	tSplexem_Preincrement           = 1059, //
+	tSplexem_Postincrement          = 1060, //
+	tSplexem_Rvalueincrement        = 1061, //
+	tSplexem_Castfromboolean        = 1062, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Second AST string lexems
 	//                                      //        Actually are deprecated
@@ -3861,6 +3869,7 @@ typedef struct tSppNode {
 typedef struct tSpFunctionextinfo {
 	tGTargetSizet localssize;
 	tGTargetSizet argumentssize;
+	bool isfar;
 } tSpFunctionextinfo;
 
 typedef struct tSpNode {
