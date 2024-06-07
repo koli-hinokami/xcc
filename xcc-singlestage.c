@@ -107,9 +107,9 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 		}else{
 			//exit(6);
 			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
+			LfIndent(buffer);
 		};
 		//exit(6);
-		LfIndent(buffer);
 		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
 		if(self->symbol){
 			sprintf(buffer,
@@ -118,16 +118,14 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 			);
 			LfWriteline(buffer);
 		};
-		if(
-			  (self->type==tLexem_Switchcase)
-			||(self->type==tLexem_Switchdefault)
-		){
-			LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
-		}else if(self->type==tLexem_Breakstatement){
-			LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
-		}else{
-			LfiPrint_SpNode("i:",self->initializer);
+		if(self->switchlabels){
+			mtList_Foreach_Clojure(
+				self->switchlabels,
+				(void(*)(void*,void*))LfiPrint_SpNode,
+				"sc"
+			);
 		};
+		LfiPrint_SpNode("i:",self->initializer);
 		LfiPrint_SpNode("c:",self->condition);
 		LfiPrint_SpNode("l:",self->left);
 		LfiPrint_SpNode("r:",self->right);
