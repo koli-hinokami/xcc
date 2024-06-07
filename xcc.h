@@ -229,6 +229,7 @@ enum tTokentype {
 	tSplexem_Postincrement          = 1060, //
 	tSplexem_Rvalueincrement        = 1061, //
 	tSplexem_Castfromboolean        = 1062, //
+	tSplexem_Casttoboolean          = 1063, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Second AST string lexems
 	//                                      //        Actually are deprecated
@@ -3618,10 +3619,10 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Unresolved                , "unresolved" },
 	{ eGAtomictype_Nearpointer               , "nearpointer" },
 	//{ eGAtomictype_Neararray                 , "neararray" },
-	//{ eGAtomictype_Nearfunction              , "nearfunction" },
+	{ eGAtomictype_Nearfunction              , "nearfunction" },
 	{ eGAtomictype_Farpointer                , "farpointer" },
 	//{ eGAtomictype_Fararray                  , "fararray" },
-	//{ eGAtomictype_Farfunction               , "farfunction" },
+	{ eGAtomictype_Farfunction               , "farfunction" },
 	{ eGAtomictype_Pointer                   , "pointer" },
 	{ eGAtomictype_Array                     , "array" },
 	{ eGAtomictype_Function                  , "function" },
@@ -3870,6 +3871,7 @@ typedef struct tSpFunctionextinfo {
 	tGTargetSizet localssize;
 	tGTargetSizet argumentssize;
 	bool isfar;
+	//tGType* returnedtype;
 } tSpFunctionextinfo;
 
 typedef struct tSpNode {
