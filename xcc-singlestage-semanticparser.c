@@ -1,5 +1,7 @@
 // Semantic(al) parser
 tSpNode /* Function declaration */ * SpCurrentfunction;
+tSpNode /* `switch();` */ * SpCurrentswitch;
+tSpNode /* `for/switch;` */ * SpCurrentbreak;
 
 // -------------------------- Forward declarations --------------------------
 tSpNode* SpInsertimpliedrvaluecast(tSpNode* self);
@@ -379,7 +381,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				};
 				//return nullptr;
 				break;
-			};
+		};
 		{	// Statements
 			case tLexem_Returnstatement: {
 				return mtSpNode_Clone(
@@ -453,6 +455,46 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.right=SpParse(self->right),                 //)body;
 					}
 				);
+				ErfLeave();
+				return i;
+			};	break;
+			case tLexem_Switchstatement: {
+				ErfEnter_String("SpParse: Switch");
+				tSpNode* prevswitch = SpCurrentswitch;
+				tSpNode* prevbreak  = SpCurrentbreak;
+				tSpNode* i = mtSpNode_Create();
+				SpCurrentswitch = i;
+				i->type = tSplexem_Switchstatement;
+				i->switchlabels = mtList_Create();
+				i->left = SpParse(self->left);
+				i->right = SpParse(self->right);
+				SpCurrentswitch = prevswitch;
+				SpCurrentbreak  = prevbreak;
+				ErfLeave();
+				return i;
+			};	break;
+			case tLexem_Switchcase: {
+				ErfEnter_String("SpParse: Switchcase");
+				tSpNode* i = mtSpNode_Create();
+				i->type = tSplexem_Switchcase;
+				i->left = SpParse(self->left);
+				mtList_Append((SpCurrentswitch->switchlabels),i);
+				ErfLeave();
+				return i;
+			};	break;
+			case tLexem_Switchdefault: {
+				ErfEnter_String("SpParse: Switchdefault");
+				tSpNode* i = mtSpNode_Create();
+				i->type = tSplexem_Switchdefault;
+				mtList_Append((SpCurrentswitch->switchlabels),i);
+				ErfLeave();
+				return i;
+			};	break;
+			case tLexem_Breakstatement: {
+				ErfEnter_String("SpParse: Breakstatement");
+				tSpNode* i = mtSpNode_Create();
+				i->type = tSplexem_Breakstatement;
+				i->initializer = SpCurrentbreak;
 				ErfLeave();
 				return i;
 			};	break;
