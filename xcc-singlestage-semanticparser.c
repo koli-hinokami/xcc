@@ -142,6 +142,26 @@ tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){
 		}
 	);
 };
+tSpNode* SpInsertbooleantointegercast(tSpNode* self){
+	if(!self)return self;
+	if(!self->returnedtype)return self;
+	if(!mtGType_GetBasetype(self->returnedtype))return self;
+	
+	//if(self->returnedtype->atomicbasetype==eGAtomictype_Boolean){
+		return mtSpNode_Clone(
+			&(tSpNode){
+				.type=tSplexem_Castfromboolean,
+				.returnedtype=mtGType_Transform(
+					mtGType_CreateAtomic(
+						eGAtomictype_Boolean
+					)
+				),
+				.left=self,
+			}
+		);
+	//};
+	return self;
+};
 tSpNode* SpInsertintegertobooleancast(tSpNode* self){
 	if(!self)return self;
 	if(!self->returnedtype)return self;
@@ -150,7 +170,7 @@ tSpNode* SpInsertintegertobooleancast(tSpNode* self){
 	if(self->returnedtype->atomicbasetype==eGAtomictype_Boolean){
 		return mtSpNode_Clone(
 			&(tSpNode){
-				.type=tSplexem_Castfromboolean,
+				.type=tSplexem_Casttoboolean,
 				.returnedtype=mtGType_Transform(
 					mtGType_CreateAtomic(
 						eGAtomictype_Boolean
@@ -365,7 +385,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Returnstatement,
-						.left=SpInsertimpliedrvaluecast(SpParse(self->left)),
+						.left=mtSpNode_Promote(
+							SpInsertimpliedrvaluecast(SpParse(self->left)),
+							SpCurrentfunction->returnedtype->complexbasetype
+						),
 						.fextinfo=SpCurrentfunction->fextinfo
 					}
 				);
@@ -1020,7 +1043,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Nonequality,
-						.returnedtype=left->returnedtype,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_CreateAtomic(eGAtomictype_Boolean),
+							eGValuecategory_Rightvalue
+						),
 						.left=left,
 						.right=right,
 					}
