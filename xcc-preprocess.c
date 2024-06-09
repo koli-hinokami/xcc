@@ -1,40 +1,106 @@
 #include "hyperheader.h"
-
-FILE* src;
-FILE* dst;
-
-char** PrEnvironment;
+// -- Types --
 typedef struct {
 	char* name;
 	tList /* char* */ arguments;
 	char* resolved;
 } tPrMacrodefinition;
-tList /* tPrMacrodefinition */ tPrMacroses;
+// -- Globals --
+FILE* src;
+FILE* dst;
 
-char fetchcharater2(){
-	return fgetc(src);
-};
-char fetchcharater(){
-	char c = fetchcharater2();
+tList /* tPrMacrodefinition */ PrMacroses;
+tList /* bool */ PrPendingifs;
+// -- Forwarddeclarations --
+bool mtChar_PrIsTokenterminator(char self);
+
+// -- Source/destination file interface --
+char PrFetchcharater(){
+	char c = fgetc(src);
 	if(c==13){ // i hate working with windows \r•\n line termination from cygwin
-	           // which excepts unix \n line terminator
-		return fetchcharater();	
+	           // which excepts unix \n line terminators
+		printf("PR: [F]  N o   W i n d o w s   l i n e   e n d i n g s !  \n");
+		exit(52);
+		return fgetc(src);	
 	}else{
 		return c;
 	};
 };
-char peekcharater(){
+char PrPeekcharater(){
 	return ungetc(fgetc(src),src);
 };
-bool PrCheckEndoffile(){
-	return feof(src);
+bool PrEndoffile(){
+	int i = ungetc(fgetc(src),src);
+	if(i==EOF){
+		return true;
+	};
+	return false;
 };
-bool mtChar_PrIsautowhitespace(char self){
+void PrEmitcharater(char ch){
+	fputc(ch,dst);
+};
+// -- Support primitives --
+bool mtChar_PrIsTokenterminator(char self){
 	if(self=='_')return false;
 	if(isspace(self))return true;
 	if(ispunct(self))return true;
 	return false;
 };
+char* /* __needs_free */ PrGettoken(){
+	//
+#ifdef qvGTrace
+	//printf("PR: [T] PrGettoken: Entered\n");
+#endif
+	char* buffer = mtString_Clone("");
+	// Special cases like line merging
+	if(PrPeekcharater()=='\\'){
+		PrFetchcharater();
+		if(PrPeekcharater()=='\n'){
+			// You know what? I think we'll return escaped 
+			// line break as a token.
+			PrFetchcharater();
+			mtString_Appendchar(&buffer,'\n'); 
+			return buffer;
+		};
+		// Nothing special. Pass backslash through as a token.
+		mtString_Appendchar(&buffer,'\\'); 
+		return buffer;
+	};
+	// A token is at least one charater
+	mtString_Appendchar(&buffer,PrFetchcharater()); 
+	// And other charaters until an operator is seen
+	while(!mtChar_PrIsTokenterminator(PrPeekcharater())){
+		mtString_Appendchar(&buffer,PrFetchcharater()); 
+	};
+	return buffer;
+};
+// -- Conditionals --
+bool PriIsDefined_Internalclojure(char* macroname, tPrMacrodefinition* macrodef){
+	return strcmp(macrodef->name,macroname)==0;
+};
+bool PrIsDefined(char* macroname){
+	return mtList_Find_Clojure(
+		&PrMacroses,
+		(bool(*)(void*,void*))PriIsDefined_Internalclojure,
+		macroname
+	)!=nullptr;
+};
+bool PrGetIgnorelines(){
+	for(                                       // For
+		tListnode* i = PrPendingifs.first;     //  Pending ifs
+		i;                                     //  To the very top
+		i=i->next                              //  Sequentially
+	) 
+		if(!(bool)i->item)                     //  If said if block evaulated to false
+			return true;                       //   Suppress lines
+	return false ;                             //   As a default, let lines through.
+};
+bool PrEvaulatecondition(char* condstring){
+	printf("PR: [F] Unimplemented function PrEvaulatecondition \n");
+	ErfError();
+	return true;
+};
+// -- Directives --
 void PrDefine(char* definition){
 	// Define a macro
 	if(mtString_Contains(definition,' ')){
@@ -42,7 +108,7 @@ void PrDefine(char* definition){
 		if(0)printf("PR: [D] Defining macro: \"%s\"\n",definition);
 		// Define some variables
 		char* macroname = mtString_Clone(definition);
-		char* arguments2= mtString_FindcharFirst_Lambda(macroname,mtChar_PrIsautowhitespace);
+		char* arguments2= mtString_FindcharFirst_Lambda(macroname,mtChar_PrIsTokenterminator);
 		char* arguments = mtString_FindcharFirst(macroname,'(');
 		char* value     = mtString_FindcharFirst(macroname,')');
 		bool parametrized;
@@ -109,7 +175,7 @@ void PrDefine(char* definition){
 			macrodef->name = macroname;
 			macrodef->arguments=*mtString_Splitat_Modify(arguments,',');
 			macrodef->resolved=value;
-			mtList_Prepend(&tPrMacroses,macrodef);
+			mtList_Prepend(&PrMacroses,macrodef);
 		}else{
 			// Plain parameterless macro
 			tPrMacrodefinition* macrodef = malloc(sizeof(tPrMacrodefinition));
@@ -117,7 +183,7 @@ void PrDefine(char* definition){
 			macrodef->arguments.first=nullptr;
 			macrodef->arguments.last=nullptr;
 			macrodef->resolved=value;
-			mtList_Prepend(&tPrMacroses,macrodef);
+			mtList_Prepend(&PrMacroses,macrodef);
 			if(0)printf("PR: [T] Parameterless macro %s•%s \n",
 				macroname,value
 			);
@@ -134,107 +200,181 @@ void PrDefine(char* definition){
 		macrodef->arguments.first=nullptr;
 		macrodef->arguments.last=nullptr;
 		macrodef->resolved=nullptr;
-		mtList_Prepend(&tPrMacroses,macrodef);
+		mtList_Prepend(&PrMacroses,macrodef);
 	};
 };
-void handledirective(){
-	char commandbuffer[256];
-	char command[256];
-	char arguments[256];
-	int i;
-	for(i=0;(commandbuffer[i++]=fetchcharater())!='\n';commandbuffer[i+1]=0);
-	commandbuffer[  i]=0;
-	commandbuffer[--i]=0;
-	// Logging
-	//printf("PR: [T] Preprocessor directive \"%s\"\n",commandbuffer);
-	// Take command
-	for(i=0;!isspace(commandbuffer[i])&&commandbuffer[i];i++){
-		command[i]=commandbuffer[i];command[i+1]=0;
-	};
-	//printf("PR: [T]  Command \"%s\"\n",command);
-	if(0){
-		if(commandbuffer[i]){
-			printf("PR: [T]  Full string \"%.*s[%c]%s\"\n",
-				i,
-				commandbuffer,
-				commandbuffer[i]!='\n'?commandbuffer[i]:'@',
-				commandbuffer+i+1
-			);
-		}else{
-			printf("PR: [T]  Full string \"%.*s\"\n",
-				i,
-				commandbuffer
-			);
-		};
-	};
-	// Arguments
-	for(;isspace(commandbuffer[i]);i++);
-	strcpy(arguments,commandbuffer+i);
-	// Commands
+bool PriPreprocessdirective(char* command,char* arguments){
+#ifdef qvGTrace
+	//printf("PR: [T] PriPreprocessdirective(%s,%s): entered\n",command,arguments);
+#endif
 	if(strcmp(command,"define")==0){
 		// Skip whitespaces
 		//printf("PR: [T]  Define issued: \"%s\"\n",arguments);
 		PrDefine(arguments);
-		// todo
+		return true;
 	};
+	return false;
+};
+bool PriPreprocesscrucialdirective(char* command,char* arguments){
+#ifdef qvGTrace
+	//printf("PR: [T] PriPreprocesscrucialdirective(%s,%s): entered\n",command,arguments);
+#endif
+	if(strcmp(command,"if")==0){
+		mtList_Prepend(&PrPendingifs,(void*)PrEvaulatecondition(arguments));
+		return true;
+	};
+	if(strcmp(command,"ifdef")==0){
+		mtList_Prepend(&PrPendingifs,(void*)PrIsDefined(arguments));
+		return true;
+	}
+	if(strcmp(command,"ifndef")==0){
+		mtList_Prepend(&PrPendingifs,(void*)!PrIsDefined(arguments));
+		return true;
+	}
+	if(strcmp(command,"else")==0){
+		PrPendingifs.first->item=(void*)(!(bool)PrPendingifs.first->item);
+		return true;
+	};
+	if(strcmp(command,"endif")==0){
+		mtList_Removefirst(&PrPendingifs);
+		return true;
+	};
+	//if(strcmp(command,"define")==0){
+	//	//printf("PR: [T]  Define issued: \"%s\"\n",arguments);
+	//	PrDefine(arguments);
+	//	// todo
+	//};
+	return false;
+};
+void PrPreprocesscrucialdirective(char* /* modifies */ directive){
+#ifdef qvGTrace
+	//printf("PR: [T] PrPreprocesscrucialdirective(%s): Entered\n",directive);
+#endif
+	char command[256];
+	char arguments[256];
+	memset(command,0,sizeof(command));
+	memset(arguments,0,sizeof(arguments));
+	char* i = directive;
+	// Skip all spaces
+	while((*i!=0) && (isspace(*i)))i++;
+	// Get command
+	for(char* j = command;(*i!=0) && (!isspace(*i));*j++=*i++)j[1]=0;
+	// Skip all spaces
+	while((*i!=0) && (isspace(*i)))i++;
+	// Get arguments
+	for(char* j = arguments;*i!=0;*j++=*i++)j[1]=0;
+	// Handle commands
+	if(PriPreprocesscrucialdirective(command,arguments))return;
+};
+void PrPreprocessdirective(char* /* modifies */ directive){
+#ifdef qvGTrace
+	//printf("PR: [T] PrPreprocessdirective(%s): Entered\n",directive);
+#endif
+	char command[256];
+	char arguments[256];
+	memset(command,0,sizeof(command));
+	memset(arguments,0,sizeof(arguments));
+	char* i = directive;
+	// Skip all spaces
+	while((*i!=0) && (isspace(*i)))i++;
+	// Get command
+	for(char* j = command;(*i!=0) && (!isspace(*i));*j++=*i++)j[1]=0;
+	// Skip all spaces
+	while((*i!=0) && (isspace(*i)))i++;
+	// Get arguments
+	for(char* j = arguments;*i!=0;*j++=*i++)j[1]=0;
+	// Handle commands
+	if(PriPreprocesscrucialdirective(command,arguments))return;
+	if(PriPreprocessdirective(command,arguments))return;
+	printf("PR: [W] Unrecognized directive %s•%s\n",command,arguments);
+};
+// -- Macro expansion --
+char* PrTransformtoken(char* token){
+	//
+#ifdef qvGTrace
+	//printf("PR: [T] PrTransformtoken: Entered\n");
+#endif
+	//__asm__("int3":::"memory"); // int3 - debugger trap
+	return nullptr;
+};
+void PrEmittoken(char* str){
+	mtString_Foreach_Clojure2_Precasttoint(str,(void(*)(int,void*))fputc,dst);
+};
+void PrIgnoretoken(){
+	//
+#ifdef qvGTrace
+	//printf("PR: [T] PrIgnoretoken: Entered\n");
+#endif
+	// PrHandletoken() but with all of emitting commented out
+	char* token = PrGettoken();
+	//char* macroedtoken = PrTransformtoken(token);
+	//if(macroedtoken){
+	//	free(token);
+	//	token = macroedtoken;
+	//};
+	//PrEmittoken(token);
+	free(token);
+};
+void PrHandletoken(){
+	//
+#ifdef qvGTrace
+	//printf("PR: [T] PrHandletoken: Entered\n");
+#endif
+	char* token = PrGettoken();
+	char* macroedtoken = PrTransformtoken(token);
+	if(macroedtoken){
+#ifdef qvGTrace
+		printf("PR: [T] PrHandletoken: Macro-transformed token\n");
+#endif
+		free(token);
+		token = macroedtoken;
+	};
+	PrEmittoken(token);
+	free(token);
 };
 
-//void checkeof(FILE* handle){
-//	if(feof(handle)){
-//		exit;
-//	};
-//};
-//void PrHandleline2(){ // todo
-//	// Alternative linepump - reads the string first
-//	char buf;
-//	char stringbuffer[1024];
-//	if(feof(src))return;
-//	buf=fetchcharater();
-//	if(feof(src))return;
-//	if(buf=='\n')return;
-//	for(
-//		int i=0;
-//		(buf!='\n')&&(!feof(src));
-//		buf=fetchcharater()
-//	){
-//		stringbuffer[i]=buf;
-//	};
-//	
-//};
+// -- Main loop --
 void PrHandleline(){
-	char buf1;
-	if(feof(src))return;
-	//printf("PR: [T] Test \n");
-	switch(buf1=fetchcharater()){
-		case '#':
-			handledirective();
-			break;
-		case '\n':
-			break;
-		case -1:
-			break;
-		default:
-			//printf("PR: [T] Char \'%c\'\n",buf1);
-			// Handle comments
-			while((buf1!='\n')&&(!feof(src))){
-				if(buf1=='/'){
-					if(peekcharater()=='/'){
-						//Single-line comment
-						while((buf1!='\n')&&(!feof(src)))buf1=fetchcharater();
-						if(buf1!=-1)fputc(buf1,dst);
-						return;
-					}else{
-						
-					};
-				}
-				fputc(buf1,dst);
-				buf1=fetchcharater();
+	//
+#ifdef qvGTrace
+	//printf("PR: [T] PrHandleline: Entered\n");
+#endif
+	if(PrPeekcharater()=='#'){
+		PrFetchcharater();
+		// Preprocessor directive
+		char* directive = mtString_Clone("");
+		while(PrPeekcharater()!='\n'){
+			mtString_Appendchar(
+				&directive,
+				PrFetchcharater()
+			);
+		};
+		PrFetchcharater();
+		if(PrGetIgnorelines()){
+			PrPreprocesscrucialdirective(directive);
+		}else{
+			PrPreprocessdirective(directive);
+		};
+		free(directive);
+	}else{
+		// Normal line
+		if(PrGetIgnorelines()){
+			while(PrPeekcharater()!='\n'){
+				PrIgnoretoken();
 			};
-			fputc('\n',dst);
-			//for(fputc(buf1,dst);buf1!='\n';fputc(buf1,dst))buf1=fgetc(src);
-			break;
+			PrEmitcharater(PrFetchcharater());
+		}else{
+			while(PrPeekcharater()!='\n'){
+				PrHandletoken();
+			};
+			PrEmitcharater(PrFetchcharater());
+		};
 	};
 };
+void PrHandlefile(){
+	while(!PrEndoffile())PrHandleline();
+}
+// -- Launcher --
 void PriLogmacroses2(tPrMacrodefinition* definition){
 	char* packedarguments = mtString_Clone("{");
 	if(mtList_Count(&definition->arguments)){
@@ -257,111 +397,35 @@ void PriLogmacroses2(tPrMacrodefinition* definition){
 };
 void PrLogmacroses(){ // print defined macroses
 	printf("PR: [M] . Printing defined macroses \n");
-	mtList_Foreach(&tPrMacroses,(void(*)(void*))PriLogmacroses2);
+	mtList_Foreach(&PrMacroses,(void(*)(void*))PriLogmacroses2);
 	printf("PR: [M] ' (end) %i macroses defined \n",
-		mtList_Count(&tPrMacroses)
+		mtList_Count(&PrMacroses)
 	);
 };
-void preprocess(){
-	char buf1,buf2;
-	ungetc('\n',src);
-	while(!feof(src))PrHandleline();
-	if(0){
-		buf1=fgetc(src);
-		if(feof(src))return;
-		switch(buf1){
-			case '\n':
-				switch(buf2=fgetc(src)){
-					case '#': // Preprocessor directives
-						printf("PR: [T] test \n");
-						handledirective();
-						break;
-					default:
-						fputc('\n',dst);
-						ungetc(buf2,src);
-				}
-				break;
-		case '/':
-				switch(buf2=fgetc(src)){
-					case '/': // Single-line comments
-						while(fgetc(src)!='\n');
-						fputc('\n',dst);
-						break;
-					case '*': // Multiline comments
-						for(bool done=true;done;){
-							switch(fgetc(src)){
-								case '*':
-									switch(fgetc(src)){
-										case '/':
-											done=false;
-											break;
-										default:
-									};
-									break;
-								default:
-							};
-						}
-						break;
-					default:
-						fputc('/',dst);
-						fputc(buf2,dst);
-				}
-				break;
-			case -1:
-				break;
-			default:
-				fputc(buf1,dst);
-		};
-	};
-};
-
-int main(int argc, char* argv[], char** envp){
-	PrEnvironment=envp;
+int main(int argc,char** argv){
 	printf("PR: [M] XCC Preprocessor: \"%s\"->\"%s\"\n",argv[1],argv[2]);
-	printf("PR: [M] Usage: s t r i c t l y  xcc-preprocess <src> <dst> <arguments>\n");
-	src = fopen(argv[1],"r");
-	dst = fopen(argv[2],"w");
-	//Do the main preprocessing job
-	preprocess( /* src,dst */ );
-	PrLogmacroses();
-	/*
-	char shortbuffer,shortbuffer2;
-	char buffer[16];
-	while(!feof(src)){
-		if(feof(src))break;
-		switch(shortbuffer=fgetc(src)){
-			case '#':
-				//!TODO: Handle preprocessor directives!
-				//skip them for now
-				while(fgetc(src)!='\n');
-				continue;
-			default:
-				if(feof(src))goto finalize;
-				fputc(shortbuffer,dst);
-				break;
-		};
-		if(feof(src))break;
-		for(shortbuffer=' ';shortbuffer!='\n';){
-			shortbuffer=fgetc(src);
-			if(feof(src))goto finalize;
-			if(shortbuffer=='/'){
-				if((shortbuffer2=fgetc(src))=='/'){//if a one-line comment
-					while(fgetc(src)!='\n');//go until end of line
-					fputc('\n',dst);//put the newline back
-				}else{
-					if(feof(src))goto finalize;
-					fputc(shortbuffer,dst);
-					fputc(shortbuffer2,dst);
-				};
-			}else{
-				fputc(shortbuffer,dst);
+	printf("PR: [M] Usage: s t r i c t l y  xcc-preprocess <src> <dst> <switches>\n");
+	if(argc>999){
+		assert(argv[3][0]=='-');
+		for(char* i = argv[3]+1;i[0];i++){
+			if(i[0]=='m'){ // 'Mode' - use system-wide preprocessor instead
+				char** arguments = calloc(sizeof(char*),argc-4+4+1);
+				memcpy(arguments+4,argv+4,sizeof(char*)*(argc-4));
+				arguments[0] = "cpp";
+				arguments[1] = "-o";
+				arguments[2] = argv[2];
+				arguments[3] = argv[1];
+				execvp(
+					"cpp", // The system-wide preprocessor
+					arguments
+				);
 			};
 		};
 	};
-	*/
-	//while((shortbuffer=fgetc(src))!='\n')fputc(shortbuffer,out);
-	//while(!feof(src))fwrite(&buffer,1,fread(&buffer,1,16,src),dst);
-	//Finalize
+	src = fopen(argv[1],"r");
+	dst = fopen(argv[2],"w");
+	PrHandlefile();
+	PrLogmacroses();
 	fclose(src);
 	fclose(dst);
 };
