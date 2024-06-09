@@ -69,6 +69,12 @@ void mtString_Append(char** s1,char* s2){
 	free(*s1);
 	*s1=str;
 };
+void mtString_Appendchar(char** s1,char s2){
+	char s3[2] = {s2,0};
+	char* str=mtString_Join(*s1,s3);
+	free(*s1);
+	*s1=str;
+};
 bool mtString_Equals(char* s1,char* s2){
 	int i=0;
 	for(i=0;(s1[i]!=0)&&(s2[i]!=0);i++){
@@ -107,6 +113,13 @@ bool mtString_Contains(char* str, char ch){ // Doesn't modifies but excepts to n
 bool mtString_Contains_Lambda(char* str, bool(*lambda)(char)){ 
 	for(int i=0;str[i];i++)if(lambda(str[i]))return true;
 	return false;
+};
+void mtString_Foreach_Clojure2_Precasttoint(
+	char* str, 
+	void(*clojure)(int ch, void* args), 
+	void* args
+){
+	for(int i=0;str[i];i++)clojure((int)str[i],args);
 };
 // ------------ Higher-level routines ---------------
 char* mtString_Trimtrailingspace(char* str){ // Modifies `str`
