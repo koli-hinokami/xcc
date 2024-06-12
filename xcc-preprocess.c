@@ -20,7 +20,7 @@ char PrFetchcharater(){
 	if(c==13){ // i hate working with windows \r•\n line termination from cygwin
 	           // which excepts unix \n line terminators
 		printf("PR: [F]  N o   W i n d o w s   l i n e   e n d i n g s !  \n");
-		exit(52);
+		exit(1);
 		return fgetc(src);	
 	}else{
 		return c;
@@ -66,8 +66,22 @@ char* /* __needs_free */ PrGettoken(){
 		mtString_Appendchar(&buffer,'\\'); 
 		return buffer;
 	};
+	// Skip whitespaces
+#ifndef __CYGWIN__
+	while(
+		  (PrPeekcharater()==' ')
+		||(PrPeekcharater()=='\t')
+	)PrFetchcharater();
+#endif
 	// A token is at least one charater
 	mtString_Appendchar(&buffer,PrFetchcharater()); 
+	// Cygwin skip whitespaces
+#ifdef __CYGWIN__
+	while(
+		  (buffer[0]==' ')
+		||(buffer[0]=='\t')
+	)mtString_Trimfirst(buffer);
+#endif
 	// And other charaters until an operator is seen
 	while(!mtChar_PrIsTokenterminator(PrPeekcharater())){
 		mtString_Appendchar(&buffer,PrFetchcharater()); 
@@ -99,6 +113,21 @@ bool PrEvaulatecondition(char* condstring){
 	printf("PR: [F] Unimplemented function PrEvaulatecondition \n");
 	ErfError();
 	return true;
+};
+bool PrMacrofinderclojure(
+	char* token,
+	tPrMacrodefinition* attemptedmacro
+){
+	if(attemptedmacro)
+		if(attemptedmacro->name)
+			if(
+				strcmp(
+					attemptedmacro->name,
+					token
+				)==0
+			)
+				return true;
+	return false;
 };
 // -- Directives --
 void PrDefine(char* definition){
@@ -150,15 +179,15 @@ void PrDefine(char* definition){
 		};
 		while(*value==' ')value++;
 		// More logging
-		if(parametrized){
-			if(0)printf("PR: [T] Parsed macro definition: %s•%s•%s•%s\n",
+		if(0)if(parametrized){
+			printf("PR: [T] Parsed macro definition: %s•%s•%s•%s\n",
 				parametrized?"true":"false",
 				macroname,
 				arguments,
 				value
 			);
 		}else{
-			if(0)printf("PR: [T] Parsed macro definition: %s•%s•%s\n",
+			printf("PR: [T] Parsed macro definition: %s•%s•%s\n",
 				parametrized?"true":"false",
 				macroname,
 				value
@@ -292,13 +321,26 @@ void PrPreprocessdirective(char* /* modifies */ directive){
 char* PrTransformtoken(char* token){
 	//
 #ifdef qvGTrace
-	//printf("PR: [T] PrTransformtoken: Entered\n");
+	//printf("PR: [T] PrTransformtoken(%s): Entered\n",token);
 #endif
-	//__asm__("int3":::"memory"); // int3 - debugger trap
+	tPrMacrodefinition * matchingmacro = mtList_Find_Clojure(
+		&PrMacroses,
+		(bool(*)(void*,void*))PrMacrofinderclojure,
+		(void*)token
+	);
+	if(matchingmacro){
+#ifdef qvGTrace
+		if(0)printf("PR: [T] PrTransformtoken: A token happily transformed (%s)->(%s)\n",
+			token,matchingmacro->resolved
+		);
+#endif
+		return mtString_Clone(matchingmacro->resolved);
+	};
 	return nullptr;
 };
 void PrEmittoken(char* str){
 	mtString_Foreach_Clojure2_Precasttoint(str,(void(*)(int,void*))fputc,dst);
+	fputc(' ',dst);
 };
 void PrIgnoretoken(){
 	//
@@ -403,9 +445,9 @@ void PrLogmacroses(){ // print defined macroses
 	);
 };
 int main(int argc,char** argv){
-	printf("PR: [M] XCC Preprocessor: \"%s\"->\"%s\"\n",argv[1],argv[2]);
+	printf("PR: [M] xcc Preprocessor: \"%s\"->\"%s\"\n",argv[1],argv[2]);
 	printf("PR: [M] Usage: s t r i c t l y  xcc-preprocess <src> <dst> <switches>\n");
-	if(argc>999){
+	if(argc>3){
 		assert(argv[3][0]=='-');
 		for(char* i = argv[3]+1;i[0];i++){
 			if(i[0]=='m'){ // 'Mode' - use system-wide preprocessor instead
