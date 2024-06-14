@@ -25,18 +25,19 @@ typedef struct tToken {
 } tToken, *ptToken;
 typedef enum eGSegment { // Acts as addressing mode as well
 	//none code data udata rodata stack tls
-	meGSegment_Relative,	//none
-	meGSegment_Code,	//code  == cs
-	meGSegment_Readonlydata,//rodata== ds
-	meGSegment_Data,	//idata == ds
-	meGSegment_Udata,	//udata == ds
-	meGSegment_Tls,		//tls   == es/fs
-	meGSegment_Stack,	//stack == ss
-	meGSegment_Stackframe,	//frame == ss:fp(/ss:sp?)
-			       // When referenced casted stackframe 
-	                       // (fp-relative) -> stack (ss-relative)
-	meGSegment_Far,		// program-defined bank/segment
-	meGSegment_Count
+	meGSegment_Relative,        //none
+	meGSegment_Code,            //code  == cs
+	meGSegment_Readonlydata,    //rodata== ds
+	meGSegment_Data,            //idata == ds
+	meGSegment_Udata,           //udata == ds
+	meGSegment_Tls,             //tls   == es/fs
+	meGSegment_Stack,           //stack == ss
+	meGSegment_Stackframe,      //frame == ss:fp(/ss:sp?)
+	                            // When referenced casted stackframe 
+	                            // (fp-relative) -> stack (ss-relative)
+	meGSegment_Far,             //program-defined bank/segment
+	meGSegment_Count,
+	meGSegment_Immediate,
 } eGSegment, eGAddressingmode;
 char* meGSegment_ToStringTable[]= {
 	"relative",
@@ -48,6 +49,8 @@ char* meGSegment_ToStringTable[]= {
 	"stack",
 	"frame",
 	"far",
+	0,
+	"imm",
 	0
 };
 typedef enum eGAtomictype {
@@ -219,6 +222,8 @@ typedef struct tGInstruction {
 typedef struct { // tGTargetPointer
 	bool nonconstant; // TODO: Refactor to use 'dynamic' segment instead of nonconstant specifier
 	// Constant pointer - segment-offset:
+	//  Allows to specify one of built-in segments, or `far` to specify bank 
+	//  and offset in said bank.
 	eGSegment segment; 
 	tGTargetSegment bank;
 	tGTargetNearpointer offset;
@@ -389,53 +394,53 @@ typedef struct tSpNode {
 //	Specifically you can't use bitwise and/or as logical ones.
 //	 This is not K&R C, please use logical operators.
 //
-//				Associativity
-//  Precedence 	opr.	Description 	
+//    Associativity
+//  Precedence  opr. Description  
 //
-// 				Left-to-right →
-// 	0 	:: 	Scope resolution 	
-// 	1 	++ -- 	Suffix/postfix increment and decrement 	
-// 		() 	Function call
-// 		[] 	Array subscripting
-// 		. 	Structure and union member access
-// 		-> 	Structure and union member access through pointer
-// 		(){} 	Compound literal from our beloved C99
-// 				Right-to-left ←
-// 	2 	++ --	Prefix increment and decrement
-// 		+ - 	Unary plus and minus
-// 		! ~	Logical NOT and bitwise NOT
-// 		() 	Type cast
-// 		* 	Indirection (dereference)
-// 		& 	Address-of
-// 		sizeof 	Size-of[note 1]
-// 			There should've been `alignof`, but there's not much
-// 			 reason for alignment on 8-bit machines, so...
-// 				Left-to-right →
-// 	2.5 	.* ->*	Pointer-to-member 	
-// 	3 	* / % 	Multiplication, division, and remainder
-// 	4 	+ - 	Addition and subtraction
-// 	5 	<< >> 	Bitwise left shift and right shift
-// 	6  	&	Bitwise AND
-// 	7  	^ 	Bitwise XOR (exclusive or)
-// 	8  	| 	Bitwise OR (inclusive or)
-// 	8.5 	<=>	Three-way comparison operator (why though)
-// 	9	< <=    Comparison
-// 		> >=
-// 	10 	== !=	More comparison
-// 	11 	&& 	Logical AND
-// 	12 	|| 	Logical OR
-// 				Right-to-left ←
-// 	13 	?:	Ternary conditional
-// 	14	= 	Simple assignment
-// 		+= -= 	Assignment by sum and difference
-// 		*= /=  	Assignment by product, quotient, and remainder
-// 		%=
-// 		<<=  	Assignment by bitwise left shift and right shift
-// 		>>=
-// 		&= ^=  	Assignment by bitwise AND, XOR, and OR
-// 		|=		
-//				Left-to-right → 
-// 	15 	, 	Comma 	
+//                      Left-to-right →
+//  0    ::      Scope resolution  
+//  1    ++ --   Suffix/postfix increment and decrement  
+//       ()      Function call
+//       []      Array subscripting
+//       .       Structure and union member access
+//       ->      Structure and union member access through pointer
+//       (){}    Compound literal from our beloved C99
+//                       Right-to-left ←
+//  2    ++ --   Prefix increment and decrement
+//       + -     Unary plus and minus
+//       ! ~     Logical NOT and bitwise NOT
+//       ()      Type cast
+//       *       Indirection (dereference)
+//       &       Address-of
+//       sizeof  Size-of
+//                There should've been `alignof`, but there's not much
+//                 reason for alignment on 8-bit machines, so...
+//                      Left-to-right →
+//  2.5  .* ->*  Pointer-to-member  
+//  3    * / %   Multiplication, division, and remainder
+//  4    + -     Addition and subtraction
+//  5    << >>   Bitwise left shift and right shift
+//  6    &       Bitwise AND
+//  7    ^       Bitwise XOR (exclusive or)
+//  8    |       Bitwise OR (inclusive or)
+//  8.5  <=>     Three-way comparison operator (why though)
+//  9    < <=    Comparison
+//       > >=
+//  10   == !=   More comparison
+//  11   &&      Logical AND
+//  12   ||      Logical OR
+//                      Right-to-left ←
+//  13   ?:      Ternary conditional
+//  14   =       Simple assignment
+//       += -=   Assignment by sum and difference
+//       *= /=   Assignment by product, quotient, and remainder
+//       %=
+//       <<=     Assignment by bitwise left shift and right shift
+//       >>=
+//       &= ^=   Assignment by bitwise AND, XOR, and OR
+//       |=  
+//               Left-to-right → 
+//  15   ,              Comma  
 //
 
 /* // Grammar declarations

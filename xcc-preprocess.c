@@ -71,7 +71,7 @@ char* /* __needs_free */ PrGettoken(){
 	while(
 		  (PrPeekcharater()==' ')
 		||(PrPeekcharater()=='\t')
-	)PrFetchcharater();
+	)PrEmitcharater(PrFetchcharater());
 #endif
 	// A token is at least one charater
 	mtString_Appendchar(&buffer,PrFetchcharater()); 
@@ -80,7 +80,10 @@ char* /* __needs_free */ PrGettoken(){
 	while(
 		  (buffer[0]==' ')
 		||(buffer[0]=='\t')
-	)mtString_Trimfirst(buffer);
+	){
+		PrEmitcharater(buffer[0]);
+		mtString_Trimfirst(buffer);
+	};
 #endif
 	// And other charaters until an operator is seen
 	while(!mtChar_PrIsTokenterminator(PrPeekcharater())){
@@ -340,7 +343,7 @@ char* PrTransformtoken(char* token){
 };
 void PrEmittoken(char* str){
 	mtString_Foreach_Clojure2_Precasttoint(str,(void(*)(int,void*))fputc,dst);
-	fputc(' ',dst);
+	//fputc(' ',dst);
 };
 void PrIgnoretoken(){
 	//
