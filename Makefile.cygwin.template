@@ -1,0 +1,4 @@
+# Makefile for xcc Retargetable C Crosscompiler - Cygwin template
+
+CCPOSTFLAGS += -llibargp -largp -llibargp
+
