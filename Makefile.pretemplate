@@ -6,6 +6,7 @@ CCFLAGS = -rdynamic -g -O0 -Wall -Wno-char-subscripts -Wno-unused-function \
  -DqszGVersion=\"1.0.1.0\" \
  -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
 #-D__buildlab__=\"$(USER)\"
+CCPOSTFLAGS = 
 TIMESTAMP = `date +%y%m%d-%H%M`
 DEPS = \
 	hyperheader.h \
@@ -13,7 +14,6 @@ DEPS = \
 	xcc-bigtables.h \
 	softpipe.h \
 	cstrings.h \
-	basictypes.h \
 	lists.h \
 	errorreportingfacilities.h \
 	Makefile

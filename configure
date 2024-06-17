@@ -19,7 +19,7 @@ usage(){
 if [ -z $1 ]; then
 	echo "cfg:[F] No platform!"
 	usage
-	exit
+	exit 1
 elif [ $1 = "--help" ]; then
 	help
 	exit
