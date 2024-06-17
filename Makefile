@@ -1,7 +1,7 @@
 # Makefile for XCC Retargetable C Compiler
 
 CC = gcc
-CFLAGS = -rdynamic -g -O0 -Wall -Wno-char-subscripts \
+CFLAGS = -rdynamic -g -O0 -Wall -Wno-char-subscripts -Wno-unused-function \
  -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
  -DqszGVersion=\"1.0.1.0\" \
  -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
@@ -35,6 +35,8 @@ clean:
 	rm -f xcc-preprocess
 	rm -f xcc-tokenizer
 	rm -f xcc-lexer
+	rm -f xcc-ircompiler
+	rm -f xcc-assembler
 run: build
 #	cpp ./xcc-singlestage.c -o ./xcc-singlestage.cpr
 	./xcc ./helloworld.c
@@ -46,7 +48,14 @@ debug: build
 xcc-test: xcc-all
 	./xcc xcc-singlestage.c
 
-xcc-all: xcc xcc-singlestage xcc-embedder xcc-preprocess xcc-tokenizer 
+xcc-all: xcc \
+	xcc-singlestage \
+	xcc-embedder \
+	xcc-preprocess \
+	xcc-tokenizer \
+	xcc-ircompiler \
+	xcc-assembler
+
 xcc-singlestage: \
 	xcc-singlestage.c \
 	xcc-singlestage-tokenizer.c \

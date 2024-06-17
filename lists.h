@@ -138,7 +138,9 @@ void mtList_Foreach(ptList self, void(*lambda)(void*)){
 	};
 };
 void mtList_Foreach_Clojure(ptList self, void(*func)(void* args,void* item), void* args){
-	if(self->last == nullptr){ // List empty
+	if(!self){
+		printf("ul: [W] lists.h: mtList_Foreach_Clojure: self==nullptr \n");
+	}else if(self->last == nullptr){ // List empty
 		return;
 	}else if(self->first == self->last){ // List contains one item
 		func(args,self->first->item);

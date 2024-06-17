@@ -149,8 +149,8 @@ void compile(char* file){
 	// IR Compiler and assembler currently are used by Singlestage compiler
 	// as well
 	parsefile("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
-	parsefile("xcc-asm"        ,filename,".asm",".obj",0);
-	parsefile("xcc-ld"        ,filename,".obj",".exe",0);
+	parsefile("xcc-assembler"  ,filename,".asm",".obj",0);
+	parsefile("xcc-ld"         ,filename,".obj",".exe",0);
 	
 	free(filename);
 	

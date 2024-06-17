@@ -11,6 +11,7 @@
 #include <ctype.h>
 #include <errno.h>
 #include <assert.h>
+#include <argp.h>
 
 #define nullptr ((void*)0)
 #define null 0
@@ -19,7 +20,7 @@
 #include "lists.h"
 #include "dictionary.h"
 #include "softpipe.h"
-#include "basictypes.h"
+//#include "basictypes.h"
 #include "xcc.h"
 #include "xcc-targetconfiguration.h"
 #include "errorreportingfacilities.h"

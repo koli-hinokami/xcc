@@ -166,7 +166,7 @@ int main(int argc,char* argv[]) {
 	printf("L:  [T] Options:\n");
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
-		printf("L:   [T]   %s\n",argv[aindex]);
+		printf("L:  [T]   %s\n",argv[aindex]);
 	};
 	//Files for compilation
 	printf("L:  [M] Compiling:\n");
