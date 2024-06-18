@@ -87,14 +87,26 @@ void PrIncludefile(char* file){
 	char* fpath = nullptr;
 	if(file[0]=='<'){
 		// search for file in standard headers path
-		fpath = mtString_Join(
-			mtString_Join(
-				getenv("HOME"),
-				"/xcc/include/"
-			),
-			filename
-		);
-		fhandle = fopen(fpath,"r");
+		//fpath = mtString_Join(
+		//	mtString_Join(
+		//		"/etc/xcc/targetinclude/",
+		//		mtString_Join(
+		//			EmArchitecturename,
+		//			"/"
+		//		)
+		//	),
+		//	filename
+		//);
+		//fhandle = fopen(fpath,"r");
+		//if(!fhandle){
+			// File doesn't exist in target arch libc headers -> try 
+			// freestanding libc
+			fpath = mtString_Join(
+				"/etc/xcc/include/",
+				filename
+			);
+			fhandle = fopen(fpath,"r");
+		//};
 	}else if(file[0]=='"'){
 		// search for file in preprocessed file path
 		fpath = mtString_Join("./",filename);
