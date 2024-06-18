@@ -154,11 +154,11 @@ void AsmCompilefile(FILE* src, FILE* dst){
 };
 
 void LnFailedassertionhandler(int signum){
-	fprintf(stderr,"Ln: [F] Failed assertion catched! \n");
+	fprintf(stderr,"ASM:[F] Failed assertion catched! \n");
 	ErfFatal();
 };
 void LnNullpointerhandler(int signum){
-	fprintf(stderr,"Ln: [F] Segfault catched! \n");
+	fprintf(stderr,"ASM:[F] Segfault catched! \n");
 	ErfFatal();
 };
 int main(int argc, char** argv){
