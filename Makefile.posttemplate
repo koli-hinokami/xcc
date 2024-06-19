@@ -14,7 +14,7 @@ clean:
 	rm -f xcc-assembler
 run: build
 #	cpp ./xcc-singlestage.c -o ./xcc-singlestage.cpr
-	./xcc ./helloworld.c
+	./xcc -a jam1 ./helloworld.c
 #	./xcc -m ./xcc-singlestage.c
 #	./xcc-singlestage ./xcc-singlestage.cpr
 debug: build
