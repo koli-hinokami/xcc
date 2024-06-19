@@ -474,7 +474,7 @@ void IrcParseline(FILE* src,FILE* dst){
 #endif
 	// Read instruction
 	tList /* <tIrcToken> */ * arguments = mtList_Create();
-	tIrcToken* tok = mtIrcToken_Get(dst);
+	tIrcToken* tok = mtIrcToken_Get(src);
 	if(!tok)return;
 	if(tok->type==eIrcTokentype_Label){
 		fprintf(dst,"%s:\n",tok->string);
@@ -486,7 +486,7 @@ void IrcParseline(FILE* src,FILE* dst){
 	};
 	char* opcode = tok->string;
 	for(
-		tok = mtIrcToken_Get(dst);
+		tok = mtIrcToken_Get(src);
 		tok->type!=eIrcTokentype_Newline;
 		tok=mtIrcToken_Get(src)
 	)
