@@ -1,0 +1,12 @@
+; vim:ts=8:
+	; Jam-1 archdef
+opcode	irc.programprologue				: .architecture 8BitPipeline
+opcode	irc.programepilogue				: 
+opcode	irc.segment			#1		: .segment #1
+opcode	v.compilernop.relative.void			: cnop
+opcode	v.nop.relative.void				: nop
+opcode	v.enter.relative.void		#1		: push si | mov tx, sp | mov si, tx | push b | push a | mov cd, #1 | mov tx, sp | mov a, tl | mov b, th | add a, c | adc b, d | mov tl, a | mov th, b | nop | mov sp, tx | pop a | pop b
+opcode	v.const.relative.int16		#1		: mov ab, #1
+opcode	v.prereturn.relative.int16	#1		: 
+opcode	v.leave.relative.void				: mov tx, si | mov sp, tx | pop si
+opcode	v.return.relative.int16				: ret
