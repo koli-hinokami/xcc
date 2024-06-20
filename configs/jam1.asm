@@ -1,6 +1,9 @@
 ; vim:ts=8
 opcode	.architecture	#1	: 
 opcode	.segment	#1	: 
+opcode	db	#1		: <#1
+opcode	dh	#1		: >#1
+opcode	dw	#1		: =#1
 opcode	cnop			: 
 opcode	nop			: 0x00
 
