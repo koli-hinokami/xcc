@@ -1,6 +1,6 @@
 ; vim:ts=8:
 	; Jam-1 archdef
-opcode	irc.programprologue				: .architecture 8BitPipeline
+opcode	irc.programprologue				: | .include "/etc/xcc/libc-jam1/libc.asm" |
 opcode	irc.programepilogue				: 
 opcode	irc.segment			#1		: .segment #1
 opcode	v.compilernop.relative.void			: cnop
