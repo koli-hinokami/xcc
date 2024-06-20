@@ -1,0 +1,8 @@
+Package: xcc-crosscompiler
+Package-Type: deb
+Version: 0.10.0
+Maintainer: Koli Hinokami
+Section: dev
+Priority: standard
+Description:
+	xcc Retargetable C Crosscompiler. Retargetability first.
