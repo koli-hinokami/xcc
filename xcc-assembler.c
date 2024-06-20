@@ -34,8 +34,8 @@ typedef enum eAsmBinarytokensize {
 typedef enum eAsmBinarytokentype {
 	eAsmBinarytokentype_Newline,
 	eAsmBinarytokentype_Raw,
-	eAsmBinarytokentype_Position,    // Indexed
-	eAsmBinarytokentype_Expr,    // Indexed
+	eAsmBinarytokentype_Position,
+	eAsmBinarytokentype_Expr,
 } eAsmBinarytokentype;
 
 typedef struct {
@@ -242,18 +242,6 @@ tAsmBinarytoken* mtAsmBinarytoken_Get(FILE* src){ // Constructor
 				}
 			);
 			break;
-		case '#':
-#ifdef qvGTrace
-			//printf("ASM:[T] mtAsmBinarytoken_Get: Argument \n");
-#endif
-			fgetc(src);
-			return mtAsmBinarytoken_Clone(
-				&(tAsmBinarytoken){
-					.type = eAsmBinarytokentype_Expr,
-					.disp = fgetc(src)-'0'
-				}
-			);
-			break;
 		case ' ':
 		case '\t':
 #ifdef qvGTrace
@@ -308,7 +296,13 @@ char* mtAsmBinarytoken_ToString(tAsmBinarytoken* self){
 			:self->type==eAsmBinarytokentype_Expr    ?"#"
 			:self->type==eAsmBinarytokentype_Position?"$"
 			:self->type==eAsmBinarytokentype_Newline ?"\\n"
-			:"(unknein type)",
+			:mtString_Join(
+				mtString_Join(
+					"(unknein type ",
+					mtString_FromInteger(self->type)
+				),
+				")"
+			),
 			mtString_FromInteger(self->disp)
 		)
 	);
@@ -335,7 +329,7 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 		case eAsmBinarytokentype_Position:
 			exprval+=AsmCurrentexternalposition;
 		default:
-			printf("ASM:[E] mtAsmBinarytoken_Emit: Unrecognized token type %i\n",self->size);
+			printf("ASM:[E] mtAsmBinarytoken_Emit: Unrecognized token type %i\n",self->type);
 			break;
 	};
 	switch(self->size){
@@ -356,7 +350,6 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 			printf("ASM:[E] mtAsmBinarytoken_Emit: Unrecognized token size %i\n",self->size);
 			break;
 	};
-	printf("ASM:[E] mtAsmBinarytoken_Emit: Unrecognized token type %i\n",self->type);
 };
 // -- class tAsmToken --
 
@@ -365,7 +358,7 @@ tAsmToken* mtAsmToken_Clone(tAsmToken* self){
 	//
 	void* i = memcpy(malloc(sizeof(tAsmToken)),self,sizeof(tAsmToken));;
 #ifdef qvGTrace
-	printf("ASM:[T] mtAsmToken_Clone(self* %p)->%p: Entered\n",self,i);
+	//printf("ASM:[T] mtAsmToken_Clone(self* %p)->%p: Entered\n",self,i);
 #endif
 	return i;//memcpy(malloc(sizeof(tAsmToken)),self,sizeof(tAsmToken));;
 };
@@ -383,7 +376,7 @@ bool mtAsmToken_HasString(tAsmToken* self){
 };
 void mtAsmToken_Destroy(tAsmToken* self){
 #ifdef qvGTrace
-	printf("ASM:[T] mtAsmToken_Destroy(self* %p): Entered\n",self);
+	//printf("ASM:[T] mtAsmToken_Destroy(self* %p): Entered\n",self);
 #endif
 	if(mtAsmToken_HasString(self))mtString_Destroy(self->string);
 	memset(self,0,sizeof(tAsmToken));
@@ -392,7 +385,7 @@ void mtAsmToken_Destroy(tAsmToken* self){
 tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 	//tAsmToken* self = mtAsmToken_Allocate();
 #ifdef qvGTrace
-	printf("ASM:[T] mtAsmToken_Get(FILE* (%p)): Entered\n",src);
+	//printf("ASM:[T] mtAsmToken_Get(FILE* (%p)): Entered\n",src);
 	//printf("ASM:[T] mtAsmToken_Get: Charater \'%c\'\n",fpeekc(src));
 #endif
 	errno=0;
@@ -599,6 +592,9 @@ void AsmReadinstructiondefinition(FILE* src){
 					printf(" when fetching instruction definition's opcode\n");
 					ErfFatal();
 				};
+				printf("ASM:[T] AsmReadinstructiondefinition: Opcode %s\n",
+					mtAsmToken_ToString(token)
+				);
 				// Allocate instruction
 				tAsmInstructiondefinition* instruction =
 					calloc(1,sizeof(tAsmInstructiondefinition));
@@ -612,6 +608,9 @@ void AsmReadinstructiondefinition(FILE* src){
 					  ((token=mtAsmToken_Get(src))->type!=eAsmTokentype_Charater)
 					||(token->ch!=':')
 				){
+					printf("ASM:[T] AsmReadinstructiondefinition: Argument %s\n",
+						mtAsmToken_ToString(token)
+					);
 					mtList_Append(instruction->operands,token);
 				};
 				mtList_Append(instruction->operands,
@@ -627,9 +626,12 @@ void AsmReadinstructiondefinition(FILE* src){
 					(bintoken=mtAsmBinarytoken_Get(src))->type!=eAsmBinarytokentype_Newline
 				){
 #ifdef qvGTrace
-					printf("ASM:[F] AsmReadinstructiondefinition: Fetched expansion token %s \n",mtAsmBinarytoken_ToString(bintoken));
+					printf("ASM:[F] AsmReadinstructiondefinition: "
+					       "Expansion token %s \n",
+						mtAsmBinarytoken_ToString(bintoken)
+					);
 #endif
-					mtList_Append(instruction->expansion,bintoken);
+					mtList_Append(instruction->expansion,mtAsmBinarytoken_Clone(bintoken));
 				};
 				// Register instruction
 				mtList_Append(&AsmInstructionsdefined,instruction);
@@ -687,7 +689,7 @@ bool AsmInstructionfinderclojure(
 #ifdef qvGTrace
 	assert((void*)clojureargs->opcode>=(void*)0x100);
 	assert((void*)item->opcode>=(void*)0x100);
-	printf(
+	if(0)printf(
 		"ASM:[T] AsmInstructionfinderclojure[%s %p](%s %p %p %p): Entered \n",
 		clojureargs?clojureargs->opcode?:"":"",
 		clojureargs?clojureargs->args:0,
@@ -708,7 +710,7 @@ bool AsmInstructionfinderclojure(
 		i=i->next,j=j->next
 	){
 #ifdef qvGTrace
-		printf("ASM:[T] AsmInstructionfinderclojure: Iteration on tokens <%s> and <%s> \n",mtAsmToken_ToString(i->item),mtAsmToken_ToString(j->item));
+		//printf("ASM:[T] AsmInstructionfinderclojure: Iteration on tokens <%s> and <%s> \n",mtAsmToken_ToString(i->item),mtAsmToken_ToString(j->item));
 #endif
 		tAsmToken* sourcetok = i->item;
 		tAsmToken* desttok = j->item;
@@ -856,7 +858,7 @@ void AsmSecondpassline(FILE* src,FILE* dst){
 	for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
 		tAsmBinarytoken* tok = i->item;
 #ifdef qvGTrace
-		printf("ASM:[T] AsmSecondpassline:  Emitting expansion for token <%s> \n",mtAsmBinarytoken_ToString(tok));
+		printf("ASM:[T] AsmSecondpassline:  Emitting expansion for token %s \n",mtAsmBinarytoken_ToString(tok));
 #endif
 		mtAsmBinarytoken_Emit(tok,dst);
 	};
@@ -992,26 +994,22 @@ int main(int argc, char** argv){
 	// Read archdef
 	AsmReadinstructiondefinitions(archdeffile);
 	// Dump archdep
-	if(0)for(tListnode * i = AsmInstructionsdefined.first;i;i=i->next){
-		tAsmInstructiondefinition * j = i->item;
-		printf("ASM:[T] Opcode %s : ",j->opcode);
-		for(tListnode * k = j->operands->first;k;k=k->next){
-			tAsmToken * l = k->item;
-			if(mtAsmToken_HasString(l))
-				printf("%s ",l->string);
-			else
-				printf("%c ",l->ch?l->ch:'%');
+	if(1){
+		printf("ASM:[D] . Dumping instructions defined \n");
+		for(tListnode * i = AsmInstructionsdefined.first;i;i=i->next){
+			tAsmInstructiondefinition * j = i->item;
+			printf("ASM:[T] | Opcode %s : ",j->opcode);
+			for(tListnode * k = j->operands->first;k;k=k->next){
+				printf("%s ",mtAsmToken_ToString(k->item));
+			};
+			printf("|");
+			for(tListnode * k = j->expansion->first;k;k=k->next){
+				printf("%s ",mtAsmBinarytoken_ToString(k->item));
+			};
+			printf("\n");
 		};
-		printf("|");
-		for(tListnode * k = j->expansion->first;k;k=k->next){
-			tAsmToken * l = k->item;
-			if(mtAsmToken_HasString(l))
-				printf("%s ",l->string);
-			else
-				printf("%c ",l->ch?:'%');
-		};
-		printf("\n");
-	};
+		printf("ASM:[D] ' \n");
+	}
 	// Open source/dest files
 	FILE* srcfile = fopen(AsmSourcefilename,"r");
 	if(!srcfile){
