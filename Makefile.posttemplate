@@ -1,6 +1,6 @@
 # Makefile for xcc Retargetable C Crosscompiler - Posttemplate
 
-.PHONY: clean rebuild
+.PHONY: clean rebuild install package
 build: xcc-all
 rebuild: clean build
 clean: 
@@ -17,6 +17,35 @@ run: build
 	./xcc -a jam1 ./helloworld.c
 #	./xcc -m ./xcc-singlestage.c
 #	./xcc-singlestage ./xcc-singlestage.cpr
+package: 
+	mkdir -p etc/xcc
+	mkdir -p usr/local/bin
+	cp -Rf ./configs/* ./etc/xcc
+	cp ./xcc              ./usr/local/bin
+	cp ./xcc-singlestage  ./usr/local/bin
+	cp ./xcc-embedder     ./usr/local/bin
+	cp ./xcc-preprocess   ./usr/local/bin
+	cp ./xcc-ircompiler   ./usr/local/bin
+	cp ./xcc-assembler    ./usr/local/bin
+	echo "2.0" > debian-binary
+	tar --create -f data.tar usr etc
+	tar --create -f control.tar control
+	ar r xcc-crosscompiler.deb debian-binary data.tar control.tar
+	# gc
+	rm debian-binary
+	rm control.tar
+	rm data.tar
+	rm -r etc
+	rm -r usr
+install: 
+	mkdir -p /etc/xcc
+	cp -Rf ./configs/* /etc/xcc/
+	cp ./xcc              /usr/local/bin
+	cp ./xcc-singlestage  /usr/local/bin
+	cp ./xcc-embedder     /usr/local/bin
+	cp ./xcc-preprocess   /usr/local/bin
+	cp ./xcc-ircompiler   /usr/local/bin
+	cp ./xcc-assembler    /usr/local/bin
 debug: build
 	gdb ./xcc-singlestage ./xcc-singlestage.c
 
