@@ -58,7 +58,8 @@ xcc-all: xcc \
 	xcc-preprocess \
 	xcc-tokenizer \
 	xcc-ircompiler \
-	xcc-assembler
+	xcc-assembler \
+	xcc-ld
 
 xcc-singlestage: \
 	xcc-singlestage.c \
