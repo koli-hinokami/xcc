@@ -173,7 +173,7 @@ void compile(char* file){
 	// as well
 	parsefile2("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
 	parsefile2("xcc-assembler"  ,filename,".asm",".obj",0);
-	parsefile("xcc-ld"         ,filename,".obj",".exe",0);
+	parsefile2("xcc-ld"         ,filename,".obj",".bin",0);
 	
 	free(filename);
 	
