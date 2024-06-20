@@ -1,7 +1,9 @@
 # Makefile for xcc Retargetable C Crosscompiler - Pretemplate
 
 CC = gcc
-CCFLAGS = -rdynamic -g -O0 -Wall -Wno-char-subscripts -Wno-unused-function \
+CCFLAGS = -rdynamic -g -O0 \
+ -Wall -Wno-char-subscripts -Wno-unused-function \
+ -Werror=int-conversion -Werror=implicit-function-declaration \
  -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
  -DqszGVersion=\"1.0.1.0\" \
  -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
