@@ -259,6 +259,7 @@ enum tTokentype {
 	tInstruction_Drop               = 1556, //For expression statements. Ignore produced value.
 	tInstruction_Pushargument       = 1557, //Throw function argument just evaluated to stack.
 	tInstruction_Call               = 1558, //Call function.
+	tInstruction_Jump               = 1559, //Jump always
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
