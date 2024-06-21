@@ -455,6 +455,20 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 
 
 };
+tGInstruction* IgCompileVariable(tSpNode* self){
+	assert(self->type==tSplexem_Variabledeclaration);
+	if(self->returnedtype->atomicbasetype==eGAtomictype_Array){
+		// Compile an array
+		assert(false);
+	}else{
+		// Relatively normal variable
+		return mtGInstruction_CreateBasic(
+			tInstruction_Allocatestorage,
+			self->returnedtype->atomicbasetype
+		);
+		assert(false);
+	};
+};
 void IgParse(tSpNode* self){
 	assert(self);
 #ifdef qvGTrace
@@ -469,6 +483,9 @@ void IgParse(tSpNode* self){
 			break;
 		case tSplexem_Functiondeclaration:
 			mtGInstruction_GetLast(GCompiled[meGSegment_Code])->next=IgCompileFunction(self);
+			break;
+		case tSplexem_Variabledeclaration:
+			mtGInstruction_GetLast(GCompiled[meGSegment_Data])->next=IgCompileVariable(self);
 			break;
 		default:
 			assert(false);
