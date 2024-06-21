@@ -27,6 +27,11 @@ char* LnTrimextension(char* file){
 //	free(argv[2]);
 //};
 
+
+void LnFailedassertionhandler(int signum){
+	fprintf(stderr,"Ln: [F] Failed assertion catched! \n");
+	ErfFatal();
+};
 void LnNullpointerhandler(int signum){
 	fprintf(stderr,"Ln: [F] Segfault catched! \n");
 	ErfFatal();
@@ -158,6 +163,7 @@ void LnCompile(char* file){
 int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
 	signal(SIGSEGV,LnNullpointerhandler);
+	signal(SIGABRT,LnFailedassertionhandler);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
 	printf("L:      Version 0.9.13.0.universal.jam1-ir\n");
@@ -169,11 +175,8 @@ int main(int argc,char* argv[]) {
 		printf("L:  [T]   %s\n",argv[aindex]);
 	};
 	//Files for compilation
-	printf("L:  [M] Compiling:\n");
-	for(;aindex<argc;aindex++){
-		if(argv[aindex][0]=='-')break;
-		LnCompile(argv[aindex]);
-	};
-
+	printf("L:  [M] Compiling \"%s\"\n",argv[aindex]);
+	LnCompile(argv[aindex]);
+	return 0;
 };
 
