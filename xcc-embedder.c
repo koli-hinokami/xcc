@@ -3,7 +3,10 @@
 FILE* src;
 FILE* dst;
 
-char** PrEnvironment;
+char* EmSourcefilename;
+char* EmTargetfilename;
+char* EmConfigdir;
+char* EmArchitecturename;
 
 typedef struct {
 	FILE* handle;
@@ -87,18 +90,18 @@ void PrIncludefile(char* file){
 	char* fpath = nullptr;
 	if(file[0]=='<'){
 		// search for file in standard headers path
-		//fpath = mtString_Join(
-		//	mtString_Join(
-		//		"/etc/xcc/targetinclude/",
-		//		mtString_Join(
-		//			EmArchitecturename,
-		//			"/"
-		//		)
-		//	),
-		//	filename
-		//);
-		//fhandle = fopen(fpath,"r");
-		//if(!fhandle){
+		fpath = mtString_Join(
+			mtString_Join(
+				"/etc/xcc/",
+				mtString_Join(
+					EmArchitecturename,
+					"/"
+				)
+			),
+			filename
+		);
+		fhandle = fopen(fpath,"r");
+		if(!fhandle){
 			// File doesn't exist in target arch libc headers -> try 
 			// freestanding libc
 			fpath = mtString_Join(
@@ -106,7 +109,7 @@ void PrIncludefile(char* file){
 				filename
 			);
 			fhandle = fopen(fpath,"r");
-		//};
+		};
 	}else if(file[0]=='"'){
 		// search for file in preprocessed file path
 		fpath = mtString_Join("./",filename);
@@ -263,7 +266,6 @@ void preprocess(){
 			case '\n':
 				switch(buf2=fgetc(src)){
 					case '#': // Preprocessor directives
-						printf("EM: [T] test \n");
 						handledirective();
 						break;
 					default:
@@ -306,11 +308,77 @@ void preprocess(){
 };
 
 int main(int argc, char* argv[], char** envp){
-	PrEnvironment=envp;
-	printf("EM: [M] XCC Embedder: \"%s\"->\"%s\"\n",argv[1],argv[2]);
-	printf("EM: [M] Usage: s t r i c t l y  xcc-embedder <src> <dst> <arguments>\n");
-	src = fopen(argv[1],"r");
-	dst = fopen(argv[2],"w");
+	printf("EM: [M] xcc Embedder\n");
+	printf("EM: [M] Usage: xcc-embedder -a <arch> <arguments> <src> <dst> \n");
+	int aindex=1;
+	// Help and usage
+	if(strcmp(argv[1],"--help")==0){
+		printf("EM: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
+		printf("EM: [M]   \n");
+		printf("EM: [M]  Options:\n");
+		printf("EM: [M]   -a=archname            Architecture to compile for - what did \n");
+		printf("EM: [M]                           you except from a crosscompiler? \n");
+		printf("EM: [M]   -o=outfile             Output file. Ignored for now.\n");
+		printf("EM: [M]   -c=configdir           Directory with configuration files.\n");
+		printf("EM: [M]                           Default isn't specified here but should be \n");
+		printf("EM: [M]                           /etc/xcc/. \n");
+		printf("EM: [M]  \n");
+	}else if(strcmp(argv[1],"--usage")==0){
+		printf("EM: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
+		printf("EM: [M]   \n");
+		printf("EM: [M]  Options:\n");
+		printf("EM: [M]   -a=archname            Architecture to compile for - what did \n");
+		printf("EM: [M]                           you except from a crosscompiler? \n");
+		printf("EM: [M]   -o=outfile             Output file. Ignored for now.\n");
+		printf("EM: [M]   -c=configdir           Directory with configuration files.\n");
+		printf("EM: [M]                           Default isn't specified here but should be \n");
+		printf("EM: [M]                           /etc/xcc. \n");
+	};
+	//Command-line options
+	EmSourcefilename=0;
+	for(;aindex<argc;aindex++){
+		assert(aindex<argc);
+		printf("Em: [T] argp: parsing option %s \n",argv[aindex]);
+		if(argv[aindex][0]!='-'){
+			if(!EmSourcefilename){
+				printf("EM: [T] argp: catched sourcefile %s\n",argv[aindex]);
+				EmSourcefilename=argv[aindex];
+			}else if(!EmTargetfilename){
+				printf("EM: [T] argp: catched outfile %s\n",argv[aindex]);
+				EmTargetfilename=argv[aindex];
+			}else{
+				printf("EM: [T] argp: unrecognized argument %s\n",argv[aindex]);
+				assert(false);
+				exit(2);
+			}
+		}else{
+			if(argv[aindex][1]=='c'){       // Configdir
+				EmConfigdir = argv[++aindex];
+			}else if(argv[aindex][1]=='a'){ // Architecture
+				printf("EM: [T] argp: catched architecture %s\n",argv[aindex+1]);
+				EmArchitecturename = argv[aindex+1];
+				++aindex;
+			}else if(argv[aindex][1]=='o'){ // Outfile
+				if(EmTargetfilename)
+					printf("EM: [F] Two output file names - %s and %s\n",
+						EmTargetfilename,argv[aindex+1]);
+				printf("EM: [T] argp: catched outfile %s\n",argv[aindex+1]);
+				EmTargetfilename=argv[aindex+1];
+				++aindex;
+			}else if(argv[aindex][1]!='-'){ // Others
+				printf("Em: [E] Unrecognized option %s \n",argv[aindex]);
+				exit(2);
+			}else{
+				//Multicharater flag
+				assert(false);
+				exit(2);
+			}
+		}
+	};
+	printf("EM: [D] Compiling %s->%s for %s\n",
+		EmSourcefilename,EmTargetfilename,EmArchitecturename);
+	src = fopen(EmSourcefilename,"r");
+	dst = fopen(EmTargetfilename,"w");
 	//Do the main preprocessing job
 	preprocess( /* src,dst */ );
 	/*
