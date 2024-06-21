@@ -56,6 +56,16 @@ opcode	v.st.data.uint8				: mov	tl,	a	\
 						| mov	[tx],	c	\
 						| mov	a,	c
 opcode	v.jmp.relative.void	#1		: jmp	#1
+opcode	v.ld.data.int16				: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| inc	a		\
+						| incc	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	d,	[tx]	\
+						| mov	a,	c	\
+						| mov	b,	d
 opcode	v.ld.data.nearptr			: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	c,	[tx]	\
@@ -88,3 +98,8 @@ opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	[tx],	c	
 opcode	v.cjb.relative.nearptr	#1		: sub a, c | sbb b, d | jb #1
+opcode	v.lea.relative.nearptr	#1		: mov ab, #1
+opcode	v.r.relative.int8			: db 0 ; rb 1
+opcode	v.r.relative.uint8			: db 0 ; rb 1
+opcode	v.r.relative.int16			: dw 0 ; rw 1
+opcode	v.r.relative.uint16			: dw 0 ; rw 1
