@@ -249,7 +249,7 @@ enum tTokentype {
 	tInstruction_Return             = 1546, //Return from function. Issue after `leave`.
 	tInstruction_Leaveframe         = 1547, //Leave stack frame
 	tInstruction_Prereturn          = 1548, //Return value from function. Issue before `leave`.
-	tInstruction_Loadindirect       = 1549, //Load value by pointer provided on calculation stack.
+	tInstruction_Load               = 1549, //Load value by pointer provided on calculation stack.
 	tInstruction_Loadaddress        = 1550, //Load effective address of an instruction.
 	tInstruction_Indexfp            = 1551, //Indexes current pointer by frame pointer.
 	tInstruction_Pushleft           = 1552, // -.- Those two are used to assist codegen for platforms that can't use two stacks like IR excepts to be able to and use machine stack as both stacks.
@@ -260,6 +260,20 @@ enum tTokentype {
 	tInstruction_Pushargument       = 1557, //Throw function argument just evaluated to stack.
 	tInstruction_Call               = 1558, //Call function.
 	tInstruction_Jump               = 1559, //Jump always
+	tInstruction_Comparejumpequal                = 1560, //Self-explanatory
+	tInstruction_Comparejumpnotequal             = 1561, //Self-explanatory
+	tInstruction_Comparejumpsignedlessthan       = 1562, //Self-explanatory
+	tInstruction_Comparejumpsignedlessequal      = 1563, //Self-explanatory
+	tInstruction_Comparejumpsignedgreaterthan    = 1564, //Self-explanatory
+	tInstruction_Comparejumpsignedgreaterequal   = 1565, //Self-explanatory
+	tInstruction_Comparejumpunsignedlessthan     = 1566, //Self-explanatory
+	tInstruction_Comparejumpunsignedlessequal    = 1567, //Self-explanatory
+	tInstruction_Comparejumpunsignedgreaterthan  = 1568, //Self-explanatory
+	tInstruction_Comparejumpunsignedgreaterequal = 1569, //Self-explanatory
+	tInstruction_Store              = 1570, //Store indirect. Needs segment.
+	tInstruction_Popleft            = 1571, //Used to assist codegen
+	tInstruction_Lvalueincrement    = 1572, //Short form for read-modify-write increment. Leaves the pointer on stack.
+	tInstruction_Cast               = 1573, //Requires two types
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1840,7 +1854,7 @@ char *TokenidtoName[]={
 	"?"                           ,// 1570
 	"?"                           ,// 1571
 	"?"                           ,// 1572
-	"?"                           ,// 1573
+	"cast"                        ,// 1573
 	"?"                           ,// 1574
 	"?"                           ,// 1575
 	"?"                           ,// 1576
@@ -3416,21 +3430,21 @@ char *TokenidtoName_Compact[]={
 	"drop"                        ,// 1556
 	"push"                        ,// 1557
 	"call"                        ,// 1558
-	"?"                           ,// 1559
-	"?"                           ,// 1560
-	"?"                           ,// 1561
-	"?"                           ,// 1562
-	"?"                           ,// 1563
-	"?"                           ,// 1564
-	"?"                           ,// 1565
-	"?"                           ,// 1566
-	"?"                           ,// 1567
-	"?"                           ,// 1568
-	"?"                           ,// 1569
-	"?"                           ,// 1570
-	"?"                           ,// 1571
-	"?"                           ,// 1572
-	"?"                           ,// 1573
+	"jmp"                         ,// 1559
+	"cje"                         ,// 1560
+	"cjne"                        ,// 1561
+	"cjl"                         ,// 1562
+	"cjle"                        ,// 1563
+	"cjg"                         ,// 1564
+	"cjge"                        ,// 1565
+	"cjb"                         ,// 1566
+	"cjbe"                        ,// 1567
+	"cja"                         ,// 1568
+	"cjae"                        ,// 1569
+	"st"                          ,// 1570
+	"plb"                         ,// 1571
+	"inc_rmw"                     ,// 1572
+	"cast"                        ,// 1573
 	"?"                           ,// 1574
 	"?"                           ,// 1575
 	"?"                           ,// 1576
