@@ -1,12 +1,89 @@
 ; vim:ts=8:
 	; Jam-1 archdef
-opcode	irc.programprologue				: | .include "/etc/xcc/libc-jam1/libc.asm" |
-opcode	irc.programepilogue				: 
-opcode	irc.segment			#1		: .segment #1
-opcode	v.compilernop.relative.void			: cnop
-opcode	v.nop.relative.void				: nop
-opcode	v.enter.relative.void		#1		: push si | mov tx, sp | mov si, tx | push b | push a | mov cd, #1 | mov tx, sp | mov a, tl | mov b, th | add a, c | adc b, d | mov tl, a | mov th, b | nop | mov sp, tx | pop a | pop b
-opcode	v.const.relative.int16		#1		: mov ab, #1
-opcode	v.prereturn.relative.int16	#1		: 
-opcode	v.leave.relative.void				: mov tx, si | mov sp, tx | pop si
-opcode	v.return.relative.int16				: ret
+opcode	irc.programprologue			: | .include "/etc/xcc/libc-jam1/libc.asm" |
+opcode	irc.programepilogue			: 
+opcode	irc.segment			#1	: .segment #1
+opcode	v.compilernop.relative.void		: cnop
+opcode	v.nop.relative.void			: nop
+opcode	v.enter.relative.void		#1	: push	ra		\
+						| push	si		\
+						| mov	si,	sp 	\
+						| mov	cd,	#1 	\
+						| mov	tx,	sp 	\
+						| mov	a,	tl 	\
+						| mov	b,	th 	\
+						| add	a,	c 	\
+						| adc	b,	d 	\
+						| mov	tl,	a 	\
+						| mov	th,	b 	\
+						| nop			\
+						| mov	sp,	tx 	
+opcode	v.const.relative.int16		#1	: mov ab, #1
+opcode	v.const.relative.nearptr	#1	: mov ab, #1
+opcode	v.prereturn.relative.int16	#1	: 
+opcode	v.leave.relative.void			: mov tx, si | mov sp, tx | pop si
+opcode	v.return.relative.int16			: pop ra | ret
+opcode	v.indexfp.relative.nearptr		: mov	tx,	si	\
+						| mov	c,	tl	\
+						| mov	d,	th	\
+						| add	a,	c	\
+						| adc	b,	d	
+opcode	v.pha.relative.nearptr			: push b | push a
+opcode	v.plb.relative.nearptr			: mov c, a | mov d, b | pop a | pop b
+opcode	v.pha.relative.int16			: push b | push a
+opcode	v.plb.relative.int16			: mov c, a | mov d, b | pop a | pop b
+opcode	v.pha.relative.int8			: push a
+opcode	v.plb.relative.int8			: mov c, a | pop a
+opcode	v.pha.relative.uint8			: push a
+opcode	v.plb.relative.uint8			: mov c, a | pop a
+opcode	v.st.data.int16				: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	c	\
+						| inc	a		\
+						| incc	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	d	\
+						| mov	a,	c	\
+						| mov	b,	d
+opcode	v.st.data.int8				: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	c	\
+						| mov	a,	c
+opcode	v.st.data.uint8				: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	c	\
+						| mov	a,	c
+opcode	v.jmp.relative.void	#1		: jmp	#1
+opcode	v.ld.data.nearptr			: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| inc	a		\
+						| incc	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	d,	[tx]	\
+						| mov	a,	c	\
+						| mov	b,	d
+opcode	v.cast.nearptr.uint8			: ; Nothing needed here
+opcode	v.drop.relative.uint8			: ; For Jam-1 current IR 
+opcode	v.drop.relative.uint16			: ; Compiler archdef I don't 
+opcode	v.drop.relative.nearptr			: ; care about *any* drops
+opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| inc	a		\
+						| incc	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	d,	[tx]	\
+						| inc	c		\
+						| incc	d		\
+						| mov	[tx],	d	\
+						| dec	a		\
+						| incc	b		\
+						| dec	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	c	
+opcode	v.cjb.relative.nearptr	#1		: sub a, c | sbb b, d | jb #1
