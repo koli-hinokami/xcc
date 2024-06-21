@@ -66,6 +66,9 @@ void ErfDumpstacktrace(){ // Stacktrace
 #endif
 };
 void ErfEnter_String(char* /* borrows */ string){
+#ifdef qvGTrace
+	printf("erf:[T] Entering \"%s\"\n",string);
+#endif
 	mtList_Prepend(&ErfVframes,
 		mtErfVframe_Create_String(
 			mtString_Clone(string)
@@ -73,6 +76,13 @@ void ErfEnter_String(char* /* borrows */ string){
 	);
 };
 void ErfLeave(void){
+#ifdef qvGTrace
+	printf("erf:[T] Leaving  \"%s\"\n",
+		(	(tErfVframe*)
+			(mtList_GetFirst(&ErfVframes))
+		)->string
+	);
+#endif
 	mtErfVframe_Destroy(mtList_GetFirst(&ErfVframes));
 	mtList_Removefirst(&ErfVframes);
 };
