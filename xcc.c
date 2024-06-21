@@ -103,6 +103,7 @@ void runprogram(char* program, char** argv){
 				 :err==5*256?"internal debug"
 				 :""
 			);
+			if(err)exit(1);
 		};
 	};
 	//printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
