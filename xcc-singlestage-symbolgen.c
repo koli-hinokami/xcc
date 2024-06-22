@@ -456,15 +456,27 @@ void SgRegisterunresolvedtype(tGType* type){
 };
 void SgFindunresolvedtypes_Type(tGType* type);
 void SgFindunresolvedtypes_LxNode(tLxNode* node){
+	printf("SG: [T] SgFindunresolvedtypes_LxNode: Entered\n");
 	assert(node);
+	if(
+		  node->type!=tLexem_Switchcase
+		&&node->type!=tLexem_Switchdefault
+	)
+		if(node->initializer)
+			SgFindunresolvedtypes_LxNode(node->initializer);
+	if(node->condition)  SgFindunresolvedtypes_LxNode(node->condition);
+	if(node->left)       SgFindunresolvedtypes_LxNode(node->left);
+	if(node->right)      SgFindunresolvedtypes_LxNode(node->right);
 	if(node->type==tLexem_Variabledeclaration){
 		SgFindunresolvedtypes_Type(node->returnedtype);
-	}else{
-		printf("SG: [W] SgFindunresolvedtypes_LxNode: Unexcepted node type %i:%s inside node %s \n",
-			node->type,TokenidtoName[node->type],
-			mtLxNode_ToString(node)
-		);
 	};
+	//else{
+	//	printf("SG: [E] SgFindunresolvedtypes_LxNode: Unexcepted node type %i:%s inside node %s \n",
+	//		node->type,TokenidtoName[node->type],
+	//		mtLxNode_ToString(node)
+	//	);
+	//	ErfError();
+	//};
 };
 void SgFindunresolvedtypes_Type(tGType* type){
 #ifdef qvGTrace
