@@ -377,12 +377,20 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						name,
 						mtGSymbol_eType_Pointer
 					);
+					symbol->type=SppForceresolvetype(
+						symbol->type,self->name_space);
+					type=symbol->type;
 					if(SpCurrentfunction){
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
-						symbol->allocatedstorage=SpAllocatelocalvarstorage(SpCurrentfunction->fextinfo,mtGType_Sizeof(type));
+						symbol->allocatedstorage=SpAllocatelocalvarstorage(
+							SpCurrentfunction->fextinfo,
+							mtGType_Sizeof(symbol->type)
+						);
 					}else{
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
-						symbol->allocatedstorage=SpAllocateglobalvarstorage(mtGType_Sizeof(type));
+						symbol->allocatedstorage=SpAllocateglobalvarstorage(
+							mtGType_Sizeof(symbol->type)
+						);
 					};
 					return mtSpNode_Clone(
 						&(tSpNode){
@@ -591,7 +599,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				returnedtype=returnedtype->complexbasetype;
 				mtGType_GetBasetype(returnedtype)->valuecategory=eGValuecategory_Leftvalue;
 				if(right->type==tSplexem_Nullexpression){
-					return mtSpNode_Clone( // cast<lvalue T>(self->left + sizeof(T)*self->right)
+					return mtSpNode_Clone( // cast<lvalue T>(self->left);
 						&(tSpNode){
 							.type=tSplexem_Cast,
 							.returnedtype=returnedtype,
@@ -641,9 +649,11 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 											&(tSpNode){
 												.type=tSplexem_Integerconstant,
 												.returnedtype=mtGType_SetValuecategory(
-													mtGType_CreatePointer(
-														mtGType_CreateAtomic(
-															eGAtomictype_Void
+													mtGType_Transform(
+														mtGType_CreatePointer(
+															mtGType_CreateAtomic(
+																eGAtomictype_Void
+															)
 														)
 													),
 													eGValuecategory_Rightvalue
@@ -874,7 +884,12 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					&(tSpNode){
 						.type=tSplexem_Cast,
 						.returnedtype=mtGType_SetValuecategory(
-							mtGType_Deepclone(type),
+							mtGType_Deepclone(
+								SppForceresolvetype(
+									type,
+									self->name_space
+								)
+							),
 							eGValuecategory_Rightvalue
 						),
 						.left=SpInsertimpliedrvaluecast(
@@ -887,6 +902,21 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};
 		};
 		{	// Expressions - arithmetic operators
+			case tLexem_Negation: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Negation,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=nullptr,
+					}
+				);
+			};	break;
 			case tLexem_Add: {
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
 				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
@@ -1088,7 +1118,12 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					return mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Postincrement,
-							.returnedtype=left->returnedtype,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Deepclone(
+									left->returnedtype
+								),
+								eGValuecategory_Rightvalue
+							),
 							.left=left,
 						}
 					);
@@ -1145,7 +1180,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
-					printf("SP: [E] SpParse: `<`: Types not equal! \n");
+					printf("SP: [E] SpParse: `<`: Types not equal! %s : %s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
 					ErfError();
 					return nullptr;
 				};
@@ -1236,6 +1274,15 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 		if(self->condition)   self->condition   = SpOptimize(self->condition);
 		if(self->left)        self->left        = SpOptimize(self->left);
 		if(self->right)       self->right       = SpOptimize(self->right);
+	};
+	{	// Negating constant
+		if(
+			  self->type==tSplexem_Negation
+			&&self->left->type==tSplexem_Integerconstant
+		){
+			self=self->left;
+			self->constant=-self->constant;
+		};
 	};
 	{	// Multiply by 1
 		if(
