@@ -969,6 +969,9 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 	if(!tok)return 0;
 	if(tok->type==eAsmTokentype_Newline)return 0;
 	if(tok->type==eAsmTokentype_Label){
+		printf("ASM:[D] | Label %-15s at %u (%x) \n",
+			tok->string,(unsigned)AsmCurrentposition,(unsigned)AsmCurrentposition
+		);
 		mtList_Append(AsmLabels,mtAsmLabel_CreateNear(tok->string,AsmCurrentposition));
 		mtAsmToken_Destroy(tok);
 		return 0;
