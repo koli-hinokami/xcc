@@ -114,6 +114,6 @@ opcode	v.d.relative.uint16	#1		: dw #1
 opcode	v.push.relative.nearptr			: push b | push a
 opcode	v.push.relative.int16			: push b | push a
 opcode	v.push.relative.uint16			: push b | push a
-opcode	v.puFh.relative.int8			: push a
+opcode	v.push.relative.int8			: push a
 opcode	v.push.relative.uint8			: push a
 opcode	v.call.relative.nearptr			: mov tl, a | mov th, b | nop | call tx
