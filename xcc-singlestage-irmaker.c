@@ -1,7 +1,11 @@
 // XCC Intermediate representation creator
 // Developed *simultaneously* with Semanticparser
 
+// -- Globals --
+tSpNode* IgCurrentfunction;
+// -- Forward declarations --
 tGInstruction* IgCompileExpression(tSpNode* self);
+// -- Functions --
 tGInstruction* IgCompileFunctionarguments(tSpNode* self){
 	assert(self);
 #ifdef qvGTrace
@@ -110,11 +114,15 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			//mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Add,self->right->returnedtype->atomicbasetype);
 			assert(mtGType_IsPointer(self->left->returnedtype));
 			assert(mtGType_IsFunction(self->left->returnedtype->complexbasetype));
+			// TODO: General: Find a way to get fextinfo by symbol
+			//                and assert that we're calling an 
+			//                stdcall subroutine
 			mtGInstruction_GetLast(i)->next=IgCompileFunctionarguments(
 				self->right
 			);
 			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Call,self->left->returnedtype->atomicbasetype);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Call,self->left->returnedtype->atomicbasetype);
 			return i;
 		};	break;
 		case tSplexem_Nullexpression: {
@@ -125,22 +133,21 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			if(self->symbol->allocatedstorage->nonconstant){
 				return mtGInstruction_CreateCodepointer(
 					tInstruction_Loadaddress,
-					eGAtomictype_Pointer,
+					eGAtomictype_Nearpointer,
 					self->symbol->allocatedstorage->dynamicpointer
 				);
-				
 			}else{
 				assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
 				if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
 					return mtGInstruction_Join_Modify(
 						mtGInstruction_CreateImmediate(
 							tInstruction_Constant,
-							eGAtomictype_Pointer,
+							eGAtomictype_Nearpointer,
 							self->symbol->allocatedstorage->offset
 						),
 						mtGInstruction_CreateBasic(
 							tInstruction_Indexfp,
-							eGAtomictype_Pointer
+							eGAtomictype_Nearpointer
 						)
 					);
 				}else{
@@ -297,9 +304,13 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				tInstruction_Leaveframe,
 				eGAtomictype_Void
 			);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateImmediate(
 				tInstruction_Return,
-				self->left->returnedtype->atomicbasetype
+				self->left->returnedtype->atomicbasetype,
+				   IgCurrentfunction->fextinfo->callingconvention
+				 ==eGCallingconvention_Stdcall
+				?IgCurrentfunction->fextinfo->argumentssize
+				:-1
 			);
 			return i;
 		};	break;
@@ -435,6 +446,11 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	printf("IG: [T] IgCompileFunction: entered \n");
 #endif
 	assert(self);
+	assert(self->fextinfo);
+	assert(  self->returnedtype->atomicbasetype==eGAtomictype_Nearfunction
+	       ||self->returnedtype->atomicbasetype==eGAtomictype_Function);
+	ErfEnter_String("IG: IgCompileFunction: root");
+	IgCurrentfunction = self;
 	// Find the place to write code to
 	tGInstruction* code = self->symbol->allocatedstorage->dynamicpointer;
 	// Set external name
@@ -449,8 +465,16 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateBasic(tInstruction_Prereturn,self->returnedtype->complexbasetype->atomicbasetype);
 		// Epilogue
 		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateBasic(tInstruction_Leaveframe,eGAtomictype_Void);
-		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateBasic(tInstruction_Return,self->returnedtype->complexbasetype->atomicbasetype);
-	}
+		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateImmediate(
+			tInstruction_Return,
+			self->returnedtype->complexbasetype->atomicbasetype,
+			   IgCurrentfunction->fextinfo->callingconvention
+			 ==eGCallingconvention_Stdcall
+			?IgCurrentfunction->fextinfo->argumentssize
+			:-1
+		);
+	};
+	ErfLeave();
 	return code;
 
 
@@ -550,6 +574,8 @@ void IgDumpir(tGInstruction** code, FILE* file){
 				}else if( // Immediate-operand commands
 					  (j->opcode.opr==tInstruction_Constant)
 					||(j->opcode.opr==tInstruction_Enterframe) // It needs the size of stackframe
+					||(j->opcode.opr==tInstruction_Definevalue)// For obvious reasons
+					||(j->opcode.opr==tInstruction_Return)     // To deallocate passed parameters
 				){
 					fprintf(
 						file,
