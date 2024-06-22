@@ -24,6 +24,7 @@ opcode	v.const.relative.nearptr	#1	: mov ab, #1
 opcode	v.prereturn.relative.int16	#1	: 
 opcode	v.leave.relative.void			: mov tx, si | mov sp, tx | pop si
 opcode	v.return.relative.int16			: pop ra | ret
+opcode	v.return.relative.int16		#1	: pop ra | .times #1 pop c | ret
 opcode	v.indexfp.relative.nearptr		: mov	tx,	si	\
 						| mov	c,	tl	\
 						| mov	d,	th	\
@@ -77,9 +78,12 @@ opcode	v.ld.data.nearptr			: mov	tl,	a	\
 						| mov	a,	c	\
 						| mov	b,	d
 opcode	v.cast.nearptr.uint8			: ; Nothing needed here
-opcode	v.drop.relative.uint8			: ; For Jam-1 current IR 
-opcode	v.drop.relative.uint16			: ; Compiler archdef I don't 
-opcode	v.drop.relative.nearptr			: ; care about *any* drops
+opcode	v.drop.relative.void			: ; 
+opcode	v.drop.relative.int8			: ; For Jam-1 current IR 
+opcode	v.drop.relative.uint8			: ; Compiler archdef I don't 
+opcode	v.drop.relative.int16			: ; care about *any* drops
+opcode	v.drop.relative.uint16			: ; whatsoever.
+opcode	v.drop.relative.nearptr			: ;
 opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	c,	[tx]	\
@@ -103,3 +107,13 @@ opcode	v.r.relative.int8			: db 0 ; rb 1
 opcode	v.r.relative.uint8			: db 0 ; rb 1
 opcode	v.r.relative.int16			: dw 0 ; rw 1
 opcode	v.r.relative.uint16			: dw 0 ; rw 1
+opcode	v.d.relative.int8	#1		: db #1
+opcode	v.d.relative.uint8	#1		: db #1
+opcode	v.d.relative.int16	#1		: dw #1
+opcode	v.d.relative.uint16	#1		: dw #1
+opcode	v.push.relative.nearptr			: push b | push a
+opcode	v.push.relative.int16			: push b | push a
+opcode	v.push.relative.uint16			: push b | push a
+opcode	v.puFh.relative.int8			: push a
+opcode	v.push.relative.uint8			: push a
+opcode	v.call.relative.nearptr			: mov tl, a | mov th, b | nop | call tx
