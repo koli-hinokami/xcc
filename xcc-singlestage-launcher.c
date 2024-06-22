@@ -142,6 +142,8 @@ void LnCompile(char* file){
 	};
 	//exit(4);
 	/// The question is where `struct`s go
+	fprintf(stderr,"L:  [M] Semanticoptimizer\n");
+	GSecondaryast = SpOptimize(GSecondaryast);
 	// Compile
 	fprintf(stderr,"L:  [M] IR Generator\n");
 	IgParse(GSecondaryast);
