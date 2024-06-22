@@ -84,6 +84,7 @@ tGTargetNearpointer AsmCurrentexternalposition;  // The position to use for $
                                                  // only at instruction
                                                  // boundaries
 tList /* <tAsmLabel* owned> */ * AsmLabels;
+int iAsmRepeattimes;
 
 struct argp_option AsmArgpOptions[] = {
 	{	
@@ -384,7 +385,8 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 			assert(self->disp>=0);
 			assert(self->disp<10);
 			tList /* tAsmToken */ * expr = AsmBoundparameters[self->disp];
-			for(tListnode* i = expr->first;i;i=i->next){tAsmToken* j = i->item;
+			for(tListnode* i = expr->first;i;i=i->next){
+				tAsmToken* j = i->item;
 #ifdef qvGTrace
 				if(0)printf("ASM:[T] Evalexpr for token <%s>\n", mtAsmToken_ToString(j));
 #endif
@@ -397,19 +399,32 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 				j=i->item;
 				tGTargetNearpointer val = 0;
 				switch(j->type){
+					case eAsmTokentype_Charater:
+						switch(j->ch){
+							case '$':
+								val = AsmCurrentexternalposition;
+								break;
+							default:
+								printf("ASM:[E] mtAsmBinarytoken_Emit: Evalexpr for token <%s>: unrecognized char \'%c\'\n", mtAsmToken_ToString(j),j->ch);
+								ErfError();
+								val = 0;
+								break;
+						};
+						break;
 					case eAsmTokentype_Identifier:
 						val = AsmGetlabelvalue(j->string);
 						break;
 					case eAsmTokentype_Number:
 						val = j->number;
 						break;
+					case eAsmTokentype_String:
+						val = AsmGetlabelvalue(j->string);
+						break;
 					default:
 						printf("ASM:[E] mtAsmBinarytoken_Emit: Evalexpr for token <%s>: unrecognized type %i\n", mtAsmToken_ToString(j),j->type);
 						ErfError();
 						val = 0;
 				};
-				if(j->type==eAsmTokentype_String)
-					{ val = AsmGetlabelvalue(j->string); }
 				switch(mode){
 					case 1:
 						exprval+=val;
@@ -970,34 +985,44 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 		ErfFatal();
 	};
 	//  by now tok is known identifier but we also need to check for directives
-	if(strcmp(tok->string,".org")==0){
+	if(strcmp(tok->string,".times")==0){
 		mtAsmToken_Destroy(tok);
 		tok = mtAsmToken_Get(getcurrentfile());
-		assert(tok->type==eAsmTokentype_Identifier);
-		char* strtol_tail;
-		AsmCurrentposition = strtol(tok->string,&strtol_tail,10);
-		assert(strtol_tail[0]==0);
-	}else if(strcmp(tok->string,".include")==0){
+		assert(tok->type==eAsmTokentype_Number);
+		//printf("ASM:[T] .times %i\n",tok->number);
+		iAsmRepeattimes = tok->number;
 		mtAsmToken_Destroy(tok);
-		tok = mtAsmToken_Get(getcurrentfile());
-		assert(tok->type==eAsmTokentype_String);
-		char* fname = mtString_Clone(tok->string);
-		mtAsmToken_Destroy(tok);
-		tok = mtAsmToken_Get(getcurrentfile());
-		assert(tok->type==eAsmTokentype_Newline);
-		mtAsmToken_Destroy(tok);
-		FILE* stream = fopen(fname,"r");
-		if(!stream){
-			printf(
-				"AsmCommonparseline: Directive .include: Unable to open file \"%s\": Error %i•%s\n",
-				fname,
-				errno,
-				strerror(errno)
-			);
+		return AsmCommonparseline();
+	}else{
+		if(strcmp(tok->string,".org")==0){
+			mtAsmToken_Destroy(tok);
+			tok = mtAsmToken_Get(getcurrentfile());
+			assert(tok->type==eAsmTokentype_Identifier);
+			char* strtol_tail;
+			AsmCurrentposition = strtol(tok->string,&strtol_tail,10);
+			assert(strtol_tail[0]==0);
+		}else if(strcmp(tok->string,".include")==0){
+			mtAsmToken_Destroy(tok);
+			tok = mtAsmToken_Get(getcurrentfile());
+			assert(tok->type==eAsmTokentype_String);
+			char* fname = mtString_Clone(tok->string);
+			mtAsmToken_Destroy(tok);
+			tok = mtAsmToken_Get(getcurrentfile());
+			assert(tok->type==eAsmTokentype_Newline);
+			mtAsmToken_Destroy(tok);
+			FILE* stream = fopen(fname,"r");
+			if(!stream){
+				printf(
+					"AsmCommonparseline: Directive .include: Unable to open file \"%s\": Error %i•%s\n",
+					fname,
+					errno,
+					strerror(errno)
+				);
+			};
+			mtList_Prepend(&AsmIncludelist,stream);
+			mtString_Destroy(fname);
+			return 0;
 		};
-		mtList_Prepend(&AsmIncludelist,stream);
-		mtString_Destroy(fname);
-		return 0;
 	};
 	char* opcode = tok->string;
 	for(
@@ -1006,7 +1031,7 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 		tok=mtAsmToken_Get(getcurrentfile())
 	)
 		mtList_Append(arguments,tok);
-	mtList_Append(arguments,tok); // The newline as well	
+	mtList_Append(arguments,tok); // The newline as well
 	// Find expansion
 	tAsmInstructiondefinition * instrdef = mtList_Find_Clojure(
 		&AsmInstructionsdefined,
@@ -1047,18 +1072,22 @@ void AsmSecondpassline(FILE* dst){
 #ifdef qvGTrace
 	//printf("ASM:[T] AsmSecondpassline: Entered \n");
 #endif
+	iAsmRepeattimes = 1;
 	tAsmInstructiondefinition * instrdef = AsmCommonparseline();
 	if(!instrdef)return;
 	// Emit expansion
-	if(instrdef->expansion->first!=0){
-		for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
-			assert(i);
-			assert(i->item);
-			tAsmBinarytoken* tok = i->item;
+	for(int i=1;i<=iAsmRepeattimes;i++){
+		AsmCurrentexternalposition=AsmCurrentposition;
+		if(instrdef->expansion->first!=0){
+			for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
+				assert(i);
+				assert(i->item);
+				tAsmBinarytoken* tok = i->item;
 #ifdef qvGTrace
-			//printf("ASM:[T] AsmSecondpassline:  Emitting expansion for token %s \n",mtAsmBinarytoken_ToString(tok));
+				//printf("ASM:[T] AsmSecondpassline:  Emitting expansion for token %s \n",mtAsmBinarytoken_ToString(tok));
 #endif
-			mtAsmBinarytoken_Emit(tok,dst);
+				mtAsmBinarytoken_Emit(tok,dst);
+			};
 		};
 	};
 	// Destroy bound arguments
@@ -1072,16 +1101,20 @@ void AsmFirstpassline(){
 #ifdef qvGTrace
 	//printf("ASM:[T] AsmFirstpassline: Entered \n");
 #endif
+	iAsmRepeattimes = 1;
 	tAsmInstructiondefinition * instrdef = AsmCommonparseline();
 	if(!instrdef)return;
 	// Emit expansion
-	for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
-		tAsmBinarytoken* tok = i->item;
+	for(int i=1;i<=iAsmRepeattimes;i++){
+		AsmCurrentexternalposition=AsmCurrentposition;
+		for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
+			tAsmBinarytoken* tok = i->item;
 #ifdef qvGTrace
-		if(0)printf("ASM: AsmFirstpassline:  Dry-emitting expansion for token %s \n",mtAsmBinarytoken_ToString(tok));
+			if(0)printf("ASM: AsmFirstpassline:  Dry-emitting expansion for token %s \n",mtAsmBinarytoken_ToString(tok));
 #endif
-		mtAsmBinarytoken_Dryemit(tok);
-	};
+			mtAsmBinarytoken_Dryemit(tok);
+		};
+	}
 };
 // -- Launcher aka init code --
 void LnFailedassertionhandler(int signum){
@@ -1169,6 +1202,7 @@ int main(int argc, char** argv){
 #endif
 	while(fpeekc(AsmSourcestream)!=EOF)AsmFirstpassline();
 	// Interpass seek
+	AsmCurrentposition=0;
 	if(fseek(AsmSourcestream,0,SEEK_SET)){
 		printf(
 			"ASM:[F] Unable to rewind source file to start: Error %i·%s\n",
