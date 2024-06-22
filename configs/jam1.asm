@@ -68,18 +68,17 @@ opcode	inc	si		: 0x35
 opcode	inc	di		: 0x36
 
 ;IO
-; Not included yet
-;opcode	out	gpio, a		: 0x37
-;opcode	in	a,	gpio	: 0x3e
-;opcode	out	spi_data, a		: 0x37
-;opcode	out	spi_ctrl, a		: 0x38
-;opcode	in	a,	spidata	: 0x3e
-;opcode	out	uart_data,	a	: 0x39
-;opcode	in	a,	uart_data	: 0x3a
-;opcode	in	a,	uart_ctrl	: 0x3b
-;opcode	out	audio_data,	a	: 0x3c
-;opcode	in	a,	cntrl_data	: 0x3d
-;opcode	in	a,	vga	: 0x31
+opcode	out	gpio,	a	: 0x37
+opcode	in	a,	gpio	: 0x3e
+opcode	out	spi_data, a 	: 0x37
+opcode	out	spi_ctrl, a 	: 0x38
+opcode	in	a,	spidata	: 0x3e
+opcode	out	uart_data, a	: 0x39
+opcode	in	a, uart_data	: 0x3a
+opcode	in	a, uart_ctrl	: 0x3b
+opcode	out	audio_data, a	: 0x3c
+opcode	in	a, cntrl_data	: 0x3d
+opcode	in	a,	vga	: 0x31
 
 opcode	break			: 0 0x3f 0 0
 
