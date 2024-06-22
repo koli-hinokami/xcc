@@ -61,6 +61,9 @@ void SpCompilefunctionarguments(
 	// 		);
 	if(typeexpr){
 		if(typeexpr->type==tLexem_Comma){
+			// TODO: General retargetability: Implement distinction between
+			//                                cdecl/stdcall and pascal
+			//                                subroutines
 			SpCompilefunctionarguments(typeexpr->left,fextinfo,name_space);
 			SpCompilefunctionarguments(typeexpr->right,fextinfo,name_space);
 		}else{
@@ -195,6 +198,7 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 			// lvalue T[] -> rvalue T*
 			newtype->atomicbasetype=eGAtomictype_Pointer;
 			mtGType_Transform(newtype);
+			mtGType_SetValuecategory(newtype,eGValuecategory_Rightvalue);
 			return mtSpNode_Clone(
 				&(tSpNode){
 					.type=tSplexem_Cast,
@@ -307,7 +311,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				 node->symbol->allocatedstorage=mtGTargetPointer_CreateDynamic(mtGInstruction_CreateCnop());
 				// Compile function
 				node->fextinfo = mtSpFunctionextinfo_Create();
-				node->fextinfo->argumentssize = GTargetStackframeArgumentsstart;
+				node->fextinfo->callingconvention = eGCallingconvention_Stdcall;
+				node->fextinfo->argumentssize = 0;
 				assert(self->left);
 				tLxNode* functionbase = self->left;
 				while(functionbase->left->type!=tLexem_Identifier){
@@ -379,6 +384,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					);
 				};
 				//return nullptr;
+				break;
+			case tLexem_Externaldeclaration:
+				// -
+				// The thing is, I need to declare a symbol as external 
+				// reference but not definition of this symbol.
+				// So ignoring it is!
+				return nullptr;
 				break;
 		};
 		{	// Statements
