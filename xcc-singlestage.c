@@ -125,6 +125,19 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 				"sc"
 			);
 		};
+		if(self->fextinfo){
+			sprintf(buffer,
+				"Lf: [M] ∙ f: \"%s\" args:%i bytes  locals:%i bytes \n",
+				 self->fextinfo->callingconvention==eGCallingconvention_Stdcall
+				?"stdcall"
+				:self->fextinfo->callingconvention==eGCallingconvention_Cdecl
+				?"cdecl"
+				:"(unk. calling convention)",
+				self->fextinfo->argumentssize,
+				self->fextinfo->localssize
+			);
+			LfWriteline(buffer);
+		};
 		LfiPrint_SpNode("i:",self->initializer);
 		LfiPrint_SpNode("c:",self->condition);
 		LfiPrint_SpNode("l:",self->left);
