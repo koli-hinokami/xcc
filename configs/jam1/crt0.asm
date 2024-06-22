@@ -1,5 +1,5 @@
 ; vim:ts=8
-	; Jam-1 crt0
+	; Jam-1 crt0 for stdcall main(int argc, char** argp, char** envp)
 	; (the code executed when program starts. be careful here)
 _start:	push	ra
 	mov	si,	0
