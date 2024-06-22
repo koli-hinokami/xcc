@@ -9,21 +9,24 @@ opcode	v.nop.relative.void			: nop
 opcode	v.enter.relative.void		#1	: push	ra		\
 						| push	si		\
 						| mov	si,	sp 	\
-						| mov	cd,	#1 	\
-						| mov	tx,	sp 	\
-						| mov	a,	tl 	\
-						| mov	b,	th 	\
-						| add	a,	c 	\
-						| adc	b,	d 	\
-						| mov	tl,	a 	\
-						| mov	th,	b 	\
-						| nop			\
-						| mov	sp,	tx 	
+						| mov	c,	0	\
+						| .times #1 push c	
+opcode	v.const.relative.void		#1	: 
+opcode	v.const.relative.int8		#1	: mov a, #1
+opcode	v.const.relative.uint8		#1	: mov a, #1
 opcode	v.const.relative.int16		#1	: mov ab, #1
+opcode	v.const.relative.uint16		#1	: mov ab, #1
 opcode	v.const.relative.nearptr	#1	: mov ab, #1
-opcode	v.prereturn.relative.int16	#1	: 
-opcode	v.leave.relative.void			: mov tx, si | mov sp, tx | pop si
+opcode	v.prereturn.relative.void		: 
+opcode	v.prereturn.relative.int8		: 
+opcode	v.prereturn.relative.uint8		: 
+opcode	v.prereturn.relative.int16		: 
+opcode	v.prereturn.relative.uint16		: 
+opcode	v.prereturn.relative.nearptr		: 
+opcode	v.leave.relative.void			: mov tx, si | mov sp, tx | nop | pop si
+opcode	v.return.relative.void			: pop ra | ret
 opcode	v.return.relative.int16			: pop ra | ret
+opcode	v.return.relative.void		#1	: pop ra | .times #1 pop c | ret
 opcode	v.return.relative.int16		#1	: pop ra | .times #1 pop c | ret
 opcode	v.indexfp.relative.nearptr		: mov	tx,	si	\
 						| mov	c,	tl	\
@@ -35,9 +38,9 @@ opcode	v.plb.relative.nearptr			: mov c, a | mov d, b | pop a | pop b
 opcode	v.pha.relative.int16			: push b | push a
 opcode	v.plb.relative.int16			: mov c, a | mov d, b | pop a | pop b
 opcode	v.pha.relative.int8			: push a
-opcode	v.plb.relative.int8			: mov c, a | pop a
+opcode	v.plb.relative.int8			: mov c, a | mov d, b | pop a
 opcode	v.pha.relative.uint8			: push a
-opcode	v.plb.relative.uint8			: mov c, a | pop a
+opcode	v.plb.relative.uint8			: mov c, a | mov d, b | pop a
 opcode	v.st.data.int16				: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	[tx],	c	\
@@ -57,6 +60,14 @@ opcode	v.st.data.uint8				: mov	tl,	a	\
 						| mov	[tx],	c	\
 						| mov	a,	c
 opcode	v.jmp.relative.void	#1		: jmp	#1
+opcode	v.ld.data.int8				: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| mov	a,	c
+opcode	v.ld.data.uint8				: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| mov	a,	c
 opcode	v.ld.data.int16				: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	c,	[tx]	\
@@ -77,13 +88,44 @@ opcode	v.ld.data.nearptr			: mov	tl,	a	\
 						| mov	d,	[tx]	\
 						| mov	a,	c	\
 						| mov	b,	d
-opcode	v.cast.nearptr.uint8			: ; Nothing needed here
+opcode	v.cast.nearptr.uint8			: mov b, 0 ; . Nothing needed here
+opcode	v.cast.int16.uint8			: mov b, 0 ; ' but to be sure
 opcode	v.drop.relative.void			: ; 
 opcode	v.drop.relative.int8			: ; For Jam-1 current IR 
 opcode	v.drop.relative.uint8			: ; Compiler archdef I don't 
 opcode	v.drop.relative.int16			: ; care about *any* drops
 opcode	v.drop.relative.uint16			: ; whatsoever.
 opcode	v.drop.relative.nearptr			: ;
+opcode	v.inc_rmw.data.int8			: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| inc	a		\
+						| mov	[tx],	c	
+opcode	v.inc_rmw.data.uint8			: mov	tl,	a	\
+						| mov	th,	b	\
+						| nop			\
+						| mov	c,	[tx]	\
+						| nop			\
+						| inc	a		\
+						| nop			\
+						| mov	[tx],	c	
+opcode	v.inc_rmw.data.int16			: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	c,	[tx]	\
+						| inc	a		\
+						| incc	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	d,	[tx]	\
+						| inc	c		\
+						| incc	d		\
+						| mov	[tx],	d	\
+						| dec	a		\
+						| incc	b		\
+						| dec	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	c	
 opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	c,	[tx]	\
@@ -101,7 +143,11 @@ opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
 						| mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	[tx],	c	
+opcode	v.cjb.relative.uint8	#1		: cmp a, c | jb #1
+opcode	v.cjb.relative.uint16	#1		: sub a, c | sbb b, d | jb #1
 opcode	v.cjb.relative.nearptr	#1		: sub a, c | sbb b, d | jb #1
+opcode	v.cjl.relative.int16	#1		: sub a, c | sbb b, d | jl #1
+opcode	v.cjl.relative.nearptr	#1		: sub a, c | sbb b, d | jl #1
 opcode	v.lea.relative.nearptr	#1		: mov ab, #1
 opcode	v.r.relative.int8			: db 0 ; rb 1
 opcode	v.r.relative.uint8			: db 0 ; rb 1
@@ -111,9 +157,19 @@ opcode	v.d.relative.int8	#1		: db #1
 opcode	v.d.relative.uint8	#1		: db #1
 opcode	v.d.relative.int16	#1		: dw #1
 opcode	v.d.relative.uint16	#1		: dw #1
+opcode	v.push.relative.void			: 
 opcode	v.push.relative.nearptr			: push b | push a
 opcode	v.push.relative.int16			: push b | push a
 opcode	v.push.relative.uint16			: push b | push a
 opcode	v.push.relative.int8			: push a
 opcode	v.push.relative.uint8			: push a
 opcode	v.call.relative.nearptr			: mov tl, a | mov th, b | nop | call tx
+opcode	v.add.relative.int8			: add a, c
+opcode	v.add.relative.uint8			: add a, c
+opcode	v.add.relative.int16			: add a, c | adc b, d
+opcode	v.add.relative.uint16			: add a, c | adc b, d
+opcode	v.add.relative.nearptr			: add a, c | adc b, d
+opcode	v.constantshl.relative.int8	#1	: .times #1 sal a
+opcode	v.constantshl.relative.uint8	#1	: .times #1 sal a
+opcode	v.constantshl.relative.int16	#1	: .times #1 sal ab
+opcode	v.constantshl.relative.uint16	#1	: .times #1 sal ab
