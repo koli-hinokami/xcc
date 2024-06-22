@@ -1,11 +1,14 @@
 ; vim:ts=8
 opcode	.architecture	#1	: 
 opcode	.segment	#1	: 
+opcode	.subsegment 		:
 opcode	db	#1		: <#1
 opcode	dh	#1		: >#1
 opcode	dw	#1		: =#1
 opcode	cnop			: 
 opcode	nop			: 0x00
+opcode	proc			:
+opcode	endp			:
 
 
 
@@ -426,6 +429,15 @@ opcode	test	a		: 0xFC
 opcode	test	b		: 0xFD
 opcode	test	c		: 0xFE
 opcode	test	d		: 0xFF
+
+; Macro shifts
+
+opcode	sal	ab		: 0x7F 0x80 0x81
+opcode	sal	cd		: 0x7F 0x82 0x83
+opcode	sal	a		: 0x7F 0x80
+opcode	sal	b		: 0x7F 0x81
+opcode	sal	c		: 0x7F 0x82
+opcode	sal	d		: 0x7F 0x83
 
 ;constant loads
 opcode	mov	a,	#1	: 0x01 #1
