@@ -3082,6 +3082,28 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 				}
 			);
 			break;
+		case tToken_Keywordextern:
+			//
+#ifdef qvGTrace
+			printf("LX: [D] LxParseDeclaration: External declaration seen \n");
+#endif
+			{
+				mtLxFetcher_Advance(fetcher);
+				tGType* basetype=LxParseBasetype(fetcher);
+				tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
+				mtLxFetcher_Advance(fetcher); // skip semicolon
+				//mtLxFetcher_Print(typeexprfetcher);
+				tLxNode* expr = LxParseTypeexpression(typeexprfetcher);
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type=tLexem_Rawexternaldeclaration,
+						.returnedtype=basetype,
+						.left=expr,
+						.right=nullptr
+					}
+				);
+			};
+			break;
 		default: {
 			enum eGStoragespecifier storage = 0;
 			if(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordauto){
@@ -3344,6 +3366,8 @@ void LxPreparseDeclaration(tLxFetcher* fetcher){
 			LxpRegistertypedefs(typeexpr);
 		};	break;
 		default: {
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordextern)
+				mtLxFetcher_Advance(fetcher);
 			tLxFetcher localfetcher = *fetcher;
 			if(LxParseBasetype(fetcher)){
 				localfetcher = *fetcher;
