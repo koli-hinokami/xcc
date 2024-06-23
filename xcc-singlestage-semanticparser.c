@@ -705,6 +705,26 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					);
 				};
 			};	break;
+			case tLexem_Addressof: {
+				tSpNode* left = SpParse(self->left);
+				tGType* returnedtype = mtGType_Deepclone(left->returnedtype);
+				// lvalue T -> rvalue T*
+				assert(
+					mtGType_GetValuecategory(returnedtype)
+					==eGValuecategory_Leftvalue
+				);
+				returnedtype=mtGType_Transform(
+					mtGType_CreatePointer(returnedtype));
+				mtGType_SetValuecategory(
+					returnedtype,eGValuecategory_Rightvalue);
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Cast,
+						.returnedtype=returnedtype,
+						.left=left,
+					}
+				);
+			};
 			case tLexem_Dereference: {
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
 				tGType* returnedtype = mtGType_Deepclone(left->returnedtype);
@@ -1294,10 +1314,10 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 		};
 	};
 	{	// Default - pass node through while recursing (again)
-		if(self->initializer) self->initializer = SpOptimize(self->initializer);
-		if(self->condition)   self->condition   = SpOptimize(self->condition);
-		if(self->left)        self->left        = SpOptimize(self->left);
-		if(self->right)       self->right       = SpOptimize(self->right);
+		//if(self->initializer) self->initializer = SpOptimize(self->initializer);
+		//if(self->condition)   self->condition   = SpOptimize(self->condition);
+		//if(self->left)        self->left        = SpOptimize(self->left);
+		//if(self->right)       self->right       = SpOptimize(self->right);
 		return self;
 	};
 };
