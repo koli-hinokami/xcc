@@ -86,7 +86,14 @@ void SpCompilefunctionarguments(
 					mtGSymbol_eType_Pointer
 				)->allocatedstorage=SpAllocateargumentstorage(
 					fextinfo,
-					mtGType_Sizeof(type)
+					mtGType_Sizeof(
+						mtGType_SetValuecategory(
+							mtGType_Deepclone(
+								type
+							),
+							eGValuecategory_Rightvalue
+						)
+					)
 				);
 				mtGType_GetBasetype(
 					mtGNamespace_Findsymbol_NameKind(
@@ -384,12 +391,26 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocatelocalvarstorage(
 							SpCurrentfunction->fextinfo,
-							mtGType_Sizeof(symbol->type)
+							mtGType_Sizeof(
+								mtGType_SetValuecategory(
+									mtGType_Deepclone(
+										symbol->type
+									),
+									eGValuecategory_Rightvalue
+								)
+							)
 						);
 					}else{
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocateglobalvarstorage(
-							mtGType_Sizeof(symbol->type)
+							mtGType_Sizeof(
+								mtGType_SetValuecategory(
+									mtGType_Deepclone(
+										symbol->type
+									),
+									eGValuecategory_Rightvalue
+								)
+							)
 						);
 					};
 					return mtSpNode_Clone(
