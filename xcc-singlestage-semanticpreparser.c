@@ -10,6 +10,8 @@ tSppNode* mtSppNode_Create(){
 
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name);
+void SgFindunresolvedtypes_Type(tGType* type);
+
 tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 #ifdef qvGTrace
 	printf("SPP:[T] SppParsefunctionarguments: entered\n");
@@ -34,6 +36,7 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 				nullptr
 			);
 			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
+			SgFindunresolvedtypes_Type(type);
 			return mtListnode_Cons(type,nullptr);
 		};	break;
 		case tLexem_Nullexpression:
@@ -617,7 +620,9 @@ tGType* SppForceresolvetype(tGType* self, tGNamespace* namespace){
 		self->unresolvedsymbol,
 		mtGSymbol_eType_Typedef
 	)->type;
+	assert(self);
 	*self=*type;
 	mtGType_SetValuecategory(self,valcat);
+	assert(self->atomicbasetype!=eGAtomictype_Unresolved);
 	return self;
 };
