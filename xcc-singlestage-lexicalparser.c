@@ -671,7 +671,7 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 					type->unresolvedsymbol = mtLxFetcher_Peek(fetcher)->string;
 					mtLxFetcher_Advance(fetcher);
 				}else{
-					printf("LX: [E] LxParseBasetype: Unknown type \"%s\" \n",
+					printf("LX: [D] LxParseBasetype: Unknown type \"%s\" \n",
 						mtLxFetcher_Peek(fetcher)->string
 					);
 					return nullptr;

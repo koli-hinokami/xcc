@@ -578,6 +578,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					self->identifier,
 					mtGSymbol_eType_Pointer
 				);
+				if(!symbol){
+					fprintf(stderr,"SP: [E] SpParse: Undefined symbol \"%s\"\n",
+						self->identifier);
+					printf("SP: [E] SpParse: Undefined symbol \"%s\"\n",
+						self->identifier);
+					ErfError();
+				};
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Symbol,
@@ -946,7 +953,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
-					printf("SP: [E] SpParse: Addition: Types not equal! \n");
+					printf("SP: [E] SpParse: Addition: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
 					ErfError();
 					return nullptr;
 				};
