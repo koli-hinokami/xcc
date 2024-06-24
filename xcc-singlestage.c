@@ -457,7 +457,7 @@ tGType* mtGType_Compose(tGType* t1,tGType* t2){
 };
 tGType* mtGType_GetBasetype(tGType* self){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_GetBasetype: entered \n");
+	//printf("ss: [T] mtGType_GetBasetype: entered \n");
 #endif
 	assert(self);
 	if(
@@ -466,7 +466,7 @@ tGType* mtGType_GetBasetype(tGType* self){
 		||(self->atomicbasetype==eGAtomictype_Function)
 	){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_GetBasetype: got it \n");
+	//printf("ss: [T] mtGType_GetBasetype: got it \n");
 #endif
 		return mtGType_GetBasetype(self->complexbasetype);
 	}else{
