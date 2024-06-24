@@ -140,6 +140,8 @@ tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){ // should've been called 
 #ifdef qvGTrace
 	printf("SP: [T] mtSpNode_Promote: entered\n");
 #endif
+	assert(self);
+	assert(self);
 	assert(mtGType_IsCastableto(self->returnedtype,type));
 	if(mtGType_Equals(self->returnedtype,type))return self;
 	if(self->type==tSplexem_Integerconstant)
@@ -371,6 +373,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//return nullptr;
 				{
 					char* name;
+					// Get type
 					tGType* type = mtGType_SetValuecategory(
 						SppGeneratetype(
 							self->returnedtype,
@@ -379,15 +382,19 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						),
 						eGValuecategory_Leftvalue
 					);
+					// Get symbol
 					tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
 						self->name_space,
 						name,
 						mtGSymbol_eType_Pointer
 					);
+					// Update symbol's type
 					symbol->type=SppForceresolvetype(
 						symbol->type,self->name_space);
 					type=symbol->type;
+					// Allocate storage
 					if(SpCurrentfunction){
+						// Allocate local var
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocatelocalvarstorage(
 							SpCurrentfunction->fextinfo,
@@ -401,6 +408,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							)
 						);
 					}else{
+						// Allocate global var
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocateglobalvarstorage(
 							mtGType_Sizeof(
@@ -413,13 +421,18 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							)
 						);
 					};
+					// Massage right node's type
+					tSpNode* right = SpInsertimpliedrvaluecast(
+						SpParse(self->right));
+					if(right) right=mtSpNode_Promote(right,type);
+					// Return node
 					return mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Variabledeclaration,
 							.returnedtype=type,
 							//.identifier=name,
 							.symbol=symbol,
-							.right=SpInsertimpliedrvaluecast(SpParse(self->right)),
+							.right=right,
 						}
 					);
 				};
