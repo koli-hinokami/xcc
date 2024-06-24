@@ -286,6 +286,91 @@ tSpNode* SpParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ * argume
 	tListnode* args = argumentslist;
 	return SpiParsefunctionarguments(ast,&args);
 };
+void SpArithmeticpromotion(tSpNode* *left, tSpNode* *right){
+	// If the types are the same, that type is the common type.
+	if(mtGType_Equals(left[0]->returnedtype,right[0]->returnedtype))return;
+	// { Here comes my tweak - when you add scalar to pointer,
+	//   weird things happen:
+	if(mtGType_IsPointer(left[0]->returnedtype)){
+		*right=mtSpNode_Clone(
+			&(tSpNode){ // mul<ptr> cast<ptr>right cast<ptr>sizeof(left[])
+				.type=tSplexem_Multiplication,
+				.returnedtype=mtGType_SetValuecategory( //ptr
+					mtGType_Transform(
+						mtGType_CreatePointer(
+							mtGType_CreateAtomic(
+								eGAtomictype_Void
+							)
+						)
+					),
+					eGValuecategory_Rightvalue
+				),
+				.left=mtSpNode_Clone( // cast<ptr> right
+					&(tSpNode){
+						.type=tSplexem_Cast,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_Transform(
+								mtGType_CreatePointer(
+									mtGType_CreateAtomic(
+										eGAtomictype_Void
+									)
+								)
+							),
+							eGValuecategory_Rightvalue
+						),
+						.left=*right,
+					}
+				),
+				.right=mtSpNode_Clone( // cast<ptr>sizeof(left[])
+					&(tSpNode){
+						.type=tSplexem_Integerconstant,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_Transform(
+								mtGType_CreatePointer(
+									mtGType_CreateAtomic(
+										eGAtomictype_Void
+									)
+								)
+							),
+							eGValuecategory_Rightvalue
+						),
+						.constant=mtGType_Sizeof(
+							left[0]->returnedtype->complexbasetype
+						),
+					}
+				),
+			}
+		);
+		return;
+	};
+	// }
+	// Else, the types are different:
+	{
+		// . If the types have the same signedness (both signed or both 
+		// | unsigned), the operand whose type has the lesser conversion 
+		// ' rank1 is implicitly converted2 to the other type.
+		// • Note that conversion rank here is pure size of type.
+		// Else, the operands have different signedness:
+		{
+			// . If the unsigned type has conversion rank greater than or 
+			// | equal to the rank of the signed type, then the operand 
+			// | with the signed type is implicitly converted to the 
+			// ' unsigned type.
+			// . Else, the unsigned type has conversion rank less than 
+			// ' the signed type: 
+			{
+				// . If the signed type can represent all values of the 
+				// | unsigned type, then the operand with the unsigned 
+				// ' type is implicitly converted to the signed type.
+				// . Else, both operands undergo implicit conversion to 
+				// | the unsigned type counterpart of the signed 
+				// ' operand's type.
+			}
+		}
+	}
+	printf("SP: [W] SpArithmeticpromotion: Unimplemented code hit!\n");
+	ErfWarning();
+};
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
 		printf("SP: [W] SpParse: Nullpointer\n");
@@ -1020,6 +1105,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	left=mtSpNode_Promote(left,right->returnedtype);
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
+				SpArithmeticpromotion(&left,&right);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: Addition: Types not equal! %s•%s\n",
 						mtGType_ToString(left->returnedtype),
