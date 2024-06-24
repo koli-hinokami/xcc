@@ -110,6 +110,8 @@ opcode	v.ld.data.nearptr			: mov	tl,	a	\
 						| mov	d,	[tx]	\
 						| mov	a,	c	\
 						| mov	b,	d
+opcode	v.cast.void.int8			: mov a, 0
+opcode	v.cast.void.uint8			: mov a, 0
 opcode	v.cast.uint8.uint16			: mov b, 0
 opcode	v.cast.nearptr.uint8			: mov b, 0 ; . Nothing needed here
 opcode	v.cast.int16.uint8			: mov b, 0 ; ' but to be sure
@@ -123,7 +125,9 @@ opcode	v.drop.relative.nearptr			: ;
 opcode	v.inc_rmw.data.int8			: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	c,	[tx]	\
+						| nop			\
 						| inc	c		\
+						| nop			\
 						| mov	[tx],	c	
 opcode	v.inc_rmw.data.uint8			: mov	tl,	a	\
 						| mov	th,	b	\
