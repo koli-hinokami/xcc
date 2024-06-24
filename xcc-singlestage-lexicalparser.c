@@ -657,7 +657,6 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			// Assemble field
 			type->unresolvedsymbol = identifier;
 		};	break;
-	
 		case tToken_Identifier:
 			if(LxUsedeclaredtypeslist){
 				if(
@@ -2549,6 +2548,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 	};
 	// Typeexpressionbypass
 	{
+		ErfEnter_String("LxParseTypeexpression: Typeexpressionbypass");
 		tLxNode* typeexpr;
 		if(fetcher->fetchfrom!=fetcher->fetchto)
 			if(fetcher->fetchfrom->next!=fetcher->fetchto)
@@ -2571,8 +2571,11 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 										)
 									)
 								)
-							)
+							){
+								ErfLeave();
 								return typeexpr;
+							};
+		ErfLeave();
 	};
 	// Precedence 14 - Assignments 
 	// Parsed with right-associativity unit
@@ -2894,11 +2897,13 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 							}
 						),
 						.right=LxParseTypeexpression(
-							mtLxFetcher_Trimlast(
-								&(tLxFetcher){
-									.fetchfrom=splitpoint->next,
-									.fetchto=fetcher->fetchto
-								}
+							mtLxFetcher_Trimfirst(
+								mtLxFetcher_Trimlast(
+									&(tLxFetcher){
+										.fetchfrom=splitpoint,
+										.fetchto=fetcher->fetchto
+									}
+								)
 							)
 						)
 					}
@@ -3338,35 +3343,45 @@ tLxNode* LxParse(tListnode* startpoint){
 };
 // ------------------ Lexicalpreparser -----------------
 void LxpRegistertypedefs(tLxNode* typeexpr){
+	ErfEnter_String("LxpRegistertypedefs");
 	switch(typeexpr->type){
 		case tLexem_Comma:
+			ErfUpdate_String("LxpRegistertypedefs: Comma");
 			LxpRegistertypedefs(typeexpr->left);
 			LxpRegistertypedefs(typeexpr->right);
+			break;
 		case tLexem_Dereference:
 		case tLexem_Arrayindex:
 		case tLexem_Functioncall:
+			ErfUpdate_String("LxpRegistertypedefs: Dereference/array/functioncall");
 			LxpRegistertypedefs(typeexpr->left);
 			break;
 		case tLexem_Identifier:
+			ErfUpdate_String("LxpRegistertypedefs: Identifier");
 			mtList_Append(&LxTypesdeclared,typeexpr->identifier);
 			break;
+		case tLexem_Nullexpression:
+			break;
 		default:
+			ErfUpdate_String("LxpRegistertypedefs: Unknown node");
 			printf(
 				"LXP:[E] LxpRegistertypedefs: Unrecognized node %i•%s \n",
 				typeexpr->type,
 				TokenidtoName[typeexpr->type]
 			);
 			GError();
-			assert(false);
 	};
+	ErfLeave();
 };
 void LxPreparseDeclaration(tLxFetcher* fetcher){
+	ErfEnter_String("LxPreparseDeclaration");
 	switch(mtLxFetcher_Peek(fetcher)->type){
 		case tToken_Semicolon:
 			mtLxFetcher_Advance(fetcher);
 			break;
 		case tToken_Keywordtypedef: {
 			// The one I'm writing Lexicalpreparser for
+			ErfUpdate_String("LxPreparseDeclaration: Typedef");
 			mtLxFetcher_Advance(fetcher);
 			LxParseBasetype(fetcher);
 			tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
@@ -3412,10 +3427,12 @@ void LxPreparseDeclaration(tLxFetcher* fetcher){
 			};
 		};	break;
 	};
+	ErfLeave();
 };
 void LxPreparse(tListnode /* <tToken> */ * startpoint){
 	// Only reason Lexicalpreparser exists is how typedefs work in C
 	// and how ambiguous they are
+	ErfEnter_String("LxPreparse");
 	tLxFetcher* fetcher = &(tLxFetcher){
 		.fetchfrom=startpoint,
 		.fetchto=nullptr
@@ -3428,4 +3445,5 @@ void LxPreparse(tListnode /* <tToken> */ * startpoint){
 		};
 		LxPreparseDeclaration(fetcher);
 	};
+	ErfLeave();
 };
