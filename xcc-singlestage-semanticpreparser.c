@@ -206,11 +206,11 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
 			node1->type=tLexem_Rawvariabledeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
-			node1->returnedtype=node->returnedtype;
+			node1->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
 			node2->type=tLexem_Rawvariabledeclaration;
-			node2->returnedtype=node->returnedtype;
+			node2->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
@@ -255,11 +255,11 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
 			node1->type=tLexem_Rawexternaldeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
-			node1->returnedtype=node->returnedtype;
+			node1->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
 			node2->type=tLexem_Rawexternaldeclaration;
-			node2->returnedtype=node->returnedtype;
+			node2->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
@@ -289,11 +289,11 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 				// Split and recurse
 				tLxNode* node1 = mtLxNode_Create();
 				node1->type=tLexem_Typedefinition; 
-				node1->returnedtype=node->returnedtype;
+				node1->returnedtype=mtGType_Deepclone(node->returnedtype);
 				node1->left=self->left->left;
 				tLxNode* node2 = mtLxNode_Create();
 				node2->type=tLexem_Typedefinition;
-				node2->returnedtype=node->returnedtype;
+				node2->returnedtype=mtGType_Deepclone(node->returnedtype);
 				node2->left=self->left->right;
 				
 				node->type=tLexem_Declarationlist;
