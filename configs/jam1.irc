@@ -215,6 +215,11 @@ opcode	v.add.relative.uint8			: add a, c
 opcode	v.add.relative.int16			: add a, c | adc b, d
 opcode	v.add.relative.uint16			: add a, c | adc b, d
 opcode	v.add.relative.nearptr			: add a, c | adc b, d
+opcode	v.sub.relative.int8			: sub a, c
+opcode	v.sub.relative.uint8			: sub a, c
+opcode	v.sub.relative.int16			: sub a, c | sbb b, d
+opcode	v.sub.relative.uint16			: sub a, c | sbb b, d
+opcode	v.sub.relative.nearptr			: sub a, c | sbb b, d
 opcode	v.constantshl.relative.int8	#1	: .times #1 sal a
 opcode	v.constantshl.relative.uint8	#1	: .times #1 sal a
 opcode	v.constantshl.relative.int16	#1	: .times #1 sal ab
