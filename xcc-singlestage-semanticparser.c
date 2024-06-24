@@ -564,6 +564,40 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};	break;
 		};
 		{	// Expressions - terms
+			case tLexem_Booleantrue:
+				{
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Transform(
+									mtGType_CreateAtomic(
+										eGAtomictype_Boolean
+									)
+								),
+								eGValuecategory_Rightvalue
+							),
+							.constant=1
+						}
+					);
+				};
+			case tLexem_Booleanfalse:
+				{
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Transform(
+									mtGType_CreateAtomic(
+										eGAtomictype_Boolean
+									)
+								),
+								eGValuecategory_Rightvalue
+							),
+							.constant=0
+						}
+					);
+				};
 			case tLexem_Integerconstant:
 				{
 					tGType* type = mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int));
@@ -1136,6 +1170,31 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					}
 				);
 			};	break;
+			case tLexem_Bitwiseand: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: Bitwiseand: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Bitwiseand,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+			}
 		};
 		{	// Expressions - increment/decrement
 			//TODO: Handle both lvalues and rvalues
