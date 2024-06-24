@@ -369,8 +369,7 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 #ifdef qvGIgnorefatals
 			return 0;
 #else
-			GFinalize();
-			exit(1);
+			GError();
 #endif
 			assert(false);
 		// Internal types
