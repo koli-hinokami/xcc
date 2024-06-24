@@ -65,6 +65,19 @@ void ErfDumpstacktrace(){ // Stacktrace
 	fprintf(stderr,"erf:[M] (end nativestacktrace)\n");
 #endif
 };
+void ErfUpdate_String(char* /* borrows */ string){
+#ifdef qvGTrace
+	printf("erf:[T] Updating \"%s\"\n",string);
+#endif
+	free(
+		(	(tErfVframe*)
+			mtList_GetFirst(&ErfVframes)
+		)->string
+	);
+	(	(tErfVframe*)
+		mtList_GetFirst(&ErfVframes)
+	)->string=mtString_Clone(string);
+};
 void ErfEnter_String(char* /* borrows */ string){
 #ifdef qvGTrace
 	printf("erf:[T] Entering \"%s\"\n",string);
