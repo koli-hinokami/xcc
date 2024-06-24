@@ -2550,6 +2550,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 	{
 		ErfEnter_String("LxParseTypeexpression: Typeexpressionbypass");
 		tLxNode* typeexpr;
+		tLxFetcher savedfetcher = *fetcher;
 		if(fetcher->fetchfrom!=fetcher->fetchto)
 			if(fetcher->fetchfrom->next!=fetcher->fetchto)
 				if((typeexpr=LxParseType(fetcher))!=nullptr)
@@ -2572,9 +2573,15 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 									)
 								)
 							){
+								printf("LX: [D] LxParseTypeexpression: "
+								               "Typeexpressionbypass: "
+											   "Worked for type %s\n",
+									typeexpr->returnedtype->unresolvedsymbol
+								);
 								ErfLeave();
 								return typeexpr;
 							};
+		*fetcher=savedfetcher;
 		ErfLeave();
 	};
 	// Precedence 14 - Assignments 
