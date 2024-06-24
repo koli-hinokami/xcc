@@ -642,12 +642,14 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		// Unresolved
 		//sprintf(buffer,"unresolved<%s> ",self->unresolvedsymbol);
 		//return self->unresolvedsymbol;
+		assert(self->unresolvedsymbol);
 		s1 = mtString_Join(self->unresolvedsymbol,">");
 		s2 = mtString_Join("unresolved<",s1);
 		free(s1);
 		return s2;
 	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
 		// Enumeration
+		assert(self->unresolvedsymbol);
 		s1 = mtString_Join(self->unresolvedsymbol,"");
 		s2 = mtString_Join("enum ",s1);
 		free(s1);
