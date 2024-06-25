@@ -1502,6 +1502,16 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 			self=self->left;
 		};
 	};
+	{	// Multiply constant by constant
+		if(
+			  self->type==tSplexem_Multiplication
+			&&self->left->type==tSplexem_Integerconstant
+			&&self->right->type==tSplexem_Integerconstant
+		){
+			self->left->constant*=self->right->constant;
+			self=self->left;
+		};
+	};
 	{	// Default - pass node through while recursing (again)
 		//if(self->initializer) self->initializer = SpOptimize(self->initializer);
 		//if(self->condition)   self->condition   = SpOptimize(self->condition);
