@@ -20,8 +20,8 @@ tGInstruction* IgCompileFunctionarguments(tSpNode* self){
 			//  differenciate `pascal` and `cdecl`/`stdcall`
 			//  functions
 			return mtGInstruction_Join_Modify(
-				IgCompileFunctionarguments(self->left),
-				IgCompileFunctionarguments(self->right)
+				IgCompileFunctionarguments(self->right),
+				IgCompileFunctionarguments(self->left)
 			);
 		default:
 			return mtGInstruction_Join_Modify(
