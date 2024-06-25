@@ -59,8 +59,22 @@ CliWriteinteger_waituart:
 	dec	b
 	jnz	CliWriteinteger_loop
 	ret
-	
-; 16*16->32 Unsigned Multiplication routine, graciously provided by James Sharman
+fixed16_divide:		; stdcall fixed16 ¤(fixed16 numerator, fixed16 denominator)
+	pop	ab
+	pop	cd
+	call	Math_Divide_fp88_fp88
+	ret
+fixed16_reciprocal:	; stdcall fixed16 ¤(fixed16 num)
+	mov	ab,	256
+	pop	cd
+	call	Math_Divide_fp88_fp88
+	ret
+
+; ------------------------------------------------------------------------------
+; ---------- Here be subroutines graciously provided by James Sharman ----------
+; ------------------------------------------------------------------------------
+
+; 16*16->32 Unsigned Multiplication routine
 ;             63 - 381 Cycles  
 ; __reg_abcd__ uint32_t ¤(__reg_ab__ uint16_t val1, __reg_cd__ uint16_t val2)
 Math_Multiply_16_16: 
@@ -232,3 +246,312 @@ Math_Multiply_8_8_retZ:	proc
 	mov d,c
 	ret
 	endp
+; Fixed16 / Fixed16 Signed division routine kit entry point
+; Paramaters: ab  numerator
+;             cd  denominator
+; Overwrites: cd
+; Returns:    ab  result
+; notes:      RHS only has 7 bit's precision. 
+;  
+; Varients:            
+;   Math_Divide_fp88_fp88_unsigned         -  unsigned version (both values should be positive) 
+;   Math_Divide_fp88_fp88_denom_unsigned   -  denominator unsigned  (numerator can be negative)  
+;   Math_Divide_fp88_fp88                  -  Generic version 
+; __reg_ab__ fixed16 Math_Divide_fp88_fp88(__reg_ab__ numerator, __reg_cd__ denominator)
+Math_Divide_fp88_fp88:	proc
+	test d
+	jns Math_Divide_fp88_fp88_denom_unsigned
+	
+	; we need to invert cd
+	push a
+	push b
+	
+	mov a,c
+	mov b,d
+	xor c,c
+	xor d,d 
+	sub c,a
+	subb d,b
+	
+	pop b
+	pop a
+	
+	test b
+	
+	js Math_Divide_fp88_fp88_Both_negative
+	
+	push ra  
+	
+	call Math_Divide_fp88_fp88_unsigned
+
+	;and on the return negate result.
+	
+	mov c,a
+	mov d,b
+	xor a,a
+	xor b,b 
+	sub a,c
+	subb b,d	
+			
+	pop ra	
+	ret 
+	endp
+Math_Divide_fp88_fp88_Both_negative:	proc
+	; both are negative, so result will be posative 
+	; invert ab
+	push c
+	push d
+	
+	mov c,a
+	mov d,b
+	xor a,a
+	xor b,b 
+	sub a,c
+	subb b,d
+	
+	pop d
+	pop c 
+	
+	jmp Math_Divide_fp88_fp88_unsigned	; tailcall unsigned version. 	
+	endp
+
+.subsegment
+Math_Divide_fp88_fp88_denom_unsigned:	proc
+	test b
+	jns Math_Divide_fp88_fp88_unsigned
+	
+	push ra
+	
+	; we need to invert ab
+	push c
+	push d
+	
+	mov c,a
+	mov d,b
+	xor a,a
+	xor b,b 
+	sub a,c
+	subb b,d
+	
+	pop d
+	pop c 
+	
+	call Math_Divide_fp88_fp88_unsigned
+
+	;and on the return negate result.    
+	
+	mov c,a
+	mov d,b
+	xor a,a
+	xor b,b 
+	sub a,c
+	subb b,d	
+			
+	pop ra	
+	ret 
+	endp
+	
+.subsegment
+Math_Divide_fp88_fp88_unsigned:		proc
+	push a
+	
+	xor a,a 
+	test d
+	jz Math_Divide_fp88_fp88_denom_hz
+	
+	mov tx,Math_Divide_fp88_fp88_denom_hnz_loop
+Math_Divide_fp88_fp88_denom_hnz_loop:
+	inc a
+	clc
+	shr d
+	shr c
+	test d
+	jnz tx              ; d = 0,   a is bits need to shift to get there.
+	
+Math_Divide_fp88_fp88_denom_hz:
+	test c              
+	jns Math_Divide_fp88_fp88_denom_lmsbz
+	clc
+	shr c 
+	inc a               ; make sure msb of c is zero  (Our quick divide only goes to 7 bits)               	
+Math_Divide_fp88_fp88_denom_lmsbz:	
+	; we have shifted th denominator down by 'a' bits  
+	; shuffle original ab into abd= ab<<8
+	; then shift down by the same number of bits as denominator. 
+	
+	mov d,b 
+	pop b   ; b = original a
+	
+	nop
+	push c  ; our 7 bit denominator.  
+	mov c,a 
+	xor a,a 
+	test c
+	
+	jz Math_Divide_fp88_fp88_normalized
+	
+	
+	mov tx,Math_Divide_fp88_fp88_norm_lp
+Math_Divide_fp88_fp88_norm_lp:
+	clc
+	shr d
+	shr b
+	shr a 
+	dec c
+	jnz tx
+	
+	;abd = modified numerator	
+
+Math_Divide_fp88_fp88_normalized:    
+	pop c
+	
+	; now we can fall unto the partial 24_8 divide.
+	endp
+; Paramaters: a = numerator low
+;             b = numerator high
+;             d = numerator top    - assumed less than denominator (i.e. result fits in 16 bits) 
+;             c = denominator
+; Returns:    a = quotient low
+;             b = quotient high
+;             d = remainder (overwrite) 
+Math_Divide_fp88_util_24_8:	proc
+	test d
+	jz Math_Divide_16_8       ; (8) if d is zero,  use the 16/8 version
+
+	push a      ; (2)   save quotient low
+	mov a,b	    ; (1)   
+
+	xor b,b     ; (1) quotient
+	jmp Math_Divide_16_8_noHeader	
+	endp
+	
+.subsegment	 
+; Paramaters: a = numerator low     (Assumes the rusult fits in 8 bits)
+;             b = numerator high
+;             c = denominator
+; Returns:    
+;             a = quotient   
+;             d = remainder (overwrite) 
+Math_Divide_fp88_util_16_8:	proc
+	test b
+	jz Math_Divide_8_8       ; (8) if d is zero,  use the 16/8 version
+
+	mov d,b	    ; (1)   
+	jmp Math_Divide_8_8_noHeader		
+	endp
+	
+.subsegment	
+; Paramaters: abd = numerator 
+;             c   = denominator
+; Returns:    abd = quotient 
+Math_Divide_u24_u8:	proc
+	push ra
+	test d
+	jnz full_div
+
+	call Math_Divide_16_8       ; (8) if d is zero,  use the 16/8 version
+	xor d,d                     ; but we kill of remainder, that should be top 8 bits of result.
+	pop ra
+	ret
+
+full_div:
+	push a      ;  save quotient low
+	push b      ;  and mid 
+	mov a,d	    ;  start with the top 8 bits 
+
+	call Math_Divide_8_8
+	
+	; a is top 8 bits of result 
+	; c is donominator 
+	; d is remainder 
+
+	pop tl  ; mid
+	pop th  ; low 
+	xor b,b     
+	push a      ;  top 8 bits of result, needs to finish in d
+	push th     ; re-save low
+	mov a,tl    ; put mid into a 
+	
+	call Math_Divide_16_8_noHeader			
+	
+	pop d       ; restore top 8 bits of result.	
+	pop ra
+	ret
+	endp
+	
+.subsegment	
+; Paramaters: abd = numerator 
+;             c   = denominator
+; Returns:    abd = quotient 
+; Overites:   c
+Math_Divide_s24_u8:	proc
+	test d
+	jns Math_Divide_u24_u8   ; if it's not negative, easy option. 
+
+	push ra
+
+	; invert abd 
+	mov tl,c
+	xor c,c
+	dec c        ; c = 0xFF	
+	xor a,c
+	xor b,c
+	xor d,c 
+	inc a
+	incc b
+	incc d 
+	mov c, tl 	
+
+	call Math_Divide_u24_u8
+
+	mov tl,c
+	xor c,c
+	dec c        ; c = 0xFF	
+	xor a,c
+	xor b,c
+	xor d,c 
+	inc a
+	incc b
+	incc d 
+	mov c, tl 	
+
+	pop ra
+	ret	
+	endp
+	
+	
+	
+.subsegment
+; Paramaters: ab = numerator
+;             c  = denominator
+; Overwrites: d
+; Returns:    ab = quotient
+Math_Divide_fp88_u8:	proc
+
+	test b
+	js _negative
+	
+	jmp Math_Divide_16_8   ; tailcall the simple divide. 
+_negative:
+	push ra	
+	
+	xor d,d
+	dec d  
+	xor a,d
+	xor b,d
+	inc a
+	incc b     ; ab*=-1
+	
+	call Math_Divide_16_8
+	
+	xor d,d
+	dec d  
+	xor a,d
+	xor b,d
+	inc a
+	incc b     ; ab*=-1
+	
+	pop ra
+	ret
+	endp
+
