@@ -453,8 +453,8 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 			AsmCurrentposition+=1;
 			break;
 		case eAsmBinarytokensize_Word:
-			fputc((uint8_t)(exprval>>8),dst);
 			fputc((uint8_t)(exprval),dst);
+			fputc((uint8_t)(exprval>>8),dst);
 			AsmCurrentposition+=2;
 			break;
 		default:
