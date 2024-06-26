@@ -191,6 +191,7 @@ opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
 						| mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	[tx],	c	
+opcode	v.cjae.relative.uint16	#1		: sub a, c | sbb b, d | jae #1
 opcode	v.cjbe.relative.uint16	#1		: sub a, c | sbb b, d | jb #1 | or a, b | je #1
 opcode	v.cjb.relative.uint8	#1		: cmp a, c | jb #1
 opcode	v.cjb.relative.uint16	#1		: sub a, c | sbb b, d | jb #1
