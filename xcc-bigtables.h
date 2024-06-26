@@ -240,6 +240,8 @@ enum tTokentype {
 	tSplexem_Negation               = 1068, //
 	tSplexem_Bitwiseand             = 1069, //
 	tSplexem_Greaterthan            = 1070, //
+	tSplexem_Greaterequal           = 1071, //
+	tSplexem_Lessequal              = 1072, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
@@ -1367,9 +1369,9 @@ char *TokenidtoName[]={
 	"tSplexem_Shiftright         ",// 1067
 	"tSplexem_Negation           ",// 1068
 	"tSplexem_Bitwiseand         ",// 1069
-	"tSplexem_Undefined          ",// 1070
-	"tSplexem_Undefined          ",// 1071
-	"tSplexem_Undefined          ",// 1072
+	"tSplexem_Greaterthan        ",// 1070
+	"tSplexem_Greaterequal       ",// 1071
+	"tSplexem_Lessequal          ",// 1072
 	"tSplexem_Undefined          ",// 1073
 	"tSplexem_Undefined          ",// 1074
 	"tSplexem_Undefined          ",// 1075
