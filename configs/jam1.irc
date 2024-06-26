@@ -113,6 +113,7 @@ opcode	v.ld.data.nearptr			: mov	tl,	a	\
 						| mov	b,	d
 opcode	v.cast.void.int8			: mov a, 0
 opcode	v.cast.void.uint8			: mov a, 0
+opcode	v.cast.uint8.int16			: mov b, 0
 opcode	v.cast.uint8.uint16			: mov b, 0
 opcode	v.cast.uint8.nearptr			: mov b, 0
 opcode	v.cast.nearptr.uint8			: mov b, 0 ; . Nothing needed here
@@ -196,6 +197,7 @@ opcode	v.cjb.relative.uint16	#1		: sub a, c | sbb b, d | jb #1
 opcode	v.cjb.relative.nearptr	#1		: sub a, c | sbb b, d | jb #1
 opcode	v.cjl.relative.int16	#1		: sub a, c | sbb b, d | jl #1
 opcode	v.cjl.relative.nearptr	#1		: sub a, c | sbb b, d | jl #1
+opcode	v.cjge.relative.int16	#1		: sub a, c | sbb b, d | jge #1
 opcode	v.lea.relative.nearptr	#1		: mov ab, #1
 opcode	v.r2.relative.uint8	#1		: .times #1 db 0 ; rb 1
 opcode	v.r.relative.int8			: db 0 ; rb 1
@@ -233,3 +235,4 @@ opcode	v.constantshr.relative.uint8	#1	: .times #1 slr a
 opcode	v.constantshr.relative.uint16	#1	: .times #1 slr ab
 opcode	v.mul.relative.uint16			: call Math_Multiply_16_16
 opcode	v.mul.relative.nearptr			: call Math_Multiply_16_16
+opcode	v.negate.relative.int16			: mov c, 255 | xor a, c | xor b, c | inc a | incc b
