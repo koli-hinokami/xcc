@@ -1,6 +1,7 @@
 ; vim:ts=8:
 	; Jam-1 archdef
 opcode	irc.programprologue			: .include "/etc/xcc/jam1/crt0.asm" \
+						| .include "/etc/xcc/jam1/math.asm" \
 						| .include "/etc/xcc/jam1/libc.asm"
 opcode	irc.programepilogue			: 
 opcode	irc.segment			#1	: .segment #1
