@@ -62,16 +62,16 @@ CliWriteinteger_waituart:
 fixed16_mul:		; stdcall fixed16 ¤(fixed16 a, fixed16 b)
 	pop	ab
 	pop	cd
-	call	Math_Multiply_fp88_fp88
+	jmp	Math_Multiply_fp88_fp88
 	ret
 fixed16_divide:		; stdcall fixed16 ¤(fixed16 numerator, fixed16 denominator)
 	pop	ab
 	pop	cd
-	call	Math_Divide_fp88_fp88
+	jmp	Math_Divide_fp88_fp88
 	ret
 fixed16_reciprocal:	; stdcall fixed16 ¤(fixed16 num)
 	mov	ab,	256
 	pop	cd
-	call	Math_Divide_fp88_fp88
+	jmp	Math_Divide_fp88_fp88
 	ret
 
