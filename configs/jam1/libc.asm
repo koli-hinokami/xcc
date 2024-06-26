@@ -81,6 +81,15 @@ memset_l:
 	dec	d
 	jnz	tx
 	ret
+math_divide_16_8:	; stdcall uint16_t(uint16_t, uint8_t)
+	pop	ab
+	pop	c
+	jmp	Math_Divide_16_8
+	ret
+math_abs:
+	pop	ab
+	jmp	Math_ABS_16
+	ret
 fixed16_mul:		; stdcall fixed16 ¤(fixed16 a, fixed16 b)
 	pop	ab
 	pop	cd
