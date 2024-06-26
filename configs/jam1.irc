@@ -224,6 +224,8 @@ opcode	v.constantshl.relative.int8	#1	: .times #1 sal a
 opcode	v.constantshl.relative.uint8	#1	: .times #1 sal a
 opcode	v.constantshl.relative.int16	#1	: .times #1 sal ab
 opcode	v.constantshl.relative.uint16	#1	: .times #1 sal ab
+opcode	v.constantshr.relative.int8	#1	: .times #1 sar a
+opcode	v.constantshr.relative.int16	#1	: .times #1 sar ab
 opcode	v.constantshr.relative.uint8	#1	: .times #1 slr a
 opcode	v.constantshr.relative.uint16	#1	: .times #1 slr ab
 opcode	v.mul.relative.uint16			: call Math_Multiply_16_16
