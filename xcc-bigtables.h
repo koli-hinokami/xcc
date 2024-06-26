@@ -238,8 +238,9 @@ enum tTokentype {
 	tSplexem_Shiftright             = 1067, //
 	tSplexem_Negation               = 1068, //
 	tSplexem_Bitwiseand             = 1069, //
+	tSplexem_Greaterthan            = 1070, //
 	//tSplexem_                     = ,     //
-	//tToken_                       = 1280, //      Second AST string lexems
+	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
 	//tToken_                       = 1536, //      IR instructions
 	tInstruction_Cnop               = 1536, //Clash nop - used internally

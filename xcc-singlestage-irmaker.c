@@ -336,6 +336,43 @@ tGInstruction* IgCompileInvertedconditionaljump(
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
 	switch(self->type){
+		case tSplexem_Greaterthan: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedlessequal
+								:tInstruction_Comparejumpunsignedlessequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
 		case tSplexem_Lessthan: {
 			assert(self->right);
 			assert(
@@ -400,6 +437,43 @@ tGInstruction* IgCompileConditionaljump(
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
 	switch(self->type){
+		case tSplexem_Greaterthan: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedgreaterthan
+								:tInstruction_Comparejumpunsignedgreaterthan,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
 		case tSplexem_Lessthan: {
 			assert(
 				  self->left->returnedtype->atomicbasetype

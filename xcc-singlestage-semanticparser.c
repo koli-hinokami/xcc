@@ -1478,6 +1478,39 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};	break;
 		};
 		{	// Expressions - comparison
+			case tLexem_Greaterthan: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				left=SpInsertimpliedrvaluecast(left);
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				right=SpInsertimpliedrvaluecast(right);
+				
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: `>`: Types not equal! %s : %s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				tSpNode* i = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Greaterthan,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_CreateAtomic(eGAtomictype_Boolean),
+							eGValuecategory_Rightvalue
+						),
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return i;
+			};	break;
 			case tLexem_Lessthan: {
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
 				left=SpInsertimpliedrvaluecast(left);
