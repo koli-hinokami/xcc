@@ -952,8 +952,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
 					mtLxFetcher_Print(fetcher);
-					exit(1);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1010,7 +1012,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1123,7 +1128,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1142,7 +1150,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 										default: {
 											if(parenthesation<0){
 												fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-												exit(1);
+												printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+												mtLxFetcher_Print(fetcher);
+												ErfError();
+												return nullptr;
 											};
 											if(parenthesation==0){
 												switch(((tToken*)i->item)->type){
@@ -1208,7 +1219,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1260,7 +1274,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1312,7 +1329,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1369,7 +1389,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1434,7 +1457,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1486,7 +1512,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1538,7 +1567,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1591,7 +1623,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1648,7 +1683,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1707,7 +1745,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
@@ -1991,7 +2032,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
-					exit(1);
+					printf("LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
+					ErfError();
+					return nullptr;
 				};
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
