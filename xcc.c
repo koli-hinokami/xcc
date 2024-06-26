@@ -180,11 +180,15 @@ void compile(char* file){
 	
 }
 
+void LnNullpointerhandler(int signum){
+	fprintf(stderr,"Ln: [F] Segfault catched! \n");
+	ErfFatal();
+};
 int main (int argc,char* argv[]) {
+	signal(SIGSEGV,LnNullpointerhandler);
 	//setvbuf(stdout,null,_IONBF,0);
 	//printf("\n\n");
-	printf("Ln: [M] XCC Retargetable C Compiler\n");
-	printf("Ln:     The frontend\n");
+	printf("Ln: [M] xcc Retargetable C Crosscompiler\n");
 	printf("Ln:     Version 0.9.13.0.universal.jam1-ir\n");
 	// ^ if you are not defining the directives in your Makefile: 
 	//printf("Ln: Version 1.0.1.0.undefined.homelab.160101-0800\n");
@@ -214,7 +218,21 @@ int main (int argc,char* argv[]) {
 	//                                 targets
 	int aindex=1;
 	// Help and usage
-	if(strcmp(argv[1],"--help")==0){
+	if(
+		  argv[1]==null
+		||strcmp(argv[1],"--usage")==0
+	){
+		printf("Ln: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
+		printf("Ln: [M]   \n");
+		printf("Ln: [M]  Options:\n");
+		printf("Ln: [M]   -a=archname            Architecture to compile for - what did \n");
+		printf("Ln: [M]                           you except from a crosscompiler? \n");
+		printf("Ln: [M]   -o=outfile             Output file. Ignored for now.\n");
+		printf("Ln: [M]   -c=configdir           Directory with configuration files.\n");
+		printf("Ln: [M]                           Default isn't specified here but should be \n");
+		printf("Ln: [M]                           /etc/xcc. \n");
+		return 0;
+	}else if(strcmp(argv[1],"--help")==0){
 		printf("Ln: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
 		printf("Ln: [M]   \n");
 		printf("Ln: [M]  Options:\n");
@@ -225,16 +243,7 @@ int main (int argc,char* argv[]) {
 		printf("Ln: [M]                           Default isn't specified here but should be \n");
 		printf("Ln: [M]                           /etc/xcc/. \n");
 		printf("Ln: [M]  \n");
-	}else if(strcmp(argv[1],"--usage")==0){
-		printf("Ln: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
-		printf("Ln: [M]   \n");
-		printf("Ln: [M]  Options:\n");
-		printf("Ln: [M]   -a=archname            Architecture to compile for - what did \n");
-		printf("Ln: [M]                           you except from a crosscompiler? \n");
-		printf("Ln: [M]   -o=outfile             Output file. Ignored for now.\n");
-		printf("Ln: [M]   -c=configdir           Directory with configuration files.\n");
-		printf("Ln: [M]                           Default isn't specified here but should be \n");
-		printf("Ln: [M]                           /etc/xcc. \n");
+		return 0;
 	};
 	//Command-line options
 	printf("Ln: [T] Program name is: %s\n", argv[0]);
@@ -247,6 +256,7 @@ int main (int argc,char* argv[]) {
 	};
 	printf("Ln: [T] Options:\n");
 	for(;aindex<argc;aindex++){
+		assert(argv[aindex]);
 		if(argv[aindex][0]!='-')break;
 		printf("Ln: [T]    %s \n",argv[aindex]);
 		if(argv[aindex][1]=='c'){       // Configdir
@@ -279,6 +289,7 @@ int main (int argc,char* argv[]) {
 	//Files for compilation
 	printf("Ln: [M] Compiling:\n");
 	for(;aindex<argc;aindex++){
+		assert(argv[aindex]);
 		if(argv[aindex][0]=='-')break;
 		compile(argv[aindex]);
 	};
