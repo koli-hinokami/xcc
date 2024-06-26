@@ -315,6 +315,7 @@ void SgParse(tLxNode* ast){
 					// Handle a declaration
 					char* name = nullptr;
 					tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
+					SgFindunresolvedtypes_Type(ast->returnedtype);
 					mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 					//if(ast->right){
 					//	mtGNamespace_Add(
@@ -327,8 +328,8 @@ void SgParse(tLxNode* ast){
 					//	);
 					//}else{
 					if(name){ // You can still write a 
-						  // declaration that declares
-						  // no variables, just type
+					          // declaration that declares
+					          // no variables, just type
 						// Uninitialized
 						mtGNamespace_Add(
 							ast->name_space,
@@ -493,6 +494,8 @@ void SgFindunresolvedtypes_Type(tGType* type){
 		case eGAtomictype_Farfunction:
 			mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgFindunresolvedtypes_Type);
 		case eGAtomictype_Pointer:
+		case eGAtomictype_Nearpointer:
+		case eGAtomictype_Farpointer:
 		case eGAtomictype_Array:
 			SgFindunresolvedtypes_Type(type->complexbasetype);
 			break;
