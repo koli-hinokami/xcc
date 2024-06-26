@@ -616,11 +616,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					&(tSpNode){
 						.type=tSplexem_Forstatement,                 //for(
 						.initializer=SpParse(self->initializer),     //	initializer;
-						.condition=SpInsertintegertobooleancast(     //	condition
-							SpInsertimpliedrvaluecast(               //
-								SpParse(self->condition)             //
-							)                                        // 
-						),                                           // ;
+						.condition=                                  //	condition
+								self->condition->type                //
+							==	tLexem_Nullexpression                //
+						?	SpParse(self->condition)                 //
+						:	SpInsertintegertobooleancast(            //
+								SpInsertimpliedrvaluecast(           //
+									SpParse(self->condition)         //
+								)                                    // 
+							),                                       // ;
 						.left=mtSpNode_Clone(                        // iterator
 							&(tSpNode){                              //
 								.type=tSplexem_Expressionstatement,  //

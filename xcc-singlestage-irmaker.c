@@ -673,7 +673,15 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				tGInstruction* init = IgCompileStatement(self->initializer);
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Condition");
-				tGInstruction* cond = IgCompileConditionaljump(self->condition,body);
+				tGInstruction* cond = 
+					 self->condition->type==tSplexem_Nullexpression
+					?mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						body
+					)
+					:IgCompileConditionaljump(self->condition,body)
+					;
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Iterator");
 				tGInstruction* iter = IgCompileStatement(self->left);
