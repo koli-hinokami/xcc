@@ -454,6 +454,23 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 #endif
 	assert(self);
 	switch(self->type){
+		case tSplexem_Declarationlist: {
+			ErfEnter_String("IgCompileStatement: Declarationlist");
+			tGInstruction* i;
+			if(self->left){
+				i=IgCompileStatement(self->left);
+				if(!i)i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				assert(i);
+			}else{
+				i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				assert(i);
+			};
+			assert(i);
+			assert(mtGInstruction_GetLast(i));
+			if(self->right)mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
+			ErfLeave();
+			return i;
+		};	break;
 		case tSplexem_Blockstatement: {
 			ErfEnter_String("IgCompileStatement: Blockstatement");
 			tGInstruction* i;
