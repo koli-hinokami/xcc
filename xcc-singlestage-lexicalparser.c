@@ -2176,6 +2176,19 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				return mtLxNode_Clone(
 					&(tLxNode){
 						.type = tLexem_Integerconstant,
+						.returnedtype = mtGType_CreateAtomic(
+							eGAtomictype_Int
+						),
+						.constant = mtLxFetcher_Peek(fetcher)->constant
+					}
+				);
+			case tToken_Unsignedintegerconstant:
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type = tLexem_Integerconstant,
+						.returnedtype = mtGType_CreateAtomic(
+							eGAtomictype_Unsigned
+						),
 						.constant = mtLxFetcher_Peek(fetcher)->constant
 					}
 				);
@@ -3016,6 +3029,19 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 				return mtLxNode_Clone(
 					&(tLxNode){
 						.type = tLexem_Integerconstant,
+						.returnedtype = mtGType_CreateAtomic(
+							eGAtomictype_Int
+						),
+						.constant = mtLxFetcher_Peek(fetcher)->constant
+					}
+				);
+			case tToken_Unsignedintegerconstant:
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type = tLexem_Integerconstant,
+						.returnedtype = mtGType_CreateAtomic(
+							eGAtomictype_Unsigned
+						),
 						.constant = mtLxFetcher_Peek(fetcher)->constant
 					}
 				);

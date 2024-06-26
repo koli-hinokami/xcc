@@ -49,7 +49,8 @@ enum tTokentype {
 	tToken_Comma                    = 46,   //,
 	tToken_Semicolon                = 47,   //;
 	tToken_Ellipsis                 = 48,   //...
-	tToken_Integerconstant          = 96,   //
+	tToken_Integerconstant          = 96,   // a constant
+	tToken_Unsignedintegerconstant  = 97,   // same but unsigned
 	tToken_Whitespace               = 127,  //
 	//tToken_                       = 47,   //      Keywords
 	tToken_Keywordalignas           = 128,  //alignas
@@ -393,7 +394,7 @@ char *TokenidtoName[]={
 	"tToken_Undefined            ",// 94 
 	"tToken_Undefined            ",// 95 
 	"tToken_Integerconstant      ",// 96 
-	"tToken_Undefined            ",// 97 
+	"tToken_Unsignedintegerconst>",// 97 
 	"tToken_Undefined            ",// 98 
 	"tToken_Undefined            ",// 99 
 	"tToken_Undefined            ",// 100

@@ -713,8 +713,9 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				};
 			case tLexem_Integerconstant:
 				{
-					tGType* type = mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int));
-					mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Rightvalue;
+					tGType* type = mtGType_Transform(self->returnedtype);
+					mtGType_GetBasetype(type)->valuecategory =
+						eGValuecategory_Rightvalue;
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Integerconstant,
