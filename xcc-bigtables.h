@@ -286,6 +286,8 @@ enum tTokentype {
 	tInstruction_Constantshiftright = 1577, //Shifts by a constant amount
 	tInstruction_Allocatestorage2   = 1578, //Requires immediate that tells how many times to reserve the storage
 	tInstruction_Multiply           = 1579, //Doesn't produce top half of result
+	tInstruction_Bitwiseand         = 1580, //
+	tInstruction_Negation           = 1581, //
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -3463,8 +3465,8 @@ char *TokenidtoName_Compact[]={
 	"constantshr"                 ,// 1577
 	"r2"                          ,// 1578
 	"mul"                         ,// 1579
-	"?"                           ,// 1580
-	"?"                           ,// 1581
+	"bitwiseand"                  ,// 1580
+	"negate"                      ,// 1581
 	"?"                           ,// 1582
 	"?"                           ,// 1583
 	"?"                           ,// 1584

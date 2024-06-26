@@ -57,6 +57,33 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			);
 			return i;
 		};	break;
+		case tSplexem_Negation: {
+			tGInstruction* i;
+			i = IgCompileExpression(self->left);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Negation,
+				self->returnedtype->atomicbasetype
+			);
+			return i;
+		};	break;
+		case tSplexem_Bitwiseand: {
+			tGInstruction* i;
+			i=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Bitwiseand,
+				self->left->returnedtype->atomicbasetype
+			);
+			return i;
+		};	break;
 		case tSplexem_Addition: {
 			tGInstruction* i;
 			i=IgCompileExpression(self->left);
