@@ -38,26 +38,35 @@ puts_r: pop	si
 	pop	ra
 	.times	2	pop	c
 	ret
-CliWriteinteger:	; My routine for dumping integers to string
-	pop	c
-	pop	d
-	mov	b,	6
-CliWriteinteger_loop:
-	mov	tx,	CliWriteinteger_waituart
-CliWriteinteger_waituart:
+;CliWriteinteger:	; My routine for dumping integers to string
+;	pop	c
+;	pop	d
+;	mov	b,	6
+;CliWriteinteger_loop:
+;	mov	tx,	CliWriteinteger_waituart
+;CliWriteinteger_waituart:
+;	in	a,	uart_ctrl
+;	shl	a
+;	jlc	tx
+;	push	b
+;	mov	a,	7
+;	and	a,	c
+;	mov	b,	48
+;	add	a,	b
+;	pop	b
+;	out	uart_data, a
+;	.times 3 slr	cd
+;	dec	b
+;	jnz	CliWriteinteger_loop
+;	ret
+putchar:		; stdcall void ¤(char ch)
+	mov	tx,	putchar_l
+putchar_l:
 	in	a,	uart_ctrl
 	shl	a
 	jlc	tx
-	push	b
-	mov	a,	7
-	and	a,	c
-	mov	b,	48
-	add	a,	b
-	pop	b
+	pop	a
 	out	uart_data, a
-	.times 3 slr	cd
-	dec	b
-	jnz	CliWriteinteger_loop
 	ret
 memset:			; stdcall void ¤(void* area, uint8_t byte, size_t size)
 	; TODO: Save `di`
