@@ -715,6 +715,23 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					ErfLeave();
 					return retval;
 				};
+			case tLexem_Charaterconstant:
+				{
+					tGType* type = mtGType_Transform(
+						mtGType_CreateAtomic(
+							eGAtomictype_Char));
+					mtGType_GetBasetype(type)->valuecategory =
+						eGValuecategory_Rightvalue;
+					retval = mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=type,
+							.constant=self->identifier[0]
+						}
+					);
+					ErfLeave();
+					return retval;
+				};
 			case tLexem_Integerconstant:
 				{
 					tGType* type = mtGType_Transform(self->returnedtype);
