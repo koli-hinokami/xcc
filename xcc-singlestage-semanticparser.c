@@ -386,6 +386,14 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 		mtString_Join(
 			mtString_Join("SpParse: ",TokenidtoName[self->type]),
 			 self->type==tLexem_Functiondeclaration
+			?" (producing function name)"
+			:(char[1]){0}
+		)
+	);
+	ErfUpdate_String(
+		mtString_Join(
+			mtString_Join("SpParse: ",TokenidtoName[self->type]),
+			 self->type==tLexem_Functiondeclaration
 			?SppGeneratetype_GetName(self->left)
 			:(char[1]){0}
 		)

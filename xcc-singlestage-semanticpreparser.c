@@ -62,9 +62,12 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	printf("spp:[T] SppGeneratetype: entered \n");
+	ErfEnter_String("SppGeneratetype");
 	tGType* temptype = mtGType_Deepclone(basetype);
 	if(typeexpr==nullptr){
 		printf("SPP:[E] SppGeneratetype: typeexpr==nullptr\n");
+		ErfError();
+		ErfLeave();
 		return nullptr;
 	};
 	for(tLxNode* i=typeexpr;i!=nullptr;i=i->left){
@@ -121,26 +124,31 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 			case tLexem_Identifier:
 				if(name)*name=i->identifier;
 				mtGType_Transform(temptype);
+				ErfLeave();
 				return temptype;
 			case tLexem_Nullexpression:
 				if(name)*name=nullptr;
 				mtGType_Transform(temptype);
+				ErfLeave();
 				return temptype;
 			default:
 				printf("SPP:[E] SppGeneratetype: Internal inconsistency: unexcepted lexem %i:%s while parsing a type\n",i->type,TokenidtoName[i->type]);
 				LfPrint_LxNode(i);
 				printf("SPP:[E] SppGeneratetype: Full AST:\n");
 				LfPrint_LxNode(typeexpr);
+				ErfLeave();
 				return nullptr;
-
 		};
 	};
 	printf("SPP:[E] SppGeneratetype: Internal inconsistency: forloop dropped at nullptr\n");
-	exit(5);
+	ErfFatal();
+	return nullptr;
 };
 char* SppGeneratetype_GetName(tLxNode* typeexpression){
 	char* name;
+	ErfEnter_String("SppGeneratetype_GetName");
 	SppGeneratetype(nullptr,typeexpression,&name);
+	ErfLeave();
 	return name;
 };
 
