@@ -79,7 +79,7 @@ void runprogram(char* program, char** argv){
 	{
 		int pid,err;
 		if(szLnRundirectory){
-			mtString_Append(&program, szLnRundirectory);
+			program = mtString_Join(szLnRundirectory,program);
 		};
 		if(!(pid=fork())){
 			if(szLnRundirectory) execv (program,(char * const *)argv);
