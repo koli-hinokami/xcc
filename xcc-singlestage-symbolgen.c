@@ -64,6 +64,10 @@ void SgRegisterstructureTraverse(tGType* type){
 };
 void SgRegisterstructures(tLxNode* ast){
 	switch(ast->type){
+		case tLexem_Declarationlist:
+			SgRegisterstructures(ast->left);
+			SgRegisterstructures(ast->right);
+			break;
 		case tLexem_Typedefinition:
 			SgRegisterstructureTraverse(ast->returnedtype);
 			break;
@@ -502,7 +506,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 		case eGAtomictype_Structure: // I still need to compile structures
 		case eGAtomictype_Union:     
 			mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgFindunresolvedtypes_LxNode);
-			//SgRegistercompilablestructure(type);
+			SgRegisterstructureTraverse(type);
 		default:
 			
 	};
