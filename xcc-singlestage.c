@@ -545,7 +545,7 @@ bool mtGType_Equals(tGType* self,tGType* type){
 };
 eGValuecategory mtGType_GetValuecategory(tGType /* modifies */ * self){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+	printf("ss: [T] mtGType_GetValuecategory: entered \n");
 #endif
 	return mtGType_GetBasetype(self)->valuecategory;
 }
