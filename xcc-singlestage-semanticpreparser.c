@@ -63,6 +63,8 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	printf("spp:[T] SppGeneratetype: entered \n");
 	ErfEnter_String("SppGeneratetype");
+	if(!basetype)ErfWarning_String("basetype == null");
+	if(!typeexpr)ErfWarning_String("typeexpr == null");
 	tGType* temptype = mtGType_Deepclone(basetype);
 	if(typeexpr==nullptr){
 		printf("SPP:[E] SppGeneratetype: typeexpr==nullptr\n");
@@ -147,7 +149,11 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 char* SppGeneratetype_GetName(tLxNode* typeexpression){
 	char* name;
 	ErfEnter_String("SppGeneratetype_GetName");
-	SppGeneratetype(nullptr,typeexpression,&name);
+	SppGeneratetype(
+		mtGType_CreateAtomic(eGAtomictype_Int),
+		typeexpression,
+		&name
+	);
 	ErfLeave();
 	return name;
 };
