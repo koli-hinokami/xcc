@@ -24,7 +24,7 @@ typedef struct {
 } tDoublylinkedlist;
 
 tListnode* mtListnode_Cons(void* item,tListnode* next){
-	tListnode* i = malloc(sizeof(mtListnode_Cons));
+	tListnode* i = malloc(sizeof(struct tListnode));
 	i->item=item;
 	i->next=next;
 	return i;
