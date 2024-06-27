@@ -569,13 +569,19 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			printf("LX: [T] LxParseBasetype: Parsing structure\n");
 			// Try to recognize optional identifier
 			char* identifier = nullptr;
-			if(mtLxFetcher_Peek(fetcher)->type==tToken_Identifier){
+			if(
+				  	(!mtLxFetcher_Eof(fetcher))
+				&&	mtLxFetcher_Peek(fetcher)->type==tToken_Identifier
+			){
 				identifier=mtLxFetcher_Peek(fetcher)->string;
 				mtLxFetcher_Advance(fetcher);
 			};
 			// Try to recognize definition of fields
 			tList* declarations = nullptr;
-			if(mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces){
+			if(
+					(!mtLxFetcher_Eof(fetcher))
+				&&	mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces
+			){
 				mtLxFetcher_Advance(fetcher);
 				if(mtLxFetcher_Eof(fetcher)){
 					printf("LX: [E] LxParseBasetype: Structure: No closing curly brace\n");
