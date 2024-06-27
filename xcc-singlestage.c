@@ -314,7 +314,9 @@ tGType* mtGType_Create(){
 	return calloc(sizeof(tGType),1);
 }
 tGType* mtGType_Clone(tGType* self){
+	ErfEnter_String("mtGType_Clone");
 	assert(self);
+	ErfLeave();
 	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
 }
 tGType* mtGType_CreateAtomic(eGAtomictype type){
@@ -413,9 +415,15 @@ tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
 	return temp;
 };
 tGType* mtGType_Deepclone(tGType* self){
-	if(!self)return nullptr;
+	ErfEnter_String("mtGType_Deepclone");
+	if(!self){
+		ErfWarning();
+		return nullptr;
+	};
 	tGType* i = mtGType_Clone(self);
-	i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
+	if(i->complexbasetype)
+		i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
+	ErfLeave();
 	return i;
 }
 void mtGType_Deallocate(tGType* self){
