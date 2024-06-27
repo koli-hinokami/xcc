@@ -78,8 +78,12 @@ void runprogram(char* program, char** argv){
 	printf("\n");
 	{
 		int pid,err;
+		if(szLnRundirectory){
+			mtString_Append(&program, szLnRundirectory);
+		};
 		if(!(pid=fork())){
-			execv(program,(char * const *)argv);
+			if(szLnRundirectory) execv (program,(char * const *)argv);
+			                else execvp(program,(char * const *)argv);
 			//printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
 			exit(1);
 		}else{
@@ -122,7 +126,7 @@ void parsefile2(char* program, char* filename, char* ext1, char* ext2, char* arg
 	char* argv[12];
 	fflush(stdout);
 	
-	argv[0]=mtString_Join(szLnRundirectory,program);
+	argv[0]=mtString_Join(szLnRundirectory?:"",program);
 	argv[1]="-a";
 	argv[2]=szLnArchitecture;
 	argv[3]="-o";
@@ -132,7 +136,7 @@ void parsefile2(char* program, char* filename, char* ext1, char* ext2, char* arg
 	argv[7]=szLnConfigdir?:0;
 	argv[8]=0;
 	argv[9]=0;
-	runprogram(mtString_Join(szLnRundirectory,program),(char**)(&argv));
+	runprogram(program,(char**)(&argv));
 	free(argv[4]);
 	free(argv[5]);
 	fflush(stdout);
@@ -141,12 +145,12 @@ void parsefile(char* program, char* filename, char* ext1, char* ext2, char* args
 	char* argv[5];
 	fflush(stdout);
 	
-	argv[0]=mtString_Join(szLnRundirectory,program);
+	argv[0]=mtString_Join(szLnRundirectory?:"",program);
 	argv[1]=mtString_Join(filename,ext1);
 	argv[2]=mtString_Join(filename,ext2);
 	argv[3]=0;
 	argv[4]=0;
-	runprogram(mtString_Join(szLnRundirectory,program),(char**)(&argv));
+	runprogram(program,(char**)(&argv));
 	free(argv[1]);
 	free(argv[2]);
 	fflush(stdout);
@@ -252,7 +256,7 @@ int main (int argc,char* argv[]) {
 		mtString_FindcharLast(szLnRundirectory,'/')[1]=0;
 	}else{
 		free(szLnRundirectory);
-		szLnRundirectory=mtString_Clone("");
+		szLnRundirectory=null; // ran from path
 	};
 	printf("Ln: [T] Options:\n");
 	for(;aindex<argc;aindex++){
@@ -293,5 +297,5 @@ int main (int argc,char* argv[]) {
 		if(argv[aindex][0]=='-')break;
 		compile(argv[aindex]);
 	};
-	free(szLnRundirectory);
+	if(szLnRundirectory)free(szLnRundirectory);
 };
