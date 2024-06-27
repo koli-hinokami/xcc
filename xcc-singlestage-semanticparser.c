@@ -908,6 +908,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					self->right->identifier,
 					mtGSymbol_eType_Pointer
 				);
+				if(!symbol){
+					fprintf(stderr,"SP: [E] Unrecognized structure "
+					               "<%s> member \"%s\"\n",
+					               mtGType_ToString(left->returnedtype),
+					               self->right->identifier
+					               );
+					ErfError();
+					return nullptr;
+				};
 				assert(symbol->allocatedstorage);
 				//assert(symbol->allocatedstorage->nonconstant);
 				if(
@@ -927,7 +936,62 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					// Static structure member
 					retval = mtSpNode_Clone( // Dirty hackery to make everything work
 						&(tSpNode){
-							.type=tSplexem_Identifier,
+							.type=tSplexem_Symbol,
+							.returnedtype=symbol->type,
+							.symbol=symbol,
+						}
+					);
+				};
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Memberbypointer: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				// Don't parse right yet!
+				// ↓ TODO: Allow auto-cast to structure (not pointer to struct)
+				assert(  mtGType_GetValuecategory(left->returnedtype)
+				       ==eGValuecategory_Rightvalue);
+				assert(mtGType_IsPointer(left->returnedtype));
+				assert(   left->returnedtype->complexbasetype->atomicbasetype
+				       == eGAtomictype_Structure);
+				assert(self->right->type==tLexem_Identifier);
+				tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
+					left->returnedtype->complexbasetype->structure,
+					self->right->identifier,
+					mtGSymbol_eType_Pointer
+				);
+				if(!symbol){
+					fprintf(stderr,"SP: [E] Unrecognized structure "
+					               "<%s> member \"%s\"\n",
+					               mtGType_ToString(left->returnedtype),
+					               self->right->identifier
+					               );
+					ErfError();
+					return nullptr;
+				};
+				assert(symbol->allocatedstorage);
+				//assert(symbol->allocatedstorage->nonconstant);
+				if(
+					  (!symbol->allocatedstorage->nonconstant) // constant
+					&&(symbol->allocatedstorage->segment       // and relative
+					   ==meGSegment_Relative)
+				){
+					assert(    mtGType_GetValuecategory(left->returnedtype)
+					         ==eGValuecategory_Rightvalue
+						   &&  mtGType_IsPointer(left->returnedtype));
+					retval = mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Structuremember,
+							.returnedtype=symbol->type,
+							.left=left,
+							.constant=symbol->allocatedstorage->offset
+						}
+					);
+				}else{
+					// Static structure member
+					retval = mtSpNode_Clone( // Dirty hackery to make everything work
+						&(tSpNode){
+							.type=tSplexem_Symbol,
 							.returnedtype=symbol->type,
 							.symbol=symbol,
 						}
@@ -1058,6 +1122,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	mtLxNode_ToString(self->left)
 				//);
 #endif
+				ErfUpdate_String("SpParse: tLexem_Sizeof: Type");
 				assert(self->left);
 				if(self->left->type==tLexem_Typeexpression){
 					retval = mtSpNode_Clone(
@@ -1093,6 +1158,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					//	)
 					//);
 #endif
+					ErfUpdate_String("SpParse: tLexem_Sizeof: Expression");
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Integerconstant,
