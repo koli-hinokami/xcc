@@ -30,7 +30,7 @@ tListnode* mtListnode_Cons(void* item,tListnode* next){
 	return i;
 }
 tList* mtList_Create(){
-	return calloc(1,sizeof(tList));
+	return calloc(1,sizeof(struct tList));
 };
 bool mtList_Isempty(ptList self){
 	if(self->last == nullptr){ // List empty
