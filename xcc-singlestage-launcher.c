@@ -28,6 +28,11 @@ char* LnTrimextension(char* file){
 //};
 
 
+
+void LnInterrupthandler(int signum){
+	fprintf(stderr,"Ln: [M] Interrupted \n");
+	ErfWarning();
+};
 void LnFailedassertionhandler(int signum){
 	fprintf(stderr,"Ln: [F] Failed assertion catched! \n");
 	ErfFatal();
@@ -120,6 +125,7 @@ void LnCompile(char* file){
 	//SgUnresolvedtypes = mtList_Create();
 	fprintf(stderr,"L:  [M] Symbolgen second pass - finding unresolved types\n");
 	SgFindunresolvedtypes(GRootnamespace);
+	SgFindunresolvedtypes(GStructuretypes);
 	SgFindunresolvedtypes_LxNode(GLexed);
 	fprintf(stderr,"L:  [M] Symbolgen second pass - resolving unresolved types\n");
 	SgResolveunresolvedtypes();
@@ -130,6 +136,7 @@ void LnCompile(char* file){
 		LfPrint_GNamespace(GRootnamespace);
 		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
 	};
+	SgNosearchfortypes = true;
 	// Symbolgen struct registration
 	//  not done separately anymore!
 	// Semantic parsing - compiles structs
@@ -165,6 +172,7 @@ void LnCompile(char* file){
 };
 int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
+	signal(SIGINT,LnInterrupthandler);
 	signal(SIGSEGV,LnNullpointerhandler);
 	signal(SIGABRT,LnFailedassertionhandler);
 	printf("L:  [M] XCC Retargetable C Compiler\n");

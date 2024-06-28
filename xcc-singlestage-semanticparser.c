@@ -500,8 +500,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						mtGSymbol_eType_Pointer
 					);
 					// Update symbol's type
-					symbol->type=SppForceresolvetype(
-						symbol->type,self->name_space);
+					//symbol->type=SppForceresolvetype(
+					//	symbol->type,self->name_space);
 					type=symbol->type;
 					// Allocate storage
 					if(SpCurrentfunction){
@@ -903,6 +903,19 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				// ↓ TODO: Allow auto-cast to pointer to structure
 				assert(left->returnedtype->atomicbasetype==eGAtomictype_Structure);
 				assert(self->right->type==tLexem_Identifier);
+				assert(left->returnedtype->structure);
+#ifdef qvGDebug
+				if(!left->returnedtype->complexbasetype->structure){
+					fprintf(stderr,"SP: [E] "
+					               "SpParse: "
+					               "tLexem_Memberbypointer: "
+					               "Structure <%s> not compiled!\n",
+					               mtGType_ToString(left->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+#endif
 				tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
 					left->returnedtype->structure,
 					self->right->identifier,
@@ -955,6 +968,18 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				assert(   left->returnedtype->complexbasetype->atomicbasetype
 				       == eGAtomictype_Structure);
 				assert(self->right->type==tLexem_Identifier);
+#ifdef qvGDebug
+				if(!left->returnedtype->complexbasetype->structure){
+					fprintf(stderr,"SP: [E] "
+					               "SpParse: "
+					               "tLexem_Memberbypointer: "
+					               "Structure <%s> not compiled!\n",
+					               mtGType_ToString(left->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+#endif
 				tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
 					left->returnedtype->complexbasetype->structure,
 					self->right->identifier,

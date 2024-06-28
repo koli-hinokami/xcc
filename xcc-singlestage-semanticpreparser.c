@@ -7,6 +7,7 @@ tSppNode* mtSppNode_Create(){
 	return calloc(sizeof(tSppNode),1);
 };
 
+bool SgNosearchfortypes;
 
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name);
@@ -36,7 +37,7 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 				nullptr
 			);
 			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
-			SgFindunresolvedtypes_Type(type);
+			if(!SgNosearchfortypes)SgFindunresolvedtypes_Type(type);
 			return mtListnode_Cons(type,nullptr);
 		};	break;
 		case tLexem_Nullexpression:
@@ -495,7 +496,7 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 		};
 		//self->structsize=offset;
 	}else if(self->atomicbasetype==eGAtomictype_Union){
-		tGTargetSizet unionsize;
+		tGTargetSizet unionsize=0;
 		for(
 			tListnode /* <tLxNode> */ * i = self->precompiledstructure->first;
 			i;
@@ -536,7 +537,11 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 
 };
 tGType* SppCompilestructure(tGType* self){
+#ifdef qvGTrace
+	printf("SPP:[T] SppCompilestructure: Entered \n");
+#endif
 	assert(self);
+	if(self->structure)return self; // already compiled
 	if(self->atomicbasetype==eGAtomictype_Structure){
 		tGTargetNearpointer offset=0;
 		self->structure = mtGNamespace_Create();
@@ -546,6 +551,11 @@ tGType* SppCompilestructure(tGType* self){
 			i=i->next
 		){
 			tLxNode* node = i->item;
+#ifdef qvGTrace
+			printf("SPP:[T] SppCompilestructure: Declaration \n");
+			LfPrint_LxNode(node);
+			printf("SPP:[T] SppCompilestructure: (end) \n");
+#endif
 			char* name = nullptr;
 			if(node->type==tLexem_Variabledeclaration){
 				tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);

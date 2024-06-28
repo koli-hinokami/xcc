@@ -3,6 +3,8 @@ tList /* <tGType> */ * SgUnresolvedtypes;
 tList /* <tGType> */ * SgUnresolvedstructures;
 tList /* <tGType> */ * SgCompilablestructures;
 tGNamespace* GStructuretypes;
+bool SgNosearchfortypes;
+
 
 void SgRegisterstructure(tGType* type){
 #ifdef qvGTrace
@@ -41,7 +43,7 @@ void SgRegisterstructureTraverse(tGType* type){
 	}else switch(type->atomicbasetype){
 		case eGAtomictype_Structure:
 			if(type->precompiledstructure){
-				//mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgRegisterstructureTraverse);
+				mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgRegisterstructureTraverse);
 			};
 			SgRegisterstructure(type);
 			break;
@@ -52,6 +54,8 @@ void SgRegisterstructureTraverse(tGType* type){
 		case eGAtomictype_Function:
 			mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgRegisterstructureTraverse);
 		case eGAtomictype_Pointer:
+		case eGAtomictype_Nearpointer:
+		case eGAtomictype_Farpointer:
 		case eGAtomictype_Array:
 			SgRegisterstructureTraverse(type->complexbasetype);
 			break;
@@ -462,8 +466,8 @@ void SgRegisterunresolvedtype(tGType* type){
 void SgFindunresolvedtypes_Type(tGType* type);
 void SgFindunresolvedtypes_LxNode(tLxNode* node){
 	assert(node);
-	printf("SG: [T] SgFindunresolvedtypes_LxNode: Entered with node %i•%s\n",
-		node->type,TokenidtoName[node->type]
+	printf("SG: [T] SgFindunresolvedtypes_LxNode: Entered with node %p:%i•%s\n",
+		node,node->type,TokenidtoName[node->type]
 	);
 	if(
 		  node->type!=tLexem_Switchcase
@@ -508,7 +512,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgFindunresolvedtypes_LxNode);
 			SgRegisterstructureTraverse(type);
 		default:
-			
+				
 	};
 };
 void SgFindunresolvedtypes(tGNamespace* name_space);
@@ -556,6 +560,7 @@ tGType* SgResolvetype(tGNamespace* name_space, char* name){
 		}else {
 			// finally! I found thee!
 			assert(symbol->type->atomicbasetype!=eGAtomictype_Unresolved);
+			SgRegisterstructureTraverse(symbol->type);
 			return symbol->type;
 		}
 	};
@@ -575,6 +580,7 @@ void SgResolveunresolvedtypes_Resolvetype(tGType* type){
 		*type = *temp;
 		type->valuecategory=valcat;
 	}
+	SgRegisterstructureTraverse(type);
 };
 void SgResolveunresolvedtypes(){
 #ifdef qvGTrace
