@@ -685,6 +685,25 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};	break;
 		};
 		{	// Expressions - terms
+			case tLexem_Nullpointer:
+				{
+					retval = mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Transform(
+									mtGType_CreateAtomic(
+										eGAtomictype_Pointer
+									)
+								),
+								eGValuecategory_Rightvalue
+							),
+							.constant=0
+						}
+					);
+					ErfLeave();
+					return retval;
+				};
 			case tLexem_Booleantrue:
 				{
 					retval = mtSpNode_Clone(
