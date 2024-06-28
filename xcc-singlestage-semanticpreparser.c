@@ -558,6 +558,8 @@ tGType* SppCompilestructure(tGType* self){
 #endif
 			char* name = nullptr;
 			if(node->type==tLexem_Variabledeclaration){
+				if(node->returnedtype->atomicbasetype==eGAtomictype_Structure)
+					SppCompilestructure(node->returnedtype);
 				tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
 				mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 				if(name){ // If we actually got a symbol

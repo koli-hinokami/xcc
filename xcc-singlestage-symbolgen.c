@@ -52,6 +52,8 @@ void SgRegisterstructureTraverse(tGType* type){
 			// do nothing
 			break;
 		case eGAtomictype_Function:
+		case eGAtomictype_Nearfunction:
+		case eGAtomictype_Farfunction:
 			mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgRegisterstructureTraverse);
 		case eGAtomictype_Pointer:
 		case eGAtomictype_Nearpointer:
