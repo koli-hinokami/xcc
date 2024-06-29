@@ -268,12 +268,30 @@ tSpNode* SpiParsefunctionarguments(tSpNode* ast, tListnode /* <tGType> */ ** arg
 			);
 		default: {
 			assert(argumentslist);
-			assert(*argumentslist);
-			tSpNode* i = mtSpNode_Promote(
-				SpInsertimpliedrvaluecast(ast),
-				(tGType*)((*argumentslist)->item)
-			);
-			*argumentslist = (*argumentslist)->next;
+			tSpNode* i;
+			if(*argumentslist==nullptr){
+				printf("SP: [E] SpiParsefunctionarguments: "
+				               "Not enough arguments to function\n");
+				ErfError();
+				// In case the error is suppressed, cast to `int`
+				// TODO: Tuning: `intptr_t` may be better?
+				i = mtSpNode_Promote(
+					SpInsertimpliedrvaluecast(ast),
+					mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int))
+				);
+			};
+			if(argumentslist[0]->item==nullptr){
+				// Variadic arguments - no cast at all cuz the cast is on
+				//  thee as the codewriter
+				i = SpInsertimpliedrvaluecast(ast);
+			}else{
+				// Argument type is present
+				i = mtSpNode_Promote(
+					SpInsertimpliedrvaluecast(ast),
+					(tGType*)((*argumentslist)->item)
+				);
+				*argumentslist = (*argumentslist)->next;
+			};
 			return i;
 		};
 	}
@@ -985,6 +1003,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				       ==eGValuecategory_Rightvalue);
 				assert(mtGType_IsPointer(left->returnedtype));
 				assert(   left->returnedtype->complexbasetype->atomicbasetype
+				       != eGAtomictype_Unresolved);
+				assert(   left->returnedtype->complexbasetype->atomicbasetype
 				       == eGAtomictype_Structure);
 				assert(self->right->type==tLexem_Identifier);
 #ifdef qvGDebug
@@ -1130,7 +1150,9 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return retval;
 			};	break;
 			case tLexem_Assign: {
+				ErfUpdate_String("SpParse: tLexem_Assign: Left");
 				tSpNode* left = SpParse(self->left);
+				ErfUpdate_String("SpParse: tLexem_Assign: Right");
 				tSpNode* right = mtSpNode_Promote(
 					SpInsertimpliedrvaluecast(SpParse(self->right)),
 					mtGType_SetValuecategory(
@@ -1138,6 +1160,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						eGValuecategory_Rightvalue
 					)
 				);
+				ErfUpdate_String("SpParse: tLexem_Assign: Postprocessing");
 				if(mtGType_GetBasetype(left->returnedtype)->valuecategory!=eGValuecategory_Leftvalue){
 					printf("SP: [E] SpParse: `=`: Assignment to right value \n");
 					ErfError();
