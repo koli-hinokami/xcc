@@ -589,7 +589,6 @@ tGInstruction* IgCompileConditionaljump(
 ){ // compiles some exprs to compare-jump-condition
 	assert(self);
 	assert(self->left);
-	assert(self->right);
 	assert(self->returnedtype);
 	assert(self->returnedtype->atomicbasetype==eGAtomictype_Boolean);
 	tGInstruction* expr = nullptr;
