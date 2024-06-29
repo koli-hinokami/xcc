@@ -1527,7 +1527,26 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				);
 				ErfLeave();
 				return retval;
-			}
+			};	break;
+			case tLexem_Logicalnot: {
+				tSpNode* left = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->left)));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Logicalnot,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=nullptr,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
 		};
 		{	// Expressions - increment/decrement
 			//TODO: Handle both lvalues and rvalues
