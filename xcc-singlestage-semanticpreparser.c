@@ -207,6 +207,13 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	){
 		// New namespace
 		node->name_space=mtGNamespace_CreateInherit(parentnode?parentnode->name_space:GRootnamespace);
+		mtGNamespace_Add(
+			parentnode?parentnode->name_space:GRootnamespace,
+			mtGSymbol_CreateNamespace(
+				"(anonymous)",
+				node->name_space
+			)
+		);
 	}else{
 		// Same namespace
 		node->name_space=parentnode?parentnode->name_space:GRootnamespace;
