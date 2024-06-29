@@ -1910,6 +1910,14 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 			self->left->constant+=1;
 		};
 	};
+	{	// Expressionstatement increment transform - i++ -> ++i
+		if(
+			  self->type==tSplexem_Expressionstatement
+			&&self->left->type==tSplexem_Postincrement
+		){
+			self->left->type=tSplexem_Preincrement;
+		};
+	};
 	{	// Default - pass node through while recursing (again)
 		//if(self->initializer) self->initializer = SpOptimize(self->initializer);
 		//if(self->condition)   self->condition   = SpOptimize(self->condition);
