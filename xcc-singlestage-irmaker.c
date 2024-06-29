@@ -576,9 +576,13 @@ tGInstruction* IgCompileInvertedconditionaljump(
 		};	break;
 		case tSplexem_Casttoboolean: {
 			expr = IgCompileExpression(self->left);
+			assert(self->left->returnedtype->valuecategory==eGValuecategory_Rightvalue);
 			mtGInstruction_GetLast(expr)->next = 
 				mtGInstruction_CreateCodepointer(
-					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+					tInstruction_Jumpfalse,
+					self->left->returnedtype->atomicbasetype,
+					jumptarget
+				);
 		};	break;
 		default:
 			assert(false);
@@ -822,9 +826,13 @@ tGInstruction* IgCompileConditionaljump(
 		};	break;
 		case tSplexem_Casttoboolean: {
 			expr = IgCompileExpression(self->left);
+			assert(self->left->returnedtype->valuecategory==eGValuecategory_Rightvalue);
 			mtGInstruction_GetLast(expr)->next = 
 				mtGInstruction_CreateCodepointer(
-					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+					tInstruction_Jumptrue,
+					self->left->returnedtype->atomicbasetype,
+					jumptarget
+				);
 		};	break;
 		default:
 			printf("IG: [E] IgCompileConditionaljump: Unrecognized node %s",

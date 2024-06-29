@@ -249,8 +249,8 @@ enum tTokentype {
 	//tToken_                       = 1536, //      IR instructions
 	tInstruction_Cnop               = 1536, //Clash nop - used internally
 	tInstruction_Nop                = 1537, //No operation
-	tInstruction_Jumptrue           = 1538, //Jump if true
-	tInstruction_Jumpfalse          = 1539, //Jump if false
+	tInstruction_Jumptrue           = 1538, //Jump if value zero         -.- Why the name is misleading?
+	tInstruction_Jumpfalse          = 1539, //Jump if value non-zero     -'  Those instrs originally were for condition laying in zeroflag (carryflag?) but are repurposed to be test-jump-(zero/nonzero)
 	tInstruction_Debugbreak         = 1540, //Break into debugger
 	tInstruction_Allocatestorage    = 1541, //To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
 	tInstruction_Systemcall         = 1542, //System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
@@ -3429,8 +3429,8 @@ char *TokenidtoName_Compact[]={
 	"?",// 1535
 	"compilernop"                 ,// 1536
 	"nop"                         ,// 1537
-	"jcond"                       ,// 1538
-	"jncond"                      ,// 1539
+	"tjnz"                        ,// 1538
+	"tjz"                         ,// 1539
 	"int3"                        ,// 1540
 	"r"                           ,// 1541
 	"syscall"                     ,// 1542
