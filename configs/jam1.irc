@@ -26,9 +26,17 @@ opcode	v.prereturn.relative.uint16		:
 opcode	v.prereturn.relative.nearptr		: 
 opcode	v.leave.relative.void			: mov tx, si | mov sp, tx | nop | pop si
 opcode	v.return.relative.void			: pop ra | ret
+opcode	v.return.relative.int8			: pop ra | ret
+opcode	v.return.relative.uint8			: pop ra | ret
 opcode	v.return.relative.int16			: pop ra | ret
+opcode	v.return.relative.uint16		: pop ra | ret
+opcode	v.return.relative.nearptr		: pop ra | ret
 opcode	v.return.relative.void		#1	: pop ra | .times #1 pop c | ret
+opcode	v.return.relative.int8		#1	: pop ra | .times #1 pop c | ret
+opcode	v.return.relative.uint8		#1	: pop ra | .times #1 pop c | ret
 opcode	v.return.relative.int16		#1	: pop ra | .times #1 pop c | ret
+opcode	v.return.relative.uint16	#1	: pop ra | .times #1 pop c | ret
+opcode	v.return.relative.nearptr	#1	: pop ra | .times #1 pop c | ret
 opcode	v.indexfp.relative.nearptr		: mov	tx,	si	\
 						| mov	c,	tl	\
 						| mov	d,	th	\
@@ -44,6 +52,16 @@ opcode	v.pha.relative.int8			: push a
 opcode	v.plb.relative.int8			: mov c, a | mov d, b | pop a
 opcode	v.pha.relative.uint8			: push a
 opcode	v.plb.relative.uint8			: mov c, a | mov d, b | pop a
+opcode	v.st.data.nearptr			: mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	c	\
+						| inc	a		\
+						| incc	b		\
+						| mov	tl,	a	\
+						| mov	th,	b	\
+						| mov	[tx],	d	\
+						| mov	a,	c	\
+						| mov	b,	d
 opcode	v.st.data.uint16			: mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	[tx],	c	\
@@ -199,6 +217,12 @@ opcode	v.cjb.relative.nearptr	#1		: sub a, c | sbb b, d | jb #1
 opcode	v.cjl.relative.int16	#1		: sub a, c | sbb b, d | jl #1
 opcode	v.cjl.relative.nearptr	#1		: sub a, c | sbb b, d | jl #1
 opcode	v.cjge.relative.int16	#1		: sub a, c | sbb b, d | jge #1
+opcode	v.cje.relative.int16	#1		: sub a, c | sbb b, d | or a, b | je #1
+opcode	v.cje.relative.uint16	#1		: sub a, c | sbb b, d | or a, b | je #1
+opcode	v.cje.relative.nearptr	#1		: sub a, c | sbb b, d | or a, b | je #1
+opcode	v.cjne.relative.int16	#1		: sub a, c | sbb b, d | or a, b | jne #1
+opcode	v.cjne.relative.uint16	#1		: sub a, c | sbb b, d | or a, b | jne #1
+opcode	v.cjne.relative.nearptr	#1		: sub a, c | sbb b, d | or a, b | jne #1
 opcode	v.lea.relative.nearptr	#1		: mov ab, #1
 opcode	v.r2.relative.uint8	#1		: .times #1 db 0 ; rb 1
 opcode	v.r.relative.int8			: db 0 ; rb 1
@@ -237,3 +261,4 @@ opcode	v.constantshr.relative.uint16	#1	: .times #1 slr ab
 opcode	v.mul.relative.uint16			: call Math_Multiply_16_16
 opcode	v.mul.relative.nearptr			: call Math_Multiply_16_16
 opcode	v.negate.relative.int16			: mov c, 255 | xor a, c | xor b, c | inc a | incc b
+opcode	v.index.relative.nearptr	#1	: mov cd, #1 | add a, c | adc b, d
