@@ -1020,6 +1020,35 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			ErfLeave();
 			return init;
 		};
+		case tSplexem_Whilestatement: {
+			//	while_l: jmp   _cond
+			//	_loop:   body
+			//	_cond:   cj##cond  _loop
+			tGInstruction* retval = nullptr;
+			ErfEnter_String("IgCompileStatement: Whileloop");
+				ErfUpdate_String("IgCompileStatement: Whileloop: Body");
+				tGInstruction* body = IgCompileStatement(self->left);
+				ErfUpdate_String("IgCompileStatement: Whileloop: Condition");
+				tGInstruction* cond = 
+					 self->condition->type==tSplexem_Nullexpression
+					?mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						body
+					)
+					:IgCompileConditionaljump(self->condition,body)
+					;
+				ErfUpdate_String("IgCompileStatement: Whileloop: Binding together");
+				retval = mtGInstruction_CreateCodepointer(
+					tInstruction_Jump,
+					eGAtomictype_Void,
+					cond
+				);
+				mtGInstruction_GetLast(retval)->next = body;
+				mtGInstruction_GetLast(retval)->next = cond;
+			ErfLeave();
+			return retval;
+		};
 		case tSplexem_Ifstatement: {
 			//		ifstatement
 			//
