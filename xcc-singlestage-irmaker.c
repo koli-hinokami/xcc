@@ -6,6 +6,7 @@ tSpNode* IgCurrentfunction;
 tList /* <tInstruction*> */ IgPendingsideeffects;
 // -- Forward declarations --
 tGInstruction* IgCompileExpression(tSpNode* self);
+tGInstruction* IgCompileConditionaljump(tSpNode* self, tGInstruction* jumptarget);
 // -- Functions --
 tGInstruction* IgCompileFunctionarguments(tSpNode* self){
 	assert(self);
@@ -348,6 +349,9 @@ tGInstruction* IgCompileInvertedconditionaljump(
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
 	switch(self->type){
+		case tSplexem_Logicalnot: {
+			return IgCompileConditionaljump(self->left,jumptarget);
+		};	break;
 		case tSplexem_Equality: {
 			assert(
 				  self->left->returnedtype->atomicbasetype
@@ -595,6 +599,9 @@ tGInstruction* IgCompileConditionaljump(
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
 	switch(self->type){
+		case tSplexem_Logicalnot: {
+			return IgCompileInvertedconditionaljump(self->left,jumptarget);
+		};	break;
 		case tSplexem_Equality: {
 			assert(
 				  self->left->returnedtype->atomicbasetype
