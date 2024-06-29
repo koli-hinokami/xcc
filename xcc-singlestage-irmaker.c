@@ -125,7 +125,6 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 					eGAtomictype_Nearpointer,
 					self->symbol->allocatedstorage->dynamicpointer
 				);
-				
 			}else{
 				assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
 				if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
@@ -308,6 +307,19 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				tInstruction_Multiply,self->left->returnedtype->atomicbasetype
 			);
 			return i;
+		};	break;
+		case tSplexem_Structuremember: {
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateImmediate(
+					tInstruction_Index,
+							self->left->returnedtype->valuecategory
+						==	eGValuecategory_Leftvalue
+					?	eGAtomictype_Nearpointer
+					:	self->left->returnedtype->atomicbasetype,
+					self->constant
+				)
+			);
 		};	break;
 		default:
 			printf("IG: [E] IgCompileExpression: Unrecognized "
@@ -669,7 +681,11 @@ tGInstruction* IgCompileConditionaljump(
 					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
 		};	break;
 		default:
-			assert(false);
+			printf("IG: [E] IgCompileConditionaljump: Unrecognized node %s",
+				TokenidtoName[self->type]
+			);
+			ErfError();
+			return nullptr;
 	};
 	return expr;
 }

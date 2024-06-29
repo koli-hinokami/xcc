@@ -1043,6 +1043,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					assert(    mtGType_GetValuecategory(left->returnedtype)
 					         ==eGValuecategory_Rightvalue
 						   &&  mtGType_IsPointer(left->returnedtype));
+					assert(  symbol->type->valuecategory 
+					       ==eGValuecategory_Leftvalue);
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Structuremember,
