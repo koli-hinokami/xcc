@@ -53,6 +53,7 @@ typedef struct {
 	unsigned char size;
 	eAsmBinarytokentype type;
 	char* label;
+	signed char arg;
 	signed char disp;
 } tAsmBinarytoken;
 
@@ -307,31 +308,49 @@ tAsmBinarytoken* mtAsmBinarytoken_Get(FILE* src){ // Constructor
 			//printf("ASM:[T] mtAsmBinarytoken_Get: Default at char %i•%c\n",fpeekc(src),fpeekc(src));
 #endif
 			tAsmBinarytoken* self = mtAsmBinarytoken_Create();
-			switch(fpeekc(src)){
+			switch(fpeekc(src)){ // Size/mode - lobyte, hibyte, word
 				case '>': fgetc(src);          self->size = eAsmBinarytokensize_Hibyte;     break;
 				case '<': fgetc(src); default: self->size = eAsmBinarytokensize_Lobyte;     break;
 				case '=': fgetc(src);          self->size = eAsmBinarytokensize_Word;       break;
 			};
-			switch(fpeekc(src)){
+			{	// Displacement
+				bool negate = false;
+				unsigned base = 10;
+				if(fpeekc(src)=='-'){fgetc(src);negate = true;};
+				if(fpeekc(src)=='0'){
+					fgetc(src);
+					switch(fpeekc(src)){
+						case 'b': fgetc(src);          base = 2;  break;
+						case 'o': fgetc(src); default: base = 8;  break;
+						case 'd': fgetc(src);          base = 10; break;
+						case 'x': fgetc(src);          base = 16; break;
+					};
+					// Don't get confused that default base is octal.
+					// The default here is if leading 0 is present, proper 
+					// default base is in `base`'s initializer.
+				};
+				while((base==16?isxdigit:isdigit)(fpeekc(src))){
+					self->disp*=base;
+					unsigned char ch = fgetc(src);
+					self->disp+=
+							ch>='a'&&ch<='f'
+						?	ch-'a'+10
+						:		ch>='A'&&ch<='F'
+							?	ch-'A'+10
+							:		ch>='0'&&ch<='9'
+								?	ch-'0'
+								:	(assert(false),0)
+						;
+				};
+				if(negate)self->disp=-self->disp;
+			};
+			switch(fpeekc(src)){ // Type
 				case '$': fgetc(src);          self->type = eAsmBinarytokentype_Position;   break;
-				case '#': fgetc(src);          self->type = eAsmBinarytokentype_Expr;       break;
+				case '#': fgetc(src);          self->type = eAsmBinarytokentype_Expr;
+				                               self->arg  = fgetc(src)-'0';
+				                               break;
 				case '&': fgetc(src); default: self->type = eAsmBinarytokentype_Raw;        break;
 			};
-			char* str = mtString_Create();
-			while(!mtChar_AsmIsTokenterminator(fpeekc(src))){
-				mtString_Append(&str,(char[2]){fgetc(src),0});
-			}
-			char* strtol_tail;
-			if(str[0]==0){
-				self->disp = 0;
-			}else if(str[0]=='0' && str[1]=='x'){
-				self->disp=strtol(str+2,&strtol_tail,16);
-				assert(strtol_tail[0]==0);
-			}else{
-				self->disp=strtol(str,&strtol_tail,10);
-				assert(strtol_tail[0]==0);
-			};
-			free(str);
 			return self;
 		};
 	};
@@ -344,8 +363,13 @@ char* mtAsmBinarytoken_ToString(tAsmBinarytoken* self){
 		:self->size==eAsmBinarytokensize_Word  ?"="
 		:"(unknein size)",
 		mtString_Join(
+			mtString_FromInteger(self->disp),
 			 self->type==eAsmBinarytokentype_Raw     ?"&"
-			:self->type==eAsmBinarytokentype_Expr    ?"#"
+			:self->type==eAsmBinarytokentype_Expr    ?mtString_Join(
+			                                              "#",
+			                                              mtString_FromInteger(
+			                                                self->arg)
+			                                          )
 			:self->type==eAsmBinarytokentype_Position?"$"
 			:self->type==eAsmBinarytokentype_Newline ?"\\n"
 			:mtString_Join(
@@ -354,8 +378,7 @@ char* mtAsmBinarytoken_ToString(tAsmBinarytoken* self){
 					mtString_FromInteger(self->type)
 				),
 				")"
-			),
-			mtString_FromInteger(self->disp)
+			)
 		)
 	);
 }
@@ -375,22 +398,22 @@ void mtAsmBinarytoken_Dryemit(tAsmBinarytoken* self){
 };
 void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 	tGTargetNearpointer exprval = self->disp;
-	switch(self->type){
+	switch(self->type){ // Evaulate value of the binarytoken 
 		case eAsmBinarytokentype_Raw:
 			break;
 		case eAsmBinarytokentype_Position:
 			exprval+=AsmCurrentexternalposition;
-		case eAsmBinarytokentype_Expr: {
-			exprval = 0;
-			assert(self->disp>=0);
-			assert(self->disp<10);
-			tList /* tAsmToken */ * expr = AsmBoundparameters[self->disp];
+			break;
+		case eAsmBinarytokentype_Expr: { // Evaulate the expression
+			assert(self->arg>=0);
+			assert(self->arg<10);
+			tList /* tAsmToken */ * expr = AsmBoundparameters[self->arg];
 			for(tListnode* i = expr->first;i;i=i->next){
 				tAsmToken* j = i->item;
 #ifdef qvGTrace
 				if(0)printf("ASM:[T] Evalexpr for token <%s>\n", mtAsmToken_ToString(j));
 #endif
-				int mode = 1;
+				int mode = 1; // 1 - addictive, 2 - substractive
 				if(j->type==eAsmTokentype_Charater && j->ch=='+')
 					{ i=i->next; mode = 1; };
 				if(j->type==eAsmTokentype_Charater && j->ch=='-')
@@ -405,7 +428,11 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 								val = AsmCurrentexternalposition;
 								break;
 							default:
-								printf("ASM:[E] mtAsmBinarytoken_Emit: Evalexpr for token <%s>: unrecognized char \'%c\'\n", mtAsmToken_ToString(j),j->ch);
+								printf("ASM:[E] mtAsmBinarytoken_Emit: "
+								       "Evalexpr for token <%s>: "
+								       "unrecognized char \'%c\'\n", 
+									mtAsmToken_ToString(j),j->ch
+								);
 								ErfError();
 								val = 0;
 								break;
@@ -421,7 +448,11 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 						val = AsmGetlabelvalue(j->string);
 						break;
 					default:
-						printf("ASM:[E] mtAsmBinarytoken_Emit: Evalexpr for token <%s>: unrecognized type %i\n", mtAsmToken_ToString(j),j->type);
+						printf("ASM:[E] mtAsmBinarytoken_Emit: "
+						       "Evalexpr for token <%s>: "
+						       "unrecognized type %i\n", 
+							mtAsmToken_ToString(j),j->type
+						);
 						ErfError();
 						val = 0;
 				};
@@ -443,7 +474,7 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 			ErfError();
 			break;
 	};
-	switch(self->size){
+	switch(self->size){ // Emit
 		case eAsmBinarytokensize_Lobyte:
 			fputc((uint8_t)exprval,dst);
 			AsmCurrentposition+=1;
