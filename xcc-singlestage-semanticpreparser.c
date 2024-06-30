@@ -35,6 +35,16 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 			break;
 		case tLexem_Typeexpression: {
 			ErfUpdate_String("SppParsefunctionarguments: Typeexpression");
+			if(
+				  expr
+				&&expr->returnedtype
+				&&expr->returnedtype->atomicbasetype==eGAtomictype_Void
+				&&(
+					  expr->left==nullptr
+					||expr->left->type==tLexem_Nullexpression
+				)
+			)
+				return nullptr;
 			tGType* type = SppGeneratetype(
 				expr->returnedtype,
 				expr->left,
@@ -160,6 +170,7 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	};
 	printf("SPP:[E] SppGeneratetype: Internal inconsistency: forloop dropped at nullptr\n");
 	ErfFatal();
+	ErfLeave();
 	return nullptr;
 };
 char* SppGeneratetype_GetName(tLxNode* typeexpression){

@@ -69,6 +69,16 @@ void SpCompilefunctionarguments(
 		}else{
 			char* name;
 			if(typeexpr->type==tLexem_Typeexpression){
+				if(
+					  typeexpr
+					&&typeexpr->returnedtype
+					&&typeexpr->returnedtype->atomicbasetype==eGAtomictype_Void
+					&&(
+						  typeexpr->left==nullptr
+						||typeexpr->left->type==tLexem_Nullexpression
+					)
+				)
+					return;
 				tGType* type = SppGeneratetype(
 					typeexpr->returnedtype,
 					typeexpr->left,
