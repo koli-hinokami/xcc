@@ -1,4 +1,6 @@
 #include "hyperheader.h"
+// ------------ xcc Crossdevelopment suite -- Linking assembler -------------
+// ----------------- The one that assembles to object files -----------------
 
 // -- Types --
 
@@ -28,9 +30,10 @@ typedef enum eAsmTokentype {
 } eAsmTokentype;
 
 typedef enum eAsmBinarytokensize {
-	eAsmBinarytokensize_Lobyte,
+	eAsmBinarytokensize_Lobyte = 1,
 	eAsmBinarytokensize_Hibyte,
 	eAsmBinarytokensize_Word,
+	eAsmBinarytokensize_Label,
 } eAsmBinarytokensize;
 
 typedef enum eAsmBinarytokentype {
@@ -69,23 +72,38 @@ typedef struct { // Label
 	tGTargetSegment segment;
 } tAsmLabel;
 
+enum eAsmRelocationentrykind {
+	eAsmRelocationentrykind_Terminator = 0,
+	eAsmRelocationentrykind_Segmentstart = 1,
+};
+typedef struct { // Relocationentry
+	enum eAsmRelocationentrykind kind;
+	int segment;
+} tAsmRelocationentry;
+
+
+// -- Preprocessor constants --
+
+#define qiAsmMaxsegments 16
+
 // -- Forward declarations --
 
 error_t AsmArgpParser(int key,char* argumentvalue,struct argp_state *state);
 tGTargetNearpointer AsmGetlabelvalue(char* name);
 char* mtAsmToken_ToString(tAsmToken* self);
+tAsmRelocationentry* mtAsmRelocationentry_CreatePosition();
+tAsmRelocationentry* mtAsmRelocationentry_CreateSegmentstart(int segment);
+tGTargetNearpointer AsmGetlabelsegment(char* name);
+void mtAsmRelocationentry_Emit(tAsmRelocationentry* self, FILE* dstfile);
 
 // -- Globals --
 
 tList /* <tAsmInstructiondefinition> */ AsmInstructionsdefined;
 tList /* <tIrcToken* owned> */ * AsmBoundparameters[10];
-tGTargetNearpointer AsmCurrentposition;          // Actual position in file
-tGTargetNearpointer AsmCurrentexternalposition;  // The position to use for $
-                                                 // inside expansion - updated
-                                                 // only at instruction
-                                                 // boundaries
+tGTargetNearpointer AsmCurrentposition[qiAsmMaxsegments];
 tList /* <tAsmLabel* owned> */ * AsmLabels;
 int iAsmRepeattimes;
+unsigned AsmCurrentsegment;
 
 struct argp_option AsmArgpOptions[] = {
 	{	
@@ -133,7 +151,7 @@ struct argp AsmArgpParserstruct = {
 	.args_doc = "file.asm"      // Usage
 	          "\n-o out.obj file",
 	.doc = 
-		"IR Compiler for xcc."
+		"Linking assembler for xcc Crossdevelopment suite"
 		"\n\v"
 		"If --output option isn't specified, extension is replaced with "
 		".obj (if present, otherwise created) to get output file name. "
@@ -386,10 +404,10 @@ void mtAsmBinarytoken_Dryemit(tAsmBinarytoken* self){
 	switch(self->size){
 		case eAsmBinarytokensize_Lobyte:
 		case eAsmBinarytokensize_Hibyte:
-			AsmCurrentposition+=1;
+			AsmCurrentposition[AsmCurrentsegment]+=1;
 			break;
 		case eAsmBinarytokensize_Word:
-			AsmCurrentposition+=2;
+			AsmCurrentposition[AsmCurrentsegment]+=2;
 			break;
 		default:
 			printf("ASM:[E] mtAsmBinarytoken_Dryemit: Unrecognized token size %i\n",self->size);
@@ -398,11 +416,12 @@ void mtAsmBinarytoken_Dryemit(tAsmBinarytoken* self){
 };
 void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 	tGTargetNearpointer exprval = self->disp;
+	tList /* <tAsmRelocationentry> */ * relocations = mtList_Create();
 	switch(self->type){ // Evaulate value of the binarytoken 
 		case eAsmBinarytokentype_Raw:
 			break;
 		case eAsmBinarytokentype_Position:
-			exprval+=AsmCurrentexternalposition;
+			mtList_Append(relocations, mtAsmRelocationentry_CreatePosition());
 			break;
 		case eAsmBinarytokentype_Expr: { // Evaulate the expression
 			assert(self->arg>=0);
@@ -425,7 +444,10 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 					case eAsmTokentype_Charater:
 						switch(j->ch){
 							case '$':
-								val = AsmCurrentexternalposition;
+								val=0;
+								mtList_Append(relocations,
+									mtAsmRelocationentry_CreatePosition()
+								);
 								break;
 							default:
 								printf("ASM:[E] mtAsmBinarytoken_Emit: "
@@ -440,12 +462,14 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 						break;
 					case eAsmTokentype_Identifier:
 						val = AsmGetlabelvalue(j->string);
+						mtList_Append(relocations,
+							mtAsmRelocationentry_CreateSegmentstart(
+								AsmGetlabelsegment(j->string)
+							)
+						);
 						break;
 					case eAsmTokentype_Number:
 						val = j->number;
-						break;
-					case eAsmTokentype_String:
-						val = AsmGetlabelvalue(j->string);
 						break;
 					default:
 						printf("ASM:[E] mtAsmBinarytoken_Emit: "
@@ -460,38 +484,26 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 					case 1:
 						exprval+=val;
 						break;
-					case 2:
-						exprval-=val;
-						break;
 					default:
 						assert(false);
 						break;
 				};
 			};
 		};	break;
+
 		default:
 			printf("ASM:[E] mtAsmBinarytoken_Emit: Unrecognized token %s of type %i\n",mtAsmBinarytoken_ToString(self),self->type);
 			ErfError();
 			break;
 	};
-	switch(self->size){ // Emit
-		case eAsmBinarytokensize_Lobyte:
-			fputc((uint8_t)exprval,dst);
-			AsmCurrentposition+=1;
-			break;
-		case eAsmBinarytokensize_Hibyte:
-			fputc((uint8_t)(exprval>>8),dst);
-			AsmCurrentposition+=1;
-			break;
-		case eAsmBinarytokensize_Word:
-			fputc((uint8_t)(exprval),dst);
-			fputc((uint8_t)(exprval>>8),dst);
-			AsmCurrentposition+=2;
-			break;
-		default:
-			printf("ASM:[E] mtAsmBinarytoken_Emit: Unrecognized token size %i\n",self->size);
-			break;
-	};
+	fputc(AsmCurrentsegment,         dst);            // Segment
+	fputc(self->size                ,dst);            // Type
+	fputc(exprval                   ,dst);            // Displacement
+	fputc(exprval>>8                ,dst);            // Highdisplacement
+	for(tListnode* i = relocations->first;i;i=i->next) // Relocations
+		mtAsmRelocationentry_Emit(i->item,dst);
+	fputc(eAsmRelocationentrykind_Terminator,dst);    // Terminator
+	
 };
 // -- class tAsmToken --
 
@@ -693,6 +705,27 @@ bool mtAsmToken_Equals(tAsmToken* self,tAsmToken* tok){
 };
 
 
+// -- class tAsmRelocationentry --
+
+tAsmRelocationentry* mtAsmRelocationentry_CreatePosition(){assert(false); };
+tAsmRelocationentry* mtAsmRelocationentry_CreateSegmentstart(int segment){
+	tAsmRelocationentry* self = calloc(1,sizeof(tAsmRelocationentry));
+	self->kind = eAsmRelocationentrykind_Segmentstart;
+	self->segment = segment;
+	return self;
+};
+
+void mtAsmRelocationentry_Emit(tAsmRelocationentry* self, FILE* dstfile){
+	switch(self->kind){
+		case eAsmRelocationentrykind_Segmentstart:
+			fputc(self->kind,dstfile);
+			fputc(self->segment,dstfile);
+			break;
+		default:
+			assert(false);
+			break;
+	};
+};
 // -- Functions --
 
 error_t AsmArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
@@ -753,6 +786,29 @@ FILE* AsmFileerrorfilter(FILE* self){
 bool AsmLabelfinderclojure(char* name, tAsmLabel* label){
 	if(strcmp(name,label->name)==0)return true;
 	return false;
+};
+tGTargetNearpointer AsmGetlabelsegment(char* name){
+	if(!
+		mtList_Find_Clojure(
+			AsmLabels,
+			(bool(*)(void*,void*))&AsmLabelfinderclojure,
+			name
+		)
+	){
+		printf("ASM:[E] AsmGetlabelsegment: Undefined label \"%s\"\n",name);
+		ErfError();
+		return 0;
+	};
+	return (
+		(tAsmLabel*)
+		(
+			mtList_Find_Clojure(
+				AsmLabels,
+				(bool(*)(void*,void*))&AsmLabelfinderclojure,
+				name
+			)
+		)
+	)->segment;
 };
 tGTargetNearpointer AsmGetlabelvalue(char* name){
 	if(!
@@ -988,8 +1044,17 @@ bool AsmInstructionfinderclojure(
 #endif
 	return true;
 };
-void AsmCreatelabel(char* /* borrows */ name, tGTargetNearpointer position){
-	assert(false);
+void AsmCreatelabel(char* /* borrows */ name){
+	mtList_Append(
+		AsmLabels,
+		mtAsmLabel_Clone(
+			&(tAsmLabel){
+				.name = mtString_Clone(name),
+				.offset = AsmCurrentposition[AsmCurrentsegment],
+				.segment= AsmCurrentsegment,
+			}
+		)
+	);
 };
 
 tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emitting
@@ -1000,10 +1065,10 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 	if(!tok)return 0;
 	if(tok->type==eAsmTokentype_Newline)return 0;
 	if(tok->type==eAsmTokentype_Label){
-		printf("ASM:[D] | Label %-15s at %u (%x) \n",
-			tok->string,(unsigned)AsmCurrentposition,(unsigned)AsmCurrentposition
-		);
-		mtList_Append(AsmLabels,mtAsmLabel_CreateNear(tok->string,AsmCurrentposition));
+		//printf("ASM:[D] | Label %-15s at %u (%x) \n",
+		//	tok->string,(unsigned)AsmCurrentposition,(unsigned)AsmCurrentposition
+		//);
+		AsmCreatelabel(tok->string);
 		mtAsmToken_Destroy(tok);
 		return 0;
 	};
@@ -1028,14 +1093,7 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 		mtAsmToken_Destroy(tok);
 		return AsmCommonparseline();
 	}else{
-		if(strcmp(tok->string,".org")==0){
-			mtAsmToken_Destroy(tok);
-			tok = mtAsmToken_Get(getcurrentfile());
-			assert(tok->type==eAsmTokentype_Identifier);
-			char* strtol_tail;
-			AsmCurrentposition = strtol(tok->string,&strtol_tail,10);
-			assert(strtol_tail[0]==0);
-		}else if(strcmp(tok->string,".include")==0){
+		if(strcmp(tok->string,".include")==0){
 			mtAsmToken_Destroy(tok);
 			tok = mtAsmToken_Get(getcurrentfile());
 			assert(tok->type==eAsmTokentype_String);
@@ -1055,6 +1113,18 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 			};
 			mtList_Prepend(&AsmIncludelist,stream);
 			mtString_Destroy(fname);
+			return 0;
+		}else if(strcmp(tok->string,".segment")==0){
+			mtAsmToken_Destroy(tok);
+			tok = mtAsmToken_Get(getcurrentfile());
+			assert(tok->type==eAsmTokentype_Number);
+			AsmCurrentsegment = tok->number;
+			return 0;
+		}else if(strcmp(tok->string,".global")==0){
+			mtAsmToken_Destroy(tok);
+			tok = mtAsmToken_Get(getcurrentfile());
+			assert(tok->type==eAsmTokentype_Number);
+			AsmCurrentsegment = tok->number;
 			return 0;
 		};
 	};
@@ -1102,6 +1172,7 @@ tAsmInstructiondefinition * AsmCommonparseline(){ // Returns 0 when skip emittin
 }
 void AsmSecondpassline(FILE* dst){
 	//
+	//
 	assert(dst);
 #ifdef qvGTrace
 	//printf("ASM:[T] AsmSecondpassline: Entered \n");
@@ -1111,7 +1182,7 @@ void AsmSecondpassline(FILE* dst){
 	if(!instrdef)return;
 	// Emit expansion
 	for(int i=1;i<=iAsmRepeattimes;i++){
-		AsmCurrentexternalposition=AsmCurrentposition;
+		//AsmCurrentexternalposition=AsmCurrentposition;
 		if(instrdef->expansion->first!=0){
 			for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
 				assert(i);
@@ -1140,7 +1211,7 @@ void AsmFirstpassline(){
 	if(!instrdef)return;
 	// Emit expansion
 	for(int i=1;i<=iAsmRepeattimes;i++){
-		AsmCurrentexternalposition=AsmCurrentposition;
+		//AsmCurrentexternalposition=AsmCurrentposition;
 		for(tListnode /* <tAsmBinarytoken> */ * i = instrdef->expansion->first;i;i=i->next){
 			tAsmBinarytoken* tok = i->item;
 #ifdef qvGTrace
@@ -1231,12 +1302,13 @@ int main(int argc, char** argv){
 	};
 	AsmLabels = mtList_Create();
 	// First pass
+	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
 #ifdef qvGDebug
 	printf("ASM:[D] First pass \n");
 #endif
 	while(fpeekc(AsmSourcestream)!=EOF)AsmFirstpassline();
 	// Interpass seek
-	AsmCurrentposition=0;
+	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
 	if(fseek(AsmSourcestream,0,SEEK_SET)){
 		printf(
 			"ASM:[F] Unable to rewind source file to start: Error %i·%s\n",
@@ -1244,11 +1316,14 @@ int main(int argc, char** argv){
 			strerror(errno)
 		);
 	};
+	// Emit header
+
 	// Second pass
 #ifdef qvGDebug
 	printf("ASM:[D] Second pass \n");
 #endif
 	while(fpeekc(AsmSourcestream)!=EOF)AsmSecondpassline(dstfile);
+	// Emit relocations
 	// Close it all
 	fclose(AsmSourcestream);
 	fclose(dstfile);
