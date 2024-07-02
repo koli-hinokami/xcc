@@ -1,4 +1,5 @@
 #include "hyperheader.h"
+// ----------------- xcc Crossdevelopment suite -- Linker -------------------
 
 // -- Types --
 
@@ -9,13 +10,22 @@ typedef enum LdArgpOptiontags {
 	eLdArgpOptiontags_Outputfile   = 'o',
 } eLdArgpOptiontags;
 
+typedef enum eAsmBinarytokensize {
+	eAsmBinarytokensize_Lobyte = 1,
+	eAsmBinarytokensize_Hibyte,
+	eAsmBinarytokensize_Word,
+	eAsmBinarytokensize_Label,
+} eAsmBinarytokensize;
+
+// -- Preprocessor constants --
+
+#define qiLdMaxsegments 16
+
 // -- Forward declarations --
 
 error_t LdArgpParser(int key,char* argumentvalue,struct argp_state *state);
 
 // -- Globals --
-
-tList /* <tLdInstructiondefinition> */ LdInstructionsdefined;
 
 struct argp_option LdArgpOptions[] = {
 	{	
@@ -82,10 +92,11 @@ struct argp LdArgpParserstruct = {
 	.argp_domain = nullptr,      // wat
 };
 
-char* LdSourcefilename;
-char* LdTargetfilename;
+FILE* LdTargetfile;
 char* LdArchitecturename;
 char* LdConfigdir;
+
+tList /* <tLdDataentry> */ LdSegments[qiLdMaxsegments];
 
 // -- Auxilirally functions --
 
@@ -100,6 +111,39 @@ int fpeekc(FILE* self){
 	return  ungetc(ch,self);
 };
 
+// -- Reading an object file --
+
+void LdReadfile(FILE* srcfile){
+	while(fpeekc(srcfile)!=EOF){
+		// Get segment
+		int segment = fgetc(srcfile);
+		assert(segment<qiLdMaxsegments);
+		// Fetch size
+		int size = fgetc(srcfile);
+		// Fetch displacement
+		int16_t disp  = fgetc(srcfile);
+		        disp |= fgetc(srcfile)<<8;
+		// Fetch relocations
+		while(fpeekc(srcfile)!=eAsmRelocationentrykind_Terminator)
+			switch(fgetc(srcfile)){
+				case eAsmRelocationentrykind_Terminator:
+					assert(false); 
+					break;
+				case eAsmRelocationentrykind_Segmentstart:
+					assert(false); 
+					break;
+					
+			};
+		// Verify that we get terminator
+		if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
+		// Register in internal base
+		assert(false);
+	};
+};
+void LdCompileoutputbinary(void){
+	assert(false);
+};
+
 // -- Functions --
 
 error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
@@ -111,42 +155,62 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				LdConfigdir=mtString_Clone(optionvalue);
 			};
 			break;
-		case eLdArgpOptiontags_Architecture:
-			if(LdArchitecturename){
-				return ARGP_ERR_UNKNOWN;
-			}else{
-				LdArchitecturename=mtString_Clone(optionvalue);
+		case eLdArgpOptiontags_Architecture: {
+			// Open archdef
+			FILE* archdeffile = fopen(
+				mtString_Join(
+					LdConfigdir?:"/etc/xcc/",
+					mtString_Join(
+						optionvalue,
+						".ld"
+					)
+				),
+				"r"
+			);
+			if(!archdeffile){
+				printf(
+					"LD: [F] Unable to open archdef for arch \"%s\": Error %i·%s\n",
+					optionvalue,
+					errno,
+					strerror(errno)
+				);
+				//exit(1);
 			};
-			break;
+			// Read archdef
+			// TODO: Actually read archdef
+		};	break;
 		case eLdArgpOptiontags_Outputfile:
-			if(LdTargetfilename){
+			if(LdTargetfile){
 				return ARGP_ERR_UNKNOWN;
 			}else{
-				LdTargetfilename=mtString_Clone(optionvalue);
-			};
-			break;
-		case ARGP_KEY_ARG:
-			if(LdSourcefilename){
-				return ARGP_ERR_UNKNOWN;
-			}else{
-				LdSourcefilename=mtString_Clone(optionvalue);
-			};
-			break;
-		case ARGP_KEY_END:
-			if(!LdSourcefilename){
-				argp_error(state,"No source file specified");
-			};
-			// Produce target filename if absent
-			if(!LdTargetfilename){
-				LdTargetfilename = mtString_Clone(LdSourcefilename);
-				if(
-					  (mtString_FindcharLast(LdTargetfilename,'.')!=nullptr)
-					&&(mtString_FindcharLast(LdTargetfilename,'.')!=LdSourcefilename)
-				){
-					mtString_FindcharLast(LdTargetfilename,'.')[0]=0;
+				LdTargetfile = fopen(optionvalue,"wb");
+				if(!LdTargetfile){
+					printf("LD: [E] Unable to open output file \"%s\": %i•%s\n",
+						optionvalue,errno,strerror(errno));
+					ErfError();
+					return 0;
 				};
-				mtString_Append(&LdTargetfilename,".obj");
 			};
+			break;
+		case ARGP_KEY_ARG: {
+			if(!LdTargetfile){
+				printf("LD: [E] Output file needs to be specified before source files\n");
+				exit(2);
+			};
+			// Read file into memory
+			FILE* srcfile = fopen(optionvalue,"rb");
+			if(!srcfile){
+				printf("LD: [E] Unable to open source file \"%s\": %i•%s\n",
+					optionvalue,errno,strerror(errno));
+				ErfError();
+				return 0;
+			};
+			LdReadfile(srcfile);
+		};	break;
+		case ARGP_KEY_END:
+			// Output the files
+			LdCompileoutputbinary();
+			break;
 		default:
 			return ARGP_ERR_UNKNOWN;
 	};
@@ -181,52 +245,6 @@ int main(int argc, char** argv){
 		0,
 		0
 	);
-	// Open archdef
-	FILE* archdeffile = fopen(
-		mtString_Join(
-			LdConfigdir?:"/etc/xcc/",
-			mtString_Join(
-				LdArchitecturename,
-				".irc"
-			)
-		),
-		"r"
-	);
-	if(!archdeffile){
-		printf(
-			"LD: [F] Unable to open archdef for arch \"%s\": Error %i·%s\n",
-			LdArchitecturename,
-			errno,
-			strerror(errno)
-		);
-		exit(1);
-	};
-	// Read archdef
-	// Dump archdep
-	// Open source/dest files
-	FILE* srcfile = fopen(LdSourcefilename,"rb");
-	if(!srcfile){
-		printf(
-			"LD: [F] Unable to open source file \"%s\": Error %i·%s\n",
-			LdSourcefilename,
-			errno,
-			strerror(errno)
-		);
-	};
-	FILE* dstfile = fopen(LdTargetfilename,"wb");
-	if(!dstfile){
-		printf(
-			"LD: [F] Unable to open destination file \"%s\": Error %i·%s\n",
-			LdTargetfilename,
-			errno,
-			strerror(errno)
-		);
-	};
-	// Compile
-	while(fpeekc(srcfile)!=EOF)
-		fputc(fgetc(srcfile),dstfile);
-	// Close it all
-	fclose(srcfile);
-	fclose(dstfile);
+	// Today main loop is in LdArgpParser
 	return 0;
 };
