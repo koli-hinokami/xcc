@@ -17,6 +17,16 @@ typedef enum eAsmBinarytokensize {
 	eAsmBinarytokensize_Label,
 } eAsmBinarytokensize;
 
+typedef struct {
+	tGTargetSegment segment;
+	tGTargetNearpointer offset;
+} tLdDataentry;
+
+enum eAsmRelocationentrykind {
+	eAsmRelocationentrykind_Terminator = 0,
+	eAsmRelocationentrykind_Segmentstart = 1,
+};
+
 // -- Preprocessor constants --
 
 #define qiLdMaxsegments 16
@@ -114,7 +124,9 @@ int fpeekc(FILE* self){
 // -- Reading an object file --
 
 void LdReadfile(FILE* srcfile){
+	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
+		printf("LD: [T] Entry %i\n",i++);
 		// Get segment
 		int segment = fgetc(srcfile);
 		assert(segment<qiLdMaxsegments);
@@ -132,7 +144,9 @@ void LdReadfile(FILE* srcfile){
 				case eAsmRelocationentrykind_Segmentstart:
 					assert(false); 
 					break;
-					
+				default:
+					assert(false);
+					break;
 			};
 		// Verify that we get terminator
 		if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
@@ -141,6 +155,9 @@ void LdReadfile(FILE* srcfile){
 	};
 };
 void LdCompileoutputbinary(void){
+	fprintf(stdout,"LD: [D] Generating symbols \n");
+	assert(false);
+	fprintf(stdout,"LD: [D] Emitting binary\n");
 	assert(false);
 };
 
@@ -205,6 +222,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				ErfError();
 				return 0;
 			};
+			fprintf(stdout,"LD: [D] Reading object file \"%s\"\n",optionvalue);
 			LdReadfile(srcfile);
 		};	break;
 		case ARGP_KEY_END:
