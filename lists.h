@@ -32,6 +32,9 @@ tListnode* mtListnode_Cons(void* item,tListnode* next){
 tList* mtList_Create(){
 	return calloc(1,sizeof(struct tList));
 };
+tList* mtList_Shallowclone(tList* self){
+	return memcpy(malloc(sizeof(struct tList)),self,sizeof(struct tList));
+};
 bool mtList_Isempty(ptList self){
 	if(self->last == nullptr){ // List empty
 		return true;
