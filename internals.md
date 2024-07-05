@@ -219,4 +219,29 @@ Actions that are intented to be present are:
  • `align`   - Pad output file to closest address that's multiple of alignment.
  • `pad`     - Pad output file to the given address. Not align.
 
+# Common between Linker and Assembler
+
+## Segments allocated
+
+  id  owner   name        rwx       description
+*  0:         .null                  Reserved, do not use.
+*  1: crt0    .header     r   init  executable file header, provided by crt0
+*  2: crt0    .text       rx  init  crt0 code and read-only data
+*  3: crt0    .bss        rw  bss   crt0 writable data segment
+*  4: user    .zp         rx  init  Zeropage
+*  5: user    .lowcode    rx  init  Nonpageable code
+*  6: user    .lowdata    rw  init  Nonpageable data
+*  7: user    .code       rx  init  Code segment
+*  8: user    .data       rw  init  Data segment
+*  9: user    .rodata     r   init  Readonly data segment
+* 10: user    .udata      rw  bss   Uninitialized data segment
+* 11: user    .farcode    rx  init  Far code segment
+* 12: user    .fardata    rw  init  Far uninitialized data segment
+* 13: user    .farrodata  r   init  Far readonly data segment
+* 14: user    .farbss     rw  bss   Far uninitialized data segment
+
+Note that .code/.data/.rodata/.udata segments may be swapped in and out on
+some systems so interrupt handlers and such have to reside in .lowcode and
+.lowdata segments.
+
 # vim:tw=78:ts=4:sw=4:et:

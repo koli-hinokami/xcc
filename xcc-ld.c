@@ -38,8 +38,8 @@ typedef struct {
 
 typedef enum eLdLinkerscriptentrykind {
 	eLdLinkerscriptentrykind_Segment = 1,
-	eLdLinkerscriptentrykind_Align,
-	eLdLinkerscriptentrykind_Pad,
+	eLdLinkerscriptentrykind_Align   = 2,
+	eLdLinkerscriptentrykind_Pad     = 3,
 } eLdLinkerscriptentrykind;
 typedef struct {
 	// taggedunion : enum eLdLinkerscriptentrykind type {
@@ -234,7 +234,7 @@ void LdReadlinkerscript(FILE* archdeffile){
 void LdFirstpassfile(int currentsegment, FILE* srcfile){
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
-		printf("LD: [T] LdFirstpass: Entry %i\n",i++);
+		printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
 		// Get segment
 		int segment = fgetc(srcfile);
 		assert(segment<qiLdMaxsegments);
@@ -270,9 +270,29 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 				};
 			// Verify that we get terminator
 			if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
-			// Handle Linkerscript entry
-			// TODO: Actually do it
-			assert(false);
+			// . Check if segment Linkerscript tells us to emit is what we
+			// ' got on hands
+			if(segment==currentsegment){
+				// Emit
+				switch(size){
+					case eAsmBinarytokensize_Lobyte:
+						LdCurrentposition+=1;
+						break;
+					case eAsmBinarytokensize_Hibyte:
+						LdCurrentposition+=1;
+						break;
+					case eAsmBinarytokensize_Word:
+						LdCurrentposition+=2;
+						break;
+					default:
+						printf("LD: [E] LdFirstpassfile: "
+						       "Unrecognized token size %i\n",
+							   size
+						);
+						assert(false);
+						break;
+				};
+			};
 		}else{
 			// Handle an exported label
 			assert(false);
@@ -288,6 +308,10 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 			for(tListnode* j = LdSourcefiles.first;j;j=j->next)
 				LdFirstpassfile(self->segnumber,j->item);
 		default:
+			printf("LD: [E] LdFirstpass: "
+				   "Unrecognized Linkerscriptentrykind %i\n",
+				   self->type
+			);
 			assert(false);
 			break;
 	};
@@ -494,7 +518,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 					errno,
 					strerror(errno)
 				);
-				//exit(1);
+				ErfFatal();
 			};
 			// Read Linkerscript
 			LdReadlinkerscript(archdeffile);
