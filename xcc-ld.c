@@ -200,6 +200,22 @@ tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
 tLdLinkerscriptentry* mtLdLinkerscriptentry_Fetchfromfile(FILE* stream){
 	assert(false);
 };
+char* mtLdLinkerscriptentry_ToString(tLdLinkerscriptentry* self){
+	return 
+			self->type==eLdLinkerscriptentrykind_Segment
+		?	mtString_Join(
+				"segment ",
+				mtString_FromInteger(self->segnumber)
+			)
+		:	mtString_Join(
+				"(unk type ",
+				mtString_Join(
+					mtString_FromInteger(self->type),
+					")"
+				)
+			);
+		;
+};
 
 // -- Reading Linkerscript --
 
@@ -232,6 +248,7 @@ void LdReadlinkerscript(FILE* archdeffile){
 // -- First pass --
 
 void LdFirstpassfile(int currentsegment, FILE* srcfile){
+	printf("LD: [T] LdFirstpassfile: Entered\n");
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
@@ -301,16 +318,23 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 };
 
 void LdFirstpass(tLdLinkerscriptentry* self){
+	printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
+		mtLdLinkerscriptentry_ToString(self)
+	);
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Parse segment and generate exported symbols' position 
 			// in that segment
-			for(tListnode* j = LdSourcefiles.first;j;j=j->next)
+			for(tListnode* j = LdSourcefiles.first;j;j=j->next){
 				LdFirstpassfile(self->segnumber,j->item);
+				rewind(j->item);
+			};
+			break;
 		default:
 			printf("LD: [E] LdFirstpass: "
-				   "Unrecognized Linkerscriptentrykind %i\n",
-				   self->type
+				   "Unrecognized Linkerscriptentry <%s> kind %i\n",
+				   mtLdLinkerscriptentry_ToString(self),
+				   (int)self->type
 			);
 			assert(false);
 			break;
@@ -320,6 +344,7 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 // -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
+	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		printf("LD: [T] LdSecondpass: Entry %i\n",i++);
@@ -398,12 +423,23 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 };
 
 void LdSecondpass(tLdLinkerscriptentry* self){
+	printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
+		mtLdLinkerscriptentry_ToString(self)
+	);
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Emit a segment while applying relocations
-			for(tListnode* j = LdSourcefiles.first;j;j=j->next)
+			for(tListnode* j = LdSourcefiles.first;j;j=j->next){
 				LdSecondpassfile(self->segnumber,j->item, LdTargetfile);
+				rewind(j->item);
+			};
+			break;
 		default:
+			printf("LD: [E] LdSecondpass: "
+				   "Unrecognized Linkerscriptentry <%s> kind %i\n",
+				   mtLdLinkerscriptentry_ToString(self),
+				   (int)self->type
+			);
 			assert(false);
 			break;
 	};
@@ -556,6 +592,8 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				LdFirstpass(i->item);
 			// Interpass
 			LdCurrentposition = 0;
+			for(tListnode* i = LdSourcefiles.first;i;i=i->next)
+				rewind(i->item);
 			// Second pass on linker script entries - emit while relocating
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
 				LdSecondpass(i->item);
