@@ -1,5 +1,6 @@
 #include "hyperheader.h"
 // ----------------- xcc Crossdevelopment suite -- Linker -------------------
+// --------- The one that links object files to binary executables ----------
 
 // -- Types --
 
@@ -41,16 +42,26 @@ typedef enum eLdLinkerscriptentrykind {
 	eLdLinkerscriptentrykind_Pad,
 } eLdLinkerscriptentrykind;
 typedef struct {
-	enum eLdLinkerscriptentrykind kind;
+	// taggedunion : enum eLdLinkerscriptentrykind type {
+	// |   .segment : 
+	// };
+	enum eLdLinkerscriptentrykind type;
+	union {
+		int segnumber;
+	};
 } tLdLinkerscriptentry;
 
 enum eLdTokenkind {
 	eLdTokenkind_Identifier = 1,
+	eLdTokenkind_Charater,
+	eLdTokenkind_Number,
 };
 
 typedef struct {
-	enum eLdTokenkind kind;
-	char* string;
+	enum eLdTokenkind type;
+	char* str;
+	int   number;
+	char  ch;
 } tLdToken;
 // -- Preprocessor constants --
 
@@ -132,25 +143,10 @@ char* LdConfigdir;
 
 tList /* <tLdExternlabel> */ LdExportedsymbols;
 tGTargetNearpointer LdCurrentposition;
+tList /* <tLdLinkerscriptentry> */ LdLinkerscript;
+tList /* <FILE> */ LdSourcefiles;
 
 // -- Auxilirally functions --
-
-tLdToken* mtLdToken_Fetch(FILE* stream){
-	tLdLinkerscriptentry* self = calloc(1,sizeof(tLdLinkerscriptentry));
-	while(isspace(fpeekc(stream)))fgetc(stream); // Skip whitespace
-	if(mtChar_LdIsTokenseparator(fpeekc(stream))){
-		self->type = eLdTokenkind_Charater;
-	}else{
-		self->type = eLdTokenkind_Identifier;
-		char* str = mtString_Create();
-		char buf;
-		while(!mtChar_LdIsTokenseparator(fpeekc(stream)))
-			mtString_Append(&string,(char[2]){fgetc(stream),0});
-	};
-	return self;
-};
-
-// -- class FILE --
 
 int fpeekc(FILE* self){
 	int ch = fgetc(self);
@@ -159,6 +155,30 @@ int fpeekc(FILE* self){
 			printf("u:  [E] fpeekc(FILE* %p): Error %i•\"%s\" while fetching charater\n",self,errno,strerror(errno));
 	};
 	return  ungetc(ch,self);
+};
+
+bool mtChar_LdIsTokenseparator(char ch){
+	return isspace(ch);
+};
+tLdToken* mtLdToken_Fetch(FILE* stream){
+	tLdToken* self = calloc(1,sizeof(tLdToken));
+	while(isspace(fpeekc(stream)))fgetc(stream); // Skip whitespace
+	if(mtChar_LdIsTokenseparator(fpeekc(stream))){
+		self->type = eLdTokenkind_Charater;
+		self->ch   = fgetc(stream);
+	}else{
+		self->type = eLdTokenkind_Identifier;
+		char* str = mtString_Create();
+		while(!mtChar_LdIsTokenseparator(fpeekc(stream)))
+			mtString_Append(&str,(char[2]){fgetc(stream),0});
+		self->str = str;
+		if(isdigit(*str)){
+			self->type=eLdTokenkind_Number;
+			char* strtol_tail = nullptr;
+			self->number = strtol(str,&strtol_tail,0);
+		};
+	};
+	return self;
 };
 
 // -- class tLdRelocation --
@@ -170,28 +190,48 @@ tLdRelocation* mtLdRelocation_CreateSegmentstart(int segment){
 	return self;
 };
 
+tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
+	assert(false);
+	return 0;
+};
+
 // -- class tLdLinkerscriptentry --
 
 tLdLinkerscriptentry* mtLdLinkerscriptentry_Fetchfromfile(FILE* stream){
-	// 
+	assert(false);
+};
+
+// -- Reading Linkerscript --
+
+void LdReadlinkerscript(FILE* archdeffile){
+	for(;;){
+		// Check for whitespace and end of file
+		if(fpeekc(archdeffile)==EOF)return;
+		while(isspace(fpeekc(archdeffile))) fgetc(archdeffile);
+		if(fpeekc(archdeffile)==EOF)return;
+		// Allocate Linkerscript entry
+		tLdLinkerscriptentry* self = calloc(1,sizeof(tLdLinkerscriptentry));
+		// Pull token that tells the class of Linkerscript entry
+		tLdToken* tok;
+		tok = mtLdToken_Fetch(archdeffile);
+		// Check it's type
+		assert(tok->type == eLdTokenkind_Identifier);
+		if(strcmp(tok->str,"segment")==0){
+			// segment <id>
+			self->type = eLdLinkerscriptentrykind_Segment;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Number);
+			self->segnumber = tok->number;
+		}else{
+			assert(false); // write a proper error message here
+		};
+		mtList_Append(&LdLinkerscript,self);
+	};
 };
 
 // -- First pass --
 
-void LdFirstpass(tLdLinkerscriptentry self){
-	switch(self->type){
-		case eLdLinkerscriptentrykind_Segment:
-			// Parse segment and generate exported symbols' position 
-			// in that segment
-			for(tListnode* j = LdSourcefiles.first;j;j=j->next)
-				LdFirstpassfile(j->item);
-		default:
-			assert(false);
-			break;
-	};
-};
-
-void LdFirstpassfile(FILE* srcfile){
+void LdFirstpassfile(int currentsegment, FILE* srcfile){
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		printf("LD: [T] LdFirstpass: Entry %i\n",i++);
@@ -240,19 +280,20 @@ void LdFirstpassfile(FILE* srcfile){
 	};
 };
 
-// -- Second pass --
-
-void LdSecondpass(tLdLinkerscriptentry self){
+void LdFirstpass(tLdLinkerscriptentry* self){
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
-			// Emit a segment while applying relocations
+			// Parse segment and generate exported symbols' position 
+			// in that segment
 			for(tListnode* j = LdSourcefiles.first;j;j=j->next)
-				LdSecondpassfile(self->segment,j->item, LdTargetfile);
+				LdFirstpassfile(self->segnumber,j->item);
 		default:
 			assert(false);
 			break;
 	};
 };
+
+// -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 	int i = 0;
@@ -310,7 +351,7 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 						LdCurrentposition+=1;
 						break;
 					case eAsmBinarytokensize_Word:
-						fputc((uint8_t)(disp),dst);
+						fputc((uint8_t)(disp),dstfile);
 						fputc((uint8_t)(disp>>8),dstfile);
 						LdCurrentposition+=2;
 						break;
@@ -332,77 +373,90 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 	};
 };
 
-// -- Reading an object file --
-
-void LdReadfile(FILE* srcfile){
-	// Read the file itself
-	int i = 0;
-	while(fpeekc(srcfile)!=EOF){
-		printf("LD: [T] Entry %i\n",i++);
-		// Get segment
-		int segment = fgetc(srcfile);
-		assert(segment<qiLdMaxsegments);
-		// Fetch size
-		int size = fgetc(srcfile);
-		// Check for label
-		if(size!=eAsmBinarytokensize_Label){
-			// Fetch displacement
-			int16_t disp  = fgetc(srcfile);
-					disp |= fgetc(srcfile)<<8;
-			// Fetch relocations
-			tList /* <tLdRelocation> */ relocs;
-			memset(&relocs,0,sizeof(tList));
-			while(fpeekc(srcfile)!=eAsmRelocationentrykind_Terminator)
-				switch(fgetc(srcfile)){
-					case eAsmRelocationentrykind_Terminator:
-						// wat
-						assert(false);
-						break;
-					case eAsmRelocationentrykind_Segmentstart:
-						// Relative to start of segment
-						mtList_Append(
-							&relocs,
-							mtLdRelocation_CreateSegmentstart(
-								fgetc(srcfile)
-							)
-						);
-						break;
-					default:
-						// Something unrecognized
-						assert(false);
-						break;
-				};
-			// Verify that we get terminator
-			if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
-			// Create entry
-			tLdDataentry entry;
-			// Fill up the entry
-			memset(&entry,0,sizeof(tLdDataentry));
-			// | Set position
-			entry.offset = LdPositions[segment];
-			// | Advance position
-			LdPositions[segment]+=
-				 size==eAsmBinarytokensize_Lobyte?1
-				:size==eAsmBinarytokensize_Hibyte?1
-				:size==eAsmBinarytokensize_Word  ?2
-				:(assert(false),0);
-			// | Set size
-			entry.size = size;
-			// | Set displacement
-			entry.displacement = disp;
-			// | Set relocations
-			entry.relocations = mtList_Shallowclone(&relocs);
-			// Register in internal base
-			mtList_Append(
-				&(LdSegments[segment]),
-				memcpy(malloc(sizeof(tLdDataentry)),&entry,sizeof(tLdDataentry))
-			);
-		}else{
-			// Handle an exported label
+void LdSecondpass(tLdLinkerscriptentry* self){
+	switch(self->type){
+		case eLdLinkerscriptentrykind_Segment:
+			// Emit a segment while applying relocations
+			for(tListnode* j = LdSourcefiles.first;j;j=j->next)
+				LdSecondpassfile(self->segnumber,j->item, LdTargetfile);
+		default:
 			assert(false);
-		};
+			break;
 	};
 };
+
+// -- Reading an object file --
+
+//void LdReadfile(FILE* srcfile){ // Remnant of old architecture
+//	// Read the file itself
+//	int i = 0;
+//	while(fpeekc(srcfile)!=EOF){
+//		printf("LD: [T] Entry %i\n",i++);
+//		// Get segment
+//		int segment = fgetc(srcfile);
+//		assert(segment<qiLdMaxsegments);
+//		// Fetch size
+//		int size = fgetc(srcfile);
+//		// Check for label
+//		if(size!=eAsmBinarytokensize_Label){
+//			// Fetch displacement
+//			int16_t disp  = fgetc(srcfile);
+//					disp |= fgetc(srcfile)<<8;
+//			// Fetch relocations
+//			tList /* <tLdRelocation> */ relocs;
+//			memset(&relocs,0,sizeof(tList));
+//			while(fpeekc(srcfile)!=eAsmRelocationentrykind_Terminator)
+//				switch(fgetc(srcfile)){
+//					case eAsmRelocationentrykind_Terminator:
+//						// wat
+//						assert(false);
+//						break;
+//					case eAsmRelocationentrykind_Segmentstart:
+//						// Relative to start of segment
+//						mtList_Append(
+//							&relocs,
+//							mtLdRelocation_CreateSegmentstart(
+//								fgetc(srcfile)
+//							)
+//						);
+//						break;
+//					default:
+//						// Something unrecognized
+//						assert(false);
+//						break;
+//				};
+//			// Verify that we get terminator
+//			if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
+//			// Create entry
+//			tLdDataentry entry;
+//			// Fill up the entry
+//			memset(&entry,0,sizeof(tLdDataentry));
+//			// | Set position
+//			entry.offset = LdPositions[segment];
+//			// | Advance position
+//			LdPositions[segment]+=
+//				 size==eAsmBinarytokensize_Lobyte?1
+//				:size==eAsmBinarytokensize_Hibyte?1
+//				:size==eAsmBinarytokensize_Word  ?2
+//				:(assert(false),0);
+//			// | Set size
+//			entry.size = size;
+//			// | Set displacement
+//			entry.displacement = disp;
+//			// | Set relocations
+//			entry.relocations = mtList_Shallowclone(&relocs);
+//			// Register in internal base
+//			mtList_Append(
+//				&(LdSegments[segment]),
+//				memcpy(malloc(sizeof(tLdDataentry)),&entry,sizeof(tLdDataentry))
+//			);
+//		}else{
+//			// Handle an exported label
+//			assert(false);
+//		};
+//	};
+//};
+
 void LdCompileoutputbinary(void){
 	fprintf(stdout,"LD: [D] Generating symbols \n");
 	assert(false);
@@ -443,7 +497,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				//exit(1);
 			};
 			// Read Linkerscript
-			// TODO: Actually read Linkerscript
+			LdReadlinkerscript(archdeffile);
 		};	break;
 		case eLdArgpOptiontags_Outputfile:
 			if(LdTargetfile){
@@ -475,13 +529,12 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 		case ARGP_KEY_END: // Create and emit output binary
 			// First pass on linker script entries - get addresses
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
-				LdFirstpass(i,j->item);
+				LdFirstpass(i->item);
 			// Interpass
 			LdCurrentposition = 0;
 			// Second pass on linker script entries - emit while relocating
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
-				for(tListnode* j = LdSourcefiles.first;j;j=j->next)
-					LdSecondpass(i,j->item);
+				LdSecondpass(i->item);
 			break;
 		default:
 			return ARGP_ERR_UNKNOWN;

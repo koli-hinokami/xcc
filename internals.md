@@ -1,5 +1,4 @@
  ------------------------ xcc Internals documentation ------------------------
-- vim:tw=78:ts=2:sw=2:et
 
 # Overall architecture
 
@@ -201,4 +200,23 @@ going.
 
 # Linker
 
-Thy usual configurable linker, just like in CC65 suite.
+Thy usual configurable linker, just like in cc65 suite.
+
+## Main loop
+
+Does two passes - first generates symbol locations and export symbol
+locations, second pass emits into output binary file while applying
+relocations.
+
+## Configuration file aka Linkerscript
+
+For now, list of actions linker should do.
+
+Actions that are intented to be present are:
+ • `segment` - Emit a segment into the output file.
+               Iterates over all files, emitting the segment from modules
+               one by one.
+ • `align`   - Pad output file to closest address that's multiple of alignment.
+ • `pad`     - Pad output file to the given address. Not align.
+
+# vim:tw=78:ts=4:sw=4:et:
