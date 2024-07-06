@@ -1,6 +1,7 @@
 ; vim:ts=8:
 	; Jam-1 Runtime library
 	; (add libc functions here)
+	.segment 7
 puts:	push	ra			; enter
 	push	si
 puts_m:	mov	tx,	sp		; mov	ab,	si

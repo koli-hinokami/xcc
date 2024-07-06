@@ -1,6 +1,7 @@
 ; vim:ts=8
 	; Jam-1 crt0 for stdcall main(int argc, char** argp, char** envp)
 	; (the code executed when program starts. be careful here)
+	.segment 1
 _start:	push	ra
 	mov	si,	0
 	mov	ab,	__libc_envp
@@ -22,6 +23,7 @@ _start:	push	ra
 	pop	ra
 	nop
 	ret
+	.segment 2
 __libc_argv:	
 	dw	__libc_argv_0
 __libc_envp:	
@@ -54,3 +56,4 @@ __crt0_leftstring:
 	db 0x74
 	db 0x0a
 	db 0
+	.segment 0
