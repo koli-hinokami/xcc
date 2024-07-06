@@ -1209,13 +1209,24 @@ void IgDumpir(tGInstruction** code, FILE* file){
 	// Print IR as text into file given as argument
 	fprintf(
 		file,
-		"; --- XCC Retargetable C Crosscompiler - Intermediate representation dump ---\n"
-		"; --------------------- Forth-like IR for xcc-ircompiler --------------------\n"
+		"; --- xcc Retargetable C Crosscompiler - Intermediate representation dump ---\n"
+		"; --------- Forth-like IR for xcc-ircompiler and linking assembler ----------\n"
 		"\tirc.programprologue\n"
 	);
 	for(int i=0;i<meGSegment_Count;i++){
-		if(i!=meGSegment_Relative){
-			fprintf(file,"\tirc.segment %s\n",meGSegment_ToStringTable[i]);
+		if(
+			  i==meGSegment_Code
+			||i==meGSegment_Data
+			||i==meGSegment_Readonlydata
+			||i==meGSegment_Udata
+		){
+			fprintf(file,"\tirc.segment %i\n",
+				 i== meGSegment_Code         ? 7
+				:i== meGSegment_Data         ? 8
+				:i== meGSegment_Readonlydata ? 9
+				:i== meGSegment_Udata        ?10
+				:(assert(false),0)
+			);
 			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){
 				fprintf(file,"l_%p:\t",j);
 				if(j->label)fprintf(file,"%s:\t",j->label);
