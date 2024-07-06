@@ -264,7 +264,7 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 	printf("LD: [T] LdFirstpassfile: Entered\n");
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
-		printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
+		//printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
 		// Get segment
 		int segment = fgetc(srcfile);
 		assert(segment<qiLdMaxsegments);
@@ -363,7 +363,7 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
-		printf("LD: [T] LdSecondpass: Entry %i\n",i++);
+		//printf("LD: [T] LdSecondpass: Entry %i\n",i++);
 		// Get segment
 		int segment = fgetc(srcfile);
 		assert(segment<qiLdMaxsegments);
