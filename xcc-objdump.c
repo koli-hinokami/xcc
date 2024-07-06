@@ -16,8 +16,9 @@ typedef enum eAsmBinarytokensize {
 } eAsmBinarytokensize;
 
 enum eAsmRelocationentrykind {
-	eAsmRelocationentrykind_Terminator = 0,
+	eAsmRelocationentrykind_Terminator   = 0,
 	eAsmRelocationentrykind_Segmentstart = 1,
+	eAsmRelocationentrykind_Label        = 2,
 };
 
 // -- Preprocessor constants --
@@ -117,31 +118,43 @@ void ObjdDumpfile(FILE* dstfile, char* srcfilename, FILE* srcfile){
 				break;
 			case eAsmBinarytokensize_Word:
 				ObjdCurrentposition[ObjdCurrentsegment]+=2;
+				break;
+			case eAsmBinarytokensize_Label:
+				break;
 			default:
+				fprintf(stderr,"OBJD[F] ObjdDumpfile: Unexcepted token size %i\n",size);
+				assert(false);
 				break;
 		};
-		fprintf(dstfile,"%s",
-			 size==eAsmBinarytokensize_Lobyte?"lobyte "
-			:size==eAsmBinarytokensize_Hibyte?"hibyte "
-			:size==eAsmBinarytokensize_Word  ?"word   "
-			:"?"
-		);
-		// Displacement
-		int16_t disp  = fgetc(srcfile);
-		        disp |= fgetc(srcfile)<<8;
-		fprintf(dstfile,"%i",disp);
-		// Relocations
-		while(fpeekc(srcfile)!=eAsmRelocationentrykind_Terminator)
-			switch(fgetc(srcfile)){
-				case eAsmRelocationentrykind_Terminator:     assert(false); break;
-				case eAsmRelocationentrykind_Segmentstart:
-					fprintf(dstfile," seg_%i",fgetc(srcfile));
-					break;
-					
-			};
-		// Terminator
-		if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
-		fprintf(dstfile,"\n");
+		if(size==eAsmBinarytokensize_Label){
+			fprintf(dstfile,".global ");
+			while(fpeekc(srcfile)!='\0') fprintf(dstfile,"%c",fgetc(srcfile));
+			fgetc(srcfile); // consume the terminator
+			fprintf(dstfile,"\n");
+		}else{
+			fprintf(dstfile,"%s",
+				 size==eAsmBinarytokensize_Lobyte?"lobyte "
+				:size==eAsmBinarytokensize_Hibyte?"hibyte "
+				:size==eAsmBinarytokensize_Word  ?"word   "
+				:"?"
+			);
+			// Displacement
+			int16_t disp  = fgetc(srcfile);
+					disp |= fgetc(srcfile)<<8;
+			fprintf(dstfile,"%i",disp);
+			// Relocations
+			while(fpeekc(srcfile)!=eAsmRelocationentrykind_Terminator)
+				switch(fgetc(srcfile)){
+					case eAsmRelocationentrykind_Terminator:     assert(false); break;
+					case eAsmRelocationentrykind_Segmentstart:
+						fprintf(dstfile," seg_%i",fgetc(srcfile));
+						break;
+						
+				};
+			// Terminator
+			if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
+			fprintf(dstfile,"\n");
+		};
 	};
 };
 

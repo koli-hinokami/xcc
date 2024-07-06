@@ -27,13 +27,17 @@ typedef struct {
 } tLdDataentry;
 
 enum eAsmRelocationentrykind {
-	eAsmRelocationentrykind_Terminator = 0,
+	eAsmRelocationentrykind_Terminator   = 0,
 	eAsmRelocationentrykind_Segmentstart = 1,
+	eAsmRelocationentrykind_Label        = 2,
 };
 
 typedef struct {
 	enum eAsmRelocationentrykind kind;
-	int segment;
+	union {
+		int segment;
+		char* label;
+	};
 } tLdRelocation;
 
 typedef enum eLdLinkerscriptentrykind {
@@ -63,6 +67,11 @@ typedef struct {
 	int   number;
 	char  ch;
 } tLdToken;
+typedef struct {
+	char* /* owned */ name;
+	tGTargetNearpointer location;
+} tLdExternlabel;
+
 // -- Preprocessor constants --
 
 #define qiLdMaxsegments 16
@@ -184,7 +193,13 @@ tLdToken* mtLdToken_Fetch(FILE* stream){
 	};
 	return self;
 };
-
+void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
+	assert(name);
+	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
+	self->name = name;
+	self->location = position;
+	mtList_Append(&LdExportedsymbols,self);
+};
 // -- class tLdRelocation --
 
 tLdRelocation* mtLdRelocation_CreateSegmentstart(int segment){
@@ -193,8 +208,15 @@ tLdRelocation* mtLdRelocation_CreateSegmentstart(int segment){
 	self->segment = segment;
 	return self;
 };
+tLdRelocation* mtLdRelocation_CreateLabel(char* label){
+	tLdRelocation* self = malloc(sizeof(tLdRelocation));
+	self->kind = eAsmRelocationentrykind_Segmentstart;
+	self->label = label;
+	return self;
+};
 
 tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
+	assert(self);
 	switch(self->kind){
 		case eAsmRelocationentrykind_Segmentstart:
 			return LdSegmentstarts[0][self->segment];
@@ -293,6 +315,20 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 							)
 						);
 						break;
+					case eAsmRelocationentrykind_Label:
+						{
+							char* str = mtString_Create();
+							while(fpeekc(srcfile)!='\0') 
+								mtString_Append(&str,
+									(char[2]){fgetc(srcfile),0}
+								);
+							fgetc(srcfile); // consume the terminator
+							mtList_Append(
+								&relocs,
+								mtLdRelocation_CreateLabel(str)
+							);
+						};
+						break;
 					default:
 						// Something unrecognized
 						assert(false);
@@ -325,7 +361,13 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 			};
 		}else{
 			// Handle an exported label
-			assert(false);
+			char* str = mtString_Create();
+			while(fpeekc(srcfile)!='\0') 
+				mtString_Append(&str,
+					(char[2]){fgetc(srcfile),0}
+				);
+			fgetc(srcfile); // consume the terminator
+			LdCreateexportedlabel(str,LdCurrentposition);
 		};
 	};
 };
@@ -391,6 +433,20 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 								fgetc(srcfile)
 							)
 						);
+						break;
+					case eAsmRelocationentrykind_Label:
+						{
+							char* str = mtString_Create();
+							while(fpeekc(srcfile)!='\0') 
+								mtString_Append(&str,
+									(char[2]){fgetc(srcfile),0}
+								);
+							fgetc(srcfile); // consume the terminator
+							mtList_Append(
+								&relocs,
+								mtLdRelocation_CreateLabel(str)
+							);
+						};
 						break;
 					default:
 						// Something unrecognized
