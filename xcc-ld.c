@@ -197,7 +197,7 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 	tLdExternlabel* self = nullptr;
 	for(tListnode /* <tLdExternlabel> */ * i = LdExportedsymbols.first;i;i=i->next){
 		if(strcmp(((tLdExternlabel*)i->item)->name,name)==0)
-			self=i;
+			self=i->item;
 	};
 	if(!self){
 		printf("LD: [E] LdGetlabelvalue: Unresolved symbol \"%s\"\n",name);
@@ -208,11 +208,12 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 	};
 };
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
+	printf("LD: [D] Exporting label %s:%i\n",name,position);
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
 	self->name = name;
 	self->location = position;
-	mtList_Append(&LdExportedsymbols,self);
+	mtList_Prepend(&LdExportedsymbols,self);
 };
 // -- class tLdRelocation --
 
@@ -388,7 +389,9 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 					(char[2]){fgetc(srcfile),0}
 				);
 			fgetc(srcfile); // consume the terminator
-			LdCreateexportedlabel(str,LdCurrentposition);
+			if(segment==currentsegment){
+				LdCreateexportedlabel(str,LdCurrentposition);
+			};
 		};
 	};
 };
