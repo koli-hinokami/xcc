@@ -1112,7 +1112,6 @@ void AsmSecondpassline(FILE* dst){
 #ifdef qvGTrace
 	//printf("ASM:[T] AsmSecondpassline: Entered \n");
 #endif
-	iAsmRepeattimes = 1;
 	// Clear bound parameters
 	for(int i=0;i<10;i++)AsmBoundparameters[i]=0;
 	// Read instruction
