@@ -1,6 +1,6 @@
 ; vim:ts=8:
 	; Jam-1 archdef
-opcode	irc.programprologue			: 
+opcode	irc.programprologue			: .extern Math_Multiply_16_16
 opcode	irc.programepilogue			: 
 opcode	irc.segment			#1	: .segment #1
 opcode	v.compilernop.relative.void		: cnop
