@@ -210,24 +210,28 @@ tLdRelocation* mtLdRelocation_CreateSegmentstart(int segment){
 };
 tLdRelocation* mtLdRelocation_CreateLabel(char* label){
 	tLdRelocation* self = malloc(sizeof(tLdRelocation));
-	self->kind = eAsmRelocationentrykind_Segmentstart;
+	self->kind = eAsmRelocationentrykind_Label;
 	self->label = label;
 	return self;
 };
 
 tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
+	ErfEnter_String("LdGetrelocationvalue");
 	assert(self);
 	switch(self->kind){
 		case eAsmRelocationentrykind_Segmentstart:
+			assert(self->segment<qiLdMaxsegments);
 			return LdSegmentstarts[0][self->segment];
 			break;
 		default:
 			printf("LD: [E] LdGetrelocationvalue: Unrecognized relocation type %i",
 				(int)self->kind);
 			assert(false);
+			ErfLeave();
 			return 0;
 			break;
 	};
+	ErfLeave();
 };
 
 // -- class tLdLinkerscriptentry --
@@ -402,21 +406,26 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 // -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
-	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+	printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
 	int i = 0;
+	ErfEnter_String("LdSecondpassfile");
 	while(fpeekc(srcfile)!=EOF){
-		//printf("LD: [T] LdSecondpass: Entry %i\n",i++);
+		printf("LD: [T] LdSecondpassfile: Entry %i\n",i++);
 		// Get segment
+		ErfUpdate_String("LdSecondpassfile: Fetching segment");
 		int segment = fgetc(srcfile);
 		assert(segment<qiLdMaxsegments);
 		// Fetch size
+		ErfUpdate_String("LdSecondpassfile: Fetching size");
 		int size = fgetc(srcfile);
 		// Check for label
 		if(size!=eAsmBinarytokensize_Label){
+			ErfUpdate_String("LdSecondpassfile: Fetching displacement");
 			// Fetch displacement
 			int16_t disp  = fgetc(srcfile);
 					disp |= fgetc(srcfile)<<8;
 			// Fetch relocations
+			ErfUpdate_String("LdSecondpassfile: Fetching relocations");
 			tList /* <tLdRelocation> */ relocs;
 			memset(&relocs,0,sizeof(tList));
 			while(fpeekc(srcfile)!=eAsmRelocationentrykind_Terminator)
@@ -455,12 +464,27 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 				};
 			// Verify that we get terminator
 			if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
+			ErfUpdate_String("LdSecondpassfile: Applying relocations");
+			// Pre-emit logging
+			printf("LD: [T] LdSecondpassfile: Entry %-4i %02X:%04X (%-5i) %s %i(",
+				i,segment,LdCurrentposition,LdCurrentposition,
+				 size==eAsmBinarytokensize_Lobyte?"lobyte "
+				:size==eAsmBinarytokensize_Hibyte?"hibyte "
+				:size==eAsmBinarytokensize_Word  ?"word   "
+				:"?",
+				(int)disp
+			);
+			for(tListnode* i=relocs.first; i; i=i->next)
+				printf("%i,",((tLdRelocation*)i->item)->kind);
+			printf(")\n");
 			// Apply relocations
 			for(tListnode* i=relocs.first; i; i=i->next)
 				disp += LdGetrelocationvalue(i->item);
 			// . Check if segment Linkerscript tells us to emit is what we
 			// ' got on hands
+			ErfUpdate_String("LdSecondpassfile: Conditional emitting ");
 			if(segment==currentsegment){
+				ErfUpdate_String("LdSecondpassfile: Emitting ");
 				// Emit
 				switch(size){
 					case eAsmBinarytokensize_Lobyte:
@@ -486,12 +510,13 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 				};
 			};
 		}else{
+			ErfUpdate_String("LdSecondpassfile: Exported label ");
 			// Handle an exported label
-			// TODO: Verify ignorability in second pass
-			//       Should be fine, but just in case
+			while(fgetc(srcfile)!=0); // Consume and ignore the string
 			assert(false);
 		};
 	};
+	ErfLeave();
 };
 
 void LdSecondpass(tLdLinkerscriptentry* self){
