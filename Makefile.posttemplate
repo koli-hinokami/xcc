@@ -48,7 +48,7 @@ install:
 	cp ./xcc-assembler    /usr/local/bin
 debug: build
 	gdb ./xcc-singlestage ./xcc-singlestage.c
-
+	
 xcc-test: xcc-all
 	./xcc xcc-singlestage.c
 
@@ -71,6 +71,13 @@ xcc-singlestage: \
 	xcc-singlestage-irmaker.c \
 	xcc-singlestage-fetcher.c \
 	xcc-singlestage-launcher.c
+
+stdlib: \
+	configs/jam1/crt0.obj \
+	configs/jam1/libc.obj
+	
+configs/jam1/%.obj: configs/jam1/%.asm
+	xcc-assembler -a jam1 -o $@ $<
 
 %: %.c $(DEPS)
 	$(CC) $(CCFLAGS) -o $@ $< $(CCPOSTFLAGS)
