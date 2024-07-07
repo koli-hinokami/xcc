@@ -193,6 +193,20 @@ tLdToken* mtLdToken_Fetch(FILE* stream){
 	};
 	return self;
 };
+tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
+	tLdExternlabel* self = nullptr;
+	for(tListnode /* <tLdExternlabel> */ * i = LdExportedsymbols.first;i;i=i->next){
+		if(strcmp(((tLdExternlabel*)i->item)->name,name)==0)
+			self=i;
+	};
+	if(!self){
+		printf("LD: [E] LdGetlabelvalue: Unresolved symbol \"%s\"\n",name);
+		ErfError();
+		return 0;
+	}else{
+		return self->location;
+	};
+};
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
@@ -222,6 +236,9 @@ tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
 		case eAsmRelocationentrykind_Segmentstart:
 			assert(self->segment<qiLdMaxsegments);
 			return LdSegmentstarts[0][self->segment];
+			break;
+		case eAsmRelocationentrykind_Label:
+			return LdGetlabelvalue(self->label);
 			break;
 		default:
 			printf("LD: [E] LdGetrelocationvalue: Unrecognized relocation type %i",
@@ -513,7 +530,6 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 			ErfUpdate_String("LdSecondpassfile: Exported label ");
 			// Handle an exported label
 			while(fgetc(srcfile)!=0); // Consume and ignore the string
-			assert(false);
 		};
 	};
 	ErfLeave();
