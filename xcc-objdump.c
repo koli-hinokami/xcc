@@ -101,8 +101,9 @@ int fpeekc(FILE* self){
 
 void ObjdDumpfile(FILE* dstfile, char* srcfilename, FILE* srcfile){
 	fprintf(dstfile," -- Object file dump: \"%s\" -- \n",srcfilename);
+	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
-		fprintf(dstfile," ");
+		fprintf(dstfile," %-5i ",i++);
 		// Segment
 		ObjdCurrentsegment = fgetc(srcfile);
 		fprintf(dstfile,"%02x:",ObjdCurrentsegment);
@@ -149,7 +150,13 @@ void ObjdDumpfile(FILE* dstfile, char* srcfilename, FILE* srcfile){
 					case eAsmRelocationentrykind_Segmentstart:
 						fprintf(dstfile," seg_%i",fgetc(srcfile));
 						break;
-						
+					case eAsmRelocationentrykind_Label:
+						fprintf(dstfile," +");
+						while(fpeekc(srcfile)!='\0') fprintf(dstfile,"%c",fgetc(srcfile));
+						fgetc(srcfile); // consume the terminator
+						break;
+					default:
+						assert(false);
 				};
 			// Terminator
 			if(fgetc(srcfile)!=eAsmRelocationentrykind_Terminator)assert(false);
