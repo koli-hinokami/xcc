@@ -1,8 +1,10 @@
 ; vim:ts=8:
 	; Jam-1 Runtime library
 	; (add libc functions here)
+	.include "/etc/xcc/jam1/math.asm"
 	.segment 7
-puts:	push	ra			; enter
+puts:	.global
+	push	ra			; enter
 	push	si
 puts_m:	mov	tx,	sp		; mov	ab,	si
 	mov	a,	tl
@@ -60,7 +62,7 @@ puts_r: pop	si
 ;	dec	b
 ;	jnz	CliWriteinteger_loop
 ;	ret
-putchar:		; stdcall void ¤(char ch)
+putchar: .global	; stdcall void ¤(char ch)
 	mov	tx,	putchar_l
 putchar_l:
 	in	a,	uart_ctrl
@@ -69,7 +71,7 @@ putchar_l:
 	pop	a
 	out	uart_data, a
 	ret
-memset:			; stdcall void ¤(void* area, uint8_t byte, size_t size)
+memset:	.global		; stdcall void ¤(void* area, uint8_t byte, size_t size)
 	; TODO: Save `di`
 	pop	di
 	pop	a
@@ -82,31 +84,31 @@ memset_l:
 	dec	d
 	jnz	tx
 	ret
-math_divide_16_8:	; stdcall uint16_t(uint16_t, uint8_t)
+math_divide_16_8: .global	; stdcall uint16_t(uint16_t, uint8_t)
 	pop	ab
 	pop	c
 	jmp	Math_Divide_16_8
 	ret
-math_abs:
+math_abs:	.global
 	pop	ab
 	jmp	Math_ABS_16
 	ret
-fixed16_mul:		; stdcall fixed16 ¤(fixed16 a, fixed16 b)
+fixed16_mul:	.global	; stdcall fixed16 ¤(fixed16 a, fixed16 b)
 	pop	ab
 	pop	cd
 	jmp	Math_Multiply_fp88_fp88
 	ret
-fixed16_divide:		; stdcall fixed16 ¤(fixed16 numerator, fixed16 denominator)
+fixed16_divide:	.global	; stdcall fixed16 ¤(fixed16 numerator, fixed16 denominator)
 	pop	ab
 	pop	cd
 	jmp	Math_Divide_fp88_fp88
 	ret
-fixed16_reciprocal:	; stdcall fixed16 ¤(fixed16 num)
+fixed16_reciprocal: .global	; stdcall fixed16 ¤(fixed16 num)
 	mov	ab,	256
 	pop	cd
 	jmp	Math_Divide_fp88_fp88
 	ret
-fixed16_sinetab:
+fixed16_sinetab: .global
 	dw	0
 	dw	0
 	dw	12
