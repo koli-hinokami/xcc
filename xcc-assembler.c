@@ -109,6 +109,7 @@ tGTargetNearpointer AsmCurrentposition[qiAsmMaxsegments];
 tList /* <tAsmLabel* owned> */ * AsmLabels;
 int iAsmRepeattimes;
 unsigned AsmCurrentsegment;
+char* szAsmLastlabel;
 
 struct argp_option AsmArgpOptions[] = {
 	{	
@@ -1123,6 +1124,7 @@ void AsmSecondpassline(FILE* dst){
 			return;
 			break;
 		case eAsmTokentype_Label:
+			szAsmLastlabel = mtString_Clone(tok->string);
 			mtAsmToken_Destroy(tok);
 			break;
 		case eAsmTokentype_Identifier:
@@ -1166,12 +1168,21 @@ void AsmSecondpassline(FILE* dst){
 			}else if(strcmp(tok->string,".global")==0){
 				mtAsmToken_Destroy(tok);
 				tok = mtAsmToken_Get(getcurrentfile());
-				assert(tok->type==eAsmTokentype_Identifier);
-				fputc((uint8_t)AsmCurrentsegment,dst);
-				fputc((uint8_t)eAsmBinarytokensize_Label,dst);
-				for(char* i=tok->string;*i;i++) fputc(*i,dst);
-				fputc((uint8_t)0,dst);
-				mtAsmToken_Destroy(tok);
+				if(tok->type==eAsmTokentype_Newline){
+					fputc((uint8_t)AsmCurrentsegment,dst);
+					fputc((uint8_t)eAsmBinarytokensize_Label,dst);
+					for(char* i=szAsmLastlabel;*i;i++) fputc(*i,dst);
+					fputc((uint8_t)0,dst);
+					mtAsmToken_Destroy(tok);
+				}else if(tok->type==eAsmTokentype_Identifier){
+					fputc((uint8_t)AsmCurrentsegment,dst);
+					fputc((uint8_t)eAsmBinarytokensize_Label,dst);
+					for(char* i=tok->string;*i;i++) fputc(*i,dst);
+					fputc((uint8_t)0,dst);
+					mtAsmToken_Destroy(tok);
+				}else{
+					assert(false);
+				};
 				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);
@@ -1254,6 +1265,7 @@ void AsmFirstpassline(){
 			return;
 			break;
 		case eAsmTokentype_Label:
+			szAsmLastlabel = mtString_Clone(tok->string);
 			AsmCreatelabel(tok->string);
 			mtAsmToken_Destroy(tok);
 			break;
