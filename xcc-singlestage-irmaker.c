@@ -1162,27 +1162,30 @@ tGInstruction* IgCompileVariable(tSpNode* self){
 		assert(!self->returnedtype->dynamicarraysize);
 		assert(self->returnedtype->arraysize);
 		return mtGInstruction_Join_Modify(
-			mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
 			mtGInstruction_SetLabel(
-				mtGInstruction_CreateImmediate(
-					tInstruction_Allocatestorage2,
-					eGAtomictype_Uint8,
-					mtGType_Sizeof(
-						mtGType_SetValuecategory(
-							mtGType_Deepclone(
-								self->returnedtype
-							),
-							eGValuecategory_Rightvalue
-						)
-					)
-				),
+				mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
 				mtString_Clone(self->symbol->name)
+			),
+			mtGInstruction_CreateImmediate(
+				tInstruction_Allocatestorage2,
+				eGAtomictype_Uint8,
+				mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Deepclone(
+							self->returnedtype
+						),
+						eGValuecategory_Rightvalue
+					)
+				)
 			)
 		);
 	}else{
 		// Relatively normal variable
 		return mtGInstruction_Join_Modify(
-			mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
+			mtGInstruction_SetLabel(
+				mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
+				mtString_Clone(self->symbol->name)
+			),
 			mtGInstruction_CreateBasic(
 				tInstruction_Allocatestorage,
 				self->returnedtype->atomicbasetype
