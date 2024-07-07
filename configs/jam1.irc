@@ -7,6 +7,8 @@ opcode	irc.programepilogue			:
 opcode	irc.segment			#1	: .segment #1
 opcode	v.compilernop.relative.void		: cnop
 opcode	v.nop.relative.void			: nop
+opcode	v.extern.relative.void		#1	: .extern #1
+opcode	v.global.relative.void			: .global
 opcode	v.enter.relative.void		#1	: push	ra		\
 						| push	si		\
 						| mov	si,	sp 	\

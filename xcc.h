@@ -390,6 +390,7 @@ typedef struct tSpNode {
 	struct tSpNode * right;
 	tGTargetUintmax constant;
 	tGSymbol* symbol;
+	char* identifier;
 	tSpFunctionextinfo* fextinfo;
 	tList /* <tSpNode> */ * switchlabels;
 } tSpNode;

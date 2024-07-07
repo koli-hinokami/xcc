@@ -243,6 +243,7 @@ enum tTokentype {
 	tSplexem_Greaterequal           = 1071, //
 	tSplexem_Lessequal              = 1072, //
 	tSplexem_Logicalnot             = 1073, //
+	tSplexem_Externaldeclaration    = 1074, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
@@ -294,6 +295,8 @@ enum tTokentype {
 	tInstruction_Bitwiseand         = 1580, //
 	tInstruction_Negation           = 1581, //
 	tInstruction_Index              = 1582, //Intended for structures
+	tInstruction_Extern             = 1583, //External symbol
+	tInstruction_Global             = 1584, //Global symbol
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1375,7 +1378,7 @@ char *TokenidtoName[]={
 	"tSplexem_Greaterequal       ",// 1071
 	"tSplexem_Lessequal          ",// 1072
 	"tSplexem_Logicalnot         ",// 1073
-	"tSplexem_Undefined          ",// 1074
+	"tSplexem_Externaldeclaration",// 1074
 	"tSplexem_Undefined          ",// 1075
 	"tSplexem_Undefined          ",// 1076
 	"tSplexem_Undefined          ",// 1077
@@ -3474,8 +3477,8 @@ char *TokenidtoName_Compact[]={
 	"bitwiseand"                  ,// 1580
 	"negate"                      ,// 1581
 	"index"                       ,// 1582
-	"?"                           ,// 1583
-	"?"                           ,// 1584
+	"extern"                      ,// 1583
+	"global"                      ,// 1584
 	"?"                           ,// 1585
 	"?"                           ,// 1586
 	"?"                           ,// 1587

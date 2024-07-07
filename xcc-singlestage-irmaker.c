@@ -1129,6 +1129,7 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	// Find the place to write code to
 	tGInstruction* code = self->symbol->allocatedstorage->dynamicpointer;
 	// Set external name
+	code->opcode.opr=tInstruction_Global;
 	code->label = self->symbol->name;
 	if(self->right){ // If implementation provided
 		// Prologue
@@ -1160,23 +1161,32 @@ tGInstruction* IgCompileVariable(tSpNode* self){
 		// Compile an array
 		assert(!self->returnedtype->dynamicarraysize);
 		assert(self->returnedtype->arraysize);
-		return mtGInstruction_CreateImmediate(
-			tInstruction_Allocatestorage2,
-			eGAtomictype_Uint8,
-			mtGType_Sizeof(
-				mtGType_SetValuecategory(
-					mtGType_Deepclone(
-						self->returnedtype
-					),
-					eGValuecategory_Rightvalue
-				)
+		return mtGInstruction_Join_Modify(
+			mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
+			mtGInstruction_SetLabel(
+				mtGInstruction_CreateImmediate(
+					tInstruction_Allocatestorage2,
+					eGAtomictype_Uint8,
+					mtGType_Sizeof(
+						mtGType_SetValuecategory(
+							mtGType_Deepclone(
+								self->returnedtype
+							),
+							eGValuecategory_Rightvalue
+						)
+					)
+				),
+				mtString_Clone(self->symbol->name)
 			)
 		);
 	}else{
 		// Relatively normal variable
-		return mtGInstruction_CreateBasic(
-			tInstruction_Allocatestorage,
-			self->returnedtype->atomicbasetype
+		return mtGInstruction_Join_Modify(
+			mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
+			mtGInstruction_CreateBasic(
+				tInstruction_Allocatestorage,
+				self->returnedtype->atomicbasetype
+			)
 		);
 	};
 };
@@ -1198,6 +1208,12 @@ void IgParse(tSpNode* self){
 		case tSplexem_Variabledeclaration:
 			ErfEnter_String("IgParse: tSplexem_Variabledeclaration");
 			mtGInstruction_GetLast(GCompiled[meGSegment_Data])->next=IgCompileVariable(self);
+			ErfLeave();
+			break;
+		case tSplexem_Externaldeclaration:
+			ErfEnter_String("IgParse: tSplexem_Externaldeclaration");
+			mtGInstruction_GetLast(GCompiled[meGSegment_Code])->next
+				=mtGInstruction_CreateExtern(self->identifier);
 			ErfLeave();
 			break;
 		default:
@@ -1229,63 +1245,72 @@ void IgDumpir(tGInstruction** code, FILE* file){
 			);
 			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){
 				fprintf(file,"l_%p:\t",j);
-				if(j->label)fprintf(file,"%s:\t",j->label);
-				if(j->opcode.opr == tInstruction_Cast){
-					fprintf(file,"v.%s.%s.%s\t",
-						TokenidtoName_Compact[j->opcode.opr],
-						meGAtomictype_ToStringTable[j->opcode.isize],
-						meGAtomictype_ToStringTable[j->opcode.altsize]
-					);
-				}else
-					fprintf(file,"v.%s.%s.%s\t",
+				if(j->opcode.opr == tInstruction_Extern){
+					fprintf(file,"v.%s.%s.%s %s\t",
 						TokenidtoName_Compact[j->opcode.opr],
 						meGSegment_ToStringTable[j->opcode.segment],
-						meGAtomictype_ToStringTable[j->opcode.isize]
+						meGAtomictype_ToStringTable[j->opcode.isize],
+						j->label
 					);
-				if(	// Instruction that need a label
-					   j->opcode.opr==tInstruction_Jump
-					|| j->opcode.opr==tInstruction_Jumptrue
-					|| j->opcode.opr==tInstruction_Jumpfalse
-					|| j->opcode.opr==tInstruction_Loadaddress
-					|| j->opcode.opr==tInstruction_Comparejumpequal               
-					|| j->opcode.opr==tInstruction_Comparejumpnotequal            
-					|| j->opcode.opr==tInstruction_Comparejumpsignedlessthan      
-					|| j->opcode.opr==tInstruction_Comparejumpsignedlessequal     
-					|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterthan   
-					|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterequal  
-					|| j->opcode.opr==tInstruction_Comparejumpunsignedlessthan    
-					|| j->opcode.opr==tInstruction_Comparejumpunsignedlessequal   
-					|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterthan 
-					|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterequal
-				){
-					if(j->jumptarget->label){
-						fprintf(
-							file,
-							"%s ",
-							j->jumptarget->label
+				}else{
+					if(j->label)fprintf(file,"%s:\t",j->label);
+					if(j->opcode.opr == tInstruction_Cast){
+						fprintf(file,"v.%s.%s.%s\t",
+							TokenidtoName_Compact[j->opcode.opr],
+							meGAtomictype_ToStringTable[j->opcode.isize],
+							meGAtomictype_ToStringTable[j->opcode.altsize]
 						);
-					}else{
+					}else
+						fprintf(file,"v.%s.%s.%s\t",
+							TokenidtoName_Compact[j->opcode.opr],
+							meGSegment_ToStringTable[j->opcode.segment],
+							meGAtomictype_ToStringTable[j->opcode.isize]
+						);
+					if(	// Instruction that need a label
+						   j->opcode.opr==tInstruction_Jump
+						|| j->opcode.opr==tInstruction_Jumptrue
+						|| j->opcode.opr==tInstruction_Jumpfalse
+						|| j->opcode.opr==tInstruction_Loadaddress
+						|| j->opcode.opr==tInstruction_Comparejumpequal               
+						|| j->opcode.opr==tInstruction_Comparejumpnotequal            
+						|| j->opcode.opr==tInstruction_Comparejumpsignedlessthan      
+						|| j->opcode.opr==tInstruction_Comparejumpsignedlessequal     
+						|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterthan   
+						|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterequal  
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedlessthan    
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedlessequal   
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterthan 
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterequal
+					){
+						if(j->jumptarget->label){
+							fprintf(
+								file,
+								"%s ",
+								j->jumptarget->label
+							);
+						}else{
+							fprintf(
+								file,
+								"l_%p ",
+								j->jumptarget
+							);
+						}
+					}else if( // Immediate-operand commands
+						  (j->opcode.opr==tInstruction_Constant)
+						||(j->opcode.opr==tInstruction_Enterframe) // It needs the size of stackframe
+						||(j->opcode.opr==tInstruction_Definevalue)// For obvious reasons
+						||(j->opcode.opr==tInstruction_Return)     // To deallocate passed parameters
+						||(j->opcode.opr==tInstruction_Constantshiftleft)
+						||(j->opcode.opr==tInstruction_Constantshiftright)
+						||(j->opcode.opr==tInstruction_Allocatestorage2)
+					){
 						fprintf(
 							file,
-							"l_%p ",
-							j->jumptarget
+							"%i",
+							j->immediate
 						);
 					}
-				}else if( // Immediate-operand commands
-					  (j->opcode.opr==tInstruction_Constant)
-					||(j->opcode.opr==tInstruction_Enterframe) // It needs the size of stackframe
-					||(j->opcode.opr==tInstruction_Definevalue)// For obvious reasons
-					||(j->opcode.opr==tInstruction_Return)     // To deallocate passed parameters
-					||(j->opcode.opr==tInstruction_Constantshiftleft)
-					||(j->opcode.opr==tInstruction_Constantshiftright)
-					||(j->opcode.opr==tInstruction_Allocatestorage2)
-				){
-					fprintf(
-						file,
-						"%i",
-						j->immediate
-					);
-				}
+				};
 				fprintf(file,"\n");
 			};
 		};
