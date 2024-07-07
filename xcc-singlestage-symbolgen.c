@@ -572,15 +572,15 @@ tGType* SgResolvetype(tGNamespace* name_space, char* name){
 };
 void SgResolveunresolvedtypes_Resolvetype(tGType* type){
 	printf("SG: [T] SgResolveunresolvedtypes_Resolvetype: Resolving type \"%s\"\n",type->unresolvedsymbol);
-	eGValuecategory valcat=type->valuecategory;
+	eGValuecategory valcat=mtGType_GetValuecategory(type);
 	if(type->atomicbasetype!=eGAtomictype_Unresolved)return;
 	tGType* temp = SgResolvetype(GRootnamespace,type->unresolvedsymbol);
 	if(temp==nullptr){
 		fprintf(stderr,"SG: [E] SgResolveunresolvedtypes_Resolvetype: Unable to resolve type \"%s\"! \n",type->unresolvedsymbol);
 		ErfError();
 	}else{
-		*type = *temp;
-		type->valuecategory=valcat;
+		*type = *mtGType_Deepclone(temp);
+		mtGType_SetValuecategory(type,valcat);
 	}
 	SgRegisterstructureTraverse(type);
 };
