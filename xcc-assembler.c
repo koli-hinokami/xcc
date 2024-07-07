@@ -452,6 +452,7 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 						switch(j->ch){
 							case '$':
 								val=0;
+								assert(mode==1);
 								mtList_Append(relocations,
 									mtAsmRelocationentry_CreatePosition()
 								);
@@ -476,6 +477,7 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 							)
 						){
 							// External label
+							assert(mode==1);
 							mtList_Append(relocations,
 								mtAsmRelocationentry_CreateLabel(
 									j->string
@@ -484,6 +486,7 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 						}else{
 							// Label handled internally
 							val = AsmGetlabelvalue(j->string);
+							assert(mode==1);
 							mtList_Append(relocations,
 								mtAsmRelocationentry_CreateSegmentstart(
 									AsmGetlabelsegment(j->string)
@@ -506,6 +509,9 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 				switch(mode){
 					case 1:
 						exprval+=val;
+						break;
+					case 2:
+						exprval-=val;
 						break;
 					default:
 						assert(false);
