@@ -9,6 +9,7 @@ typedef enum LdArgpOptiontags {
 	eLdArgpOptiontags_Architecture = 'a',
 	eLdArgpOptiontags_Confdir      = 'c',
 	eLdArgpOptiontags_Outputfile   = 'o',
+	eLdArgpOptiontags_Nostdlib     = 'f',
 } eLdArgpOptiontags;
 
 typedef enum eAsmBinarytokensize {
@@ -110,6 +111,14 @@ struct argp_option LdArgpOptions[] = {
 		.doc = "Output object file",
 		.group = null,
 	},
+	{	
+		.name = "nostdlib",
+		.key = eLdArgpOptiontags_Nostdlib,
+		.arg = nullptr,
+		.flags = null,
+		.doc = "Don't link standard library",
+		.group = null,
+	},
 	{	// Terminator entry
 		.name = nullptr,
 		.key = null,
@@ -155,6 +164,7 @@ tList /* <tLdExternlabel> */ LdExportedsymbols;
 tGTargetNearpointer LdCurrentposition;
 tList /* <tLdLinkerscriptentry> */ LdLinkerscript;
 tList /* <FILE> */ LdSourcefiles;
+bool LdNostandardlibrary;
 
 tGTargetNearpointer LdSegmentstarts[qiLdMaxmodules][qiLdMaxsegments];
  // '- Here module 0 means current module
@@ -659,6 +669,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			};
 			break;
 		case eLdArgpOptiontags_Architecture: {
+			LdArchitecturename=mtString_Clone(optionvalue);
 			// Open Linkerscript
 			FILE* archdeffile = fopen(
 				mtString_Join(
@@ -695,6 +706,10 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				};
 			};
 			break;
+		case eLdArgpOptiontags_Nostdlib:
+			LdNostandardlibrary = true;
+			return 0;
+			break;
 		case ARGP_KEY_ARG: {
 			FILE* srcfile = fopen(optionvalue,"rb");
 			if(!srcfile){
@@ -707,6 +722,44 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			return 0;
 		};	break;
 		case ARGP_KEY_END: // Create and emit output binary
+			if(!LdNostandardlibrary){
+				// Verify we know what crt0 and libc of existing to use
+				assert(LdArchitecturename);
+				// Load libc
+				char* fname = 
+					mtString_Join(
+						"/etc/xcc/",
+						mtString_Join(
+							LdArchitecturename,
+							"/libc.obj"
+						)
+					);
+				FILE* file = fopen(fname,"rb");
+				if(!file){
+					printf("LD: [E] Unable to open libc file \"%s\": %i•%s\n",
+						fname,errno,strerror(errno));
+					ErfError();
+				}else{
+					mtList_Append(&LdSourcefiles,file);
+				};
+				mtList_Append(&LdSourcefiles,file);
+				// Load crt0
+				fname = mtString_Join(
+					"/etc/xcc/",
+					mtString_Join(
+						LdArchitecturename,
+						"/crt0.obj"
+					)
+				);
+				file = fopen(fname,"rb");
+				if(!file){
+					printf("LD: [E] Unable to open crt0 file \"%s\": %i•%s\n",
+						fname,errno,strerror(errno));
+					ErfError();
+				}else{
+					mtList_Append(&LdSourcefiles,file);
+				};
+			};
 			// First pass on linker script entries - get addresses
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
 				LdFirstpass(i->item);
