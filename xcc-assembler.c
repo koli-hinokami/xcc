@@ -1603,6 +1603,7 @@ int main(int argc, char** argv){
 	};
 	AsmLabels = mtList_Create();
 	// First pass
+	iAsmRepeattimes = 1;
 	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
 #ifdef qvGDebug
 	printf("ASM:[D] First pass \n");
