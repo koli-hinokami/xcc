@@ -76,6 +76,7 @@ stdlib: \
 	configs/jam1/crt0.obj \
 	configs/jam1/libc.obj
 	
+configs/jam1/libc.obj: configs/jam1/math.asm
 configs/jam1/%.obj: configs/jam1/%.asm
 	xcc-assembler -a jam1 -o $@ $<
 
