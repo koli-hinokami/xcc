@@ -3,12 +3,12 @@
 	; (the code executed when program starts. be careful here)
 	.extern main
 	.segment 1
-_start:	push	ra
+start:	push	ra
 	mov	si,	0
-	mov	ab,	__libc_envp
+	mov	ab,	libc_envp
 	push	b
 	push	a
-	mov	ab,	__libc_argv
+	mov	ab,	libc_argv
 	push	b
 	push	a
 	mov	ab,	1
@@ -25,11 +25,11 @@ _start:	push	ra
 	nop
 	ret
 	.segment 2
-__libc_argv:	
-	dw	__libc_argv_0
-__libc_envp:	
+libc_argv:	
+	dw	libc_argv_0
+libc_envp:	
 	dw	0
-__libc_argv_0:
+libc_argv_0:
 	db	106
 	db	97
 	db	109
@@ -39,7 +39,7 @@ __libc_argv_0:
 	db	111
 	db	103
 	db	0
-__crt0_leftstring:
+crt0_leftstring:
 	db 0x63
 	db 0x72
 	db 0x74
