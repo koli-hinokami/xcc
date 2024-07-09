@@ -288,9 +288,11 @@ void preprocess(){
 											done=false;
 											break;
 										default:
+											break;
 									};
 									break;
 								default:
+									break;
 							};
 						}
 						break;

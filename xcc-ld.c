@@ -414,12 +414,14 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 		case eLdLinkerscriptentrykind_Segment:
 			// Parse segment and generate exported symbols' position 
 			// in that segment
-			int i = 1;
-			for(tListnode* j = LdSourcefiles.first;j;j=j->next){
-				assert(i<=qiLdMaxmodules);
-				LdSegmentstarts[i++][self->segnumber]=LdCurrentposition;
-				LdFirstpassfile(self->segnumber,j->item);
-				rewind(j->item);
+			{
+				int i = 1;
+				for(tListnode* j = LdSourcefiles.first;j;j=j->next){
+					assert(i<=qiLdMaxmodules);
+					LdSegmentstarts[i++][self->segnumber]=LdCurrentposition;
+					LdFirstpassfile(self->segnumber,j->item);
+					rewind(j->item);
+				};
 			};
 			break;
 		default:
@@ -555,16 +557,18 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Emit a segment while applying relocations
-			int i = 1;
-			for(tListnode* j = LdSourcefiles.first;j;j=j->next){
-				assert(i<=qiLdMaxmodules);
-				memcpy(
-					LdSegmentstarts[0],
-					LdSegmentstarts[i++],
-					sizeof(*LdSegmentstarts)
-				);
-				LdSecondpassfile(self->segnumber,j->item, LdTargetfile);
-				rewind(j->item);
+			{
+				int i = 1;
+				for(tListnode* j = LdSourcefiles.first;j;j=j->next){
+					assert(i<=qiLdMaxmodules);
+					memcpy(
+						LdSegmentstarts[0],
+						LdSegmentstarts[i++],
+						sizeof(*LdSegmentstarts)
+					);
+					LdSecondpassfile(self->segnumber,j->item, LdTargetfile);
+					rewind(j->item);
+				};
 			};
 			break;
 		default:

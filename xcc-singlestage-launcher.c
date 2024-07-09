@@ -31,7 +31,7 @@ char* LnTrimextension(char* file){
 
 void LnInterrupthandler(int signum){
 	fprintf(stderr,"Ln: [M] Interrupted \n");
-	ErfWarning();
+	ErfFatal();
 };
 void LnFailedassertionhandler(int signum){
 	fprintf(stderr,"Ln: [F] Failed assertion catched! \n");
