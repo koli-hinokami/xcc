@@ -847,8 +847,24 @@ tGInstruction* IgCompileConditionaljump(
 	};
 	return expr;
 }
-tGInstruction* IgEvaulaterelocateableconstantexpression(tSpNode*self){
+tGInstruction* IgEvaulaterelocateableconstantexpression(eGAtomictype size, tSpNode*self){
+	ErfEnter_String(
+		mtString_Format(
+			"IgEvaulaterelocateableconstantexpression size:%s node:%i•%s",
+			meGAtomictype_ToStringTable[size],
+			self->type,
+			TokenidtoName[self->type]
+		)
+	);
+	tGInstruction* retval = nullptr;
 	switch(self->type){
+		case tSplexem_Integerconstant:
+			retval = mtGInstruction_CreateImmediate(
+				tInstruction_Definevalue,
+				size,
+				self->constant
+			);
+			break;
 		default:
 			fprintf(
 				stderr,
@@ -866,14 +882,14 @@ tGInstruction* IgEvaulaterelocateableconstantexpression(tSpNode*self){
 			);
 			printf(
 				"IG: [E]                                           "
-				"Secondary AST snippet:"
+				"Secondary AST snippet:\n"
 			);
 			LfPrint_SpNode(self);
 			ErfError();
-			return nullptr;
+			retval = nullptr;
 	};
-	assert(false);
-	return nullptr;
+	ErfLeave();
+	return retval;
 };
 tGInstruction* IgCompileglobalvariable(
 	tGType* type, 
@@ -985,7 +1001,8 @@ tGInstruction* IgCompileglobalvariable(
 				type->atomicbasetype
 			);
 		}else{
-			retval = IgEvaulaterelocateableconstantexpression(self);
+			retval = IgEvaulaterelocateableconstantexpression(
+				type->atomicbasetype,self);
 		};
 	}else switch(type->atomicbasetype){
 		case eGAtomictype_Array:
