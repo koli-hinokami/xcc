@@ -121,6 +121,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		};	break;
 		case tSplexem_Symbol: {
 			assert(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue);
+			assert(self->symbol->allocatedstorage); // by now storage should be allocated...
 			if(self->symbol->allocatedstorage->nonconstant){
 				retval = mtGInstruction_CreateCodepointer(
 					tInstruction_Loadaddress,
@@ -871,18 +872,17 @@ tGInstruction* IgEvaulaterelocateableconstantexpression(tSpNode*self){
 			ErfError();
 			return nullptr;
 	};
+	assert(false);
 	return nullptr;
 };
 tGInstruction* IgCompileglobalvariable(
 	tGType* type, 
 	tSpNode* self
 ){ // Compile global variable's initializer
-	{
-		char buf[256];
-		snprintf(buf,256,"IgCompileglobalvariable type:<%s> node:%p",
-			mtGType_ToString(type),self);
-		ErfEnter_String(buf);
-	};
+	ErfEnter_String(
+		mtString_Format("IgCompileglobalvariable type:<%s> node:%p",
+			mtGType_ToString(type),self)
+	);
 	tGInstruction* retval = nullptr;
 	if(mtGType_IsScalar(type)){
 		// Scalar type. Compile as initializer
@@ -1169,11 +1169,18 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			return i;
 		};	break;
 		case tSplexem_Blockstatement: {
-			//ErfEnter_String("IgCompileStatement: Blockstatement");
+			ErfEnter_String("IgCompileStatement: Blockstatement");
 			tGInstruction* i = mtGInstruction_CreateCnop();
+			ErfUpdate_String("IgCompileStatement: Blockstatement - left");
 			if(self->left)  mtGInstruction_GetLast(i)->next=IgCompileStatement(self->left);
-			if(self->right) mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
-			//ErfLeave();
+			ErfUpdate_String("IgCompileStatement: Blockstatement - right");
+			if(self->right) {
+				assert(i);
+				assert(mtGInstruction_GetLast(i));
+				mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
+			};
+			ErfUpdate_String("IgCompileStatement: Blockstatement - post");
+			ErfLeave();
 			return i;
 		};	break;
 		case tSplexem_Returnstatement: {
@@ -1380,10 +1387,10 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			tGInstruction* cond;
 			ErfEnter_String("IgCompileStatement: `if`");
 			tGInstruction* i = mtGInstruction_CreateCnop();
-			ErfUpdate_String("IgCompileStatement: `if` - then");
+			ErfUpdate_String("IgCompileStatement: `if` - then?");
+			assert(self);
 			assert(self->left);
 			tGInstruction* thenbranch = IgCompileStatement(self->left);
-			assert(self);
 			if(self->right){
 				ErfUpdate_String("IgCompileStatement: `if` - else");
 				tGInstruction* elsebranch = IgCompileStatement(self->right);
@@ -1469,7 +1476,17 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 tGInstruction* IgCompileVariable(tSpNode* self){
 	assert(self);
 	tGInstruction* retval;
-	retval = IgCompileglobalvariable(self->returnedtype,self->right);
+	retval = mtGInstruction_Join_Modify(
+		mtGInstruction_SetLabel(
+			mtGInstruction_CreateBasic(
+				tInstruction_Global,
+				eGAtomictype_Void
+			),
+			self->symbol->name
+		),
+		IgCompileglobalvariable(self->returnedtype,self->right)
+	);
+	self->symbol->allocatedstorage=mtGTargetPointer_CreateDynamic(retval);
 	return retval;
 	//// Old code
 	//if(self->returnedtype->atomicbasetype==eGAtomictype_Array){
