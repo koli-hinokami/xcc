@@ -84,7 +84,20 @@ void runprogram(char* program, char** argv){
 		if(!(pid=fork())){
 			if(szLnRundirectory) execv (program,(char * const *)argv);
 			                else execvp(program,(char * const *)argv);
-			//printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
+			fprintf(
+				stderr,
+				"Ln: [E] Unable to launch %s: %i•%s\n",
+				program,
+				errno,
+				strerror(errno)
+			);
+			fprintf(
+				stdout,
+				"Ln: [E] Unable to launch %s: %i•%s\n",
+				program,
+				errno,
+				strerror(errno)
+			);
 			exit(1);
 		}else{
 			waitpid(pid,&err,null);
