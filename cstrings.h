@@ -166,6 +166,34 @@ char* mtString_Removecharaters(char* str,char ch){
 	};
 	return str;
 };
+char* /* deallocate */ mtString_Format(char* format, ...)
+#ifdef __GNU_C__
+__attribute__((format(printf,1,2)))
+#endif
+{
+	va_list ap;              // Allocate varargs
+	/* Guess we need no more than 100 bytes of space. */
+	size_t size = 100;
+	char *buffer = malloc (size);
+	
+	/* Try to print in the allocated space. */
+	va_start (ap, format);   // Initialize varargs
+	int buflen = vsnprintf(buffer,size,format,ap);
+	va_end(ap);
+	if(buflen >= size){
+		// Overflow -> reallocate
+		size = buflen;
+		size++;
+		free(buffer);
+		buffer = malloc(size);
+		
+		// Retry
+		va_start (ap, format);   // Initialize varargs
+		buflen = vsnprintf(buffer,size,format,ap);
+		va_end(ap);
+	}
+	return buffer;
+};
 // --------------- Weird stuff -------------------
 char* mtString_FromInteger(int self){
 	char buffer[512];
