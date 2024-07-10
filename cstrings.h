@@ -171,27 +171,18 @@ char* /* deallocate */ mtString_Format(char* format, ...)
 __attribute__((format(printf,1,2)))
 #endif
 {
-	va_list ap;              // Allocate varargs
-	/* Guess we need no more than 100 bytes of space. */
-	size_t size = 100;
-	char *buffer = malloc (size);
-	
-	/* Try to print in the allocated space. */
-	va_start (ap, format);   // Initialize varargs
-	int buflen = vsnprintf(buffer,size,format,ap);
+	va_list ap;                                  // Allocate varargs
+	// Evaulate size
+	va_start(ap,format);
+	size_t size = vsnprintf(nullptr,0,format,ap); 
 	va_end(ap);
-	if(buflen >= size){
-		// Overflow -> reallocate
-		size = buflen;
-		size++;
-		free(buffer);
-		buffer = malloc(size);
-		
-		// Retry
-		va_start (ap, format);   // Initialize varargs
-		buflen = vsnprintf(buffer,size,format,ap);
-		va_end(ap);
-	}
+	// Allocate buffer
+	char* buffer = malloc(size+1);
+	// Print into the buffer
+	va_start(ap,format);
+	vsnprintf(buffer,size+1,format,ap); 
+	va_end(ap);
+	// Return
 	return buffer;
 };
 // --------------- Weird stuff -------------------
