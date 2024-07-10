@@ -1146,10 +1146,10 @@ tGInstruction* IgCompilelocalvariable(
 	};
 };
 tGInstruction* IgCompileStatement(tSpNode* self){
+	assert(self);
 #ifdef qvGTrace
 	printf("IG: [T] IgCompileStatement: entered %i•%s\n",self->type,TokenidtoName[self->type]);
 #endif
-	assert(self);
 	switch(self->type){
 		case tSplexem_Declarationlist: {
 			ErfEnter_String("IgCompileStatement: Declarationlist");
@@ -1170,9 +1170,9 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 		};	break;
 		case tSplexem_Blockstatement: {
 			//ErfEnter_String("IgCompileStatement: Blockstatement");
-			tGInstruction* i;
-			i=IgCompileStatement(self->left);
-			i=mtGInstruction_Join_Modify(i,IgCompileStatement(self->right));
+			tGInstruction* i = mtGInstruction_CreateCnop();
+			if(self->left)  mtGInstruction_GetLast(i)->next=IgCompileStatement(self->left);
+			if(self->right) mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
 			//ErfLeave();
 			return i;
 		};	break;
