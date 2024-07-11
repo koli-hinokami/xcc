@@ -680,7 +680,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 					LdConfigdir?:"/etc/xcc/",
 					mtString_Join(
 						optionvalue,
-						".lds"
+						"/archdef.lds"
 					)
 				),
 				"r"
