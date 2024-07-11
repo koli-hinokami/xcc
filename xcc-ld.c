@@ -42,9 +42,12 @@ typedef struct {
 } tLdRelocation;
 
 typedef enum eLdLinkerscriptentrykind {
-	eLdLinkerscriptentrykind_Segment = 1,
-	eLdLinkerscriptentrykind_Align   = 2,
-	eLdLinkerscriptentrykind_Pad     = 3,
+	eLdLinkerscriptentrykind_Segment    = 1,
+	eLdLinkerscriptentrykind_Align      = 2,
+	eLdLinkerscriptentrykind_Pad        = 3,
+	eLdLinkerscriptentrykind_Org        = 4,
+	eLdLinkerscriptentrykind_Symbol     = 5,
+	eLdLinkerscriptentrykind_Loadsymbol = 6,
 } eLdLinkerscriptentrykind;
 typedef struct {
 	// taggedunion : enum eLdLinkerscriptentrykind type {
@@ -52,7 +55,9 @@ typedef struct {
 	// };
 	enum eLdLinkerscriptentrykind type;
 	union {
+		tGTargetNearpointer offset;
 		int segnumber;
+		char* symbol;
 	};
 } tLdLinkerscriptentry;
 
@@ -161,7 +166,7 @@ char* LdArchitecturename;
 char* LdConfigdir;
 
 tList /* <tLdExternlabel> */ LdExportedsymbols;
-tGTargetNearpointer LdCurrentposition;
+tGTargetNearpointer LdCurrentposition,LdCurrentalternativeposition;
 tList /* <tLdLinkerscriptentry> */ LdLinkerscript;
 tList /* <FILE> */ LdSourcefiles;
 bool LdNostandardlibrary;
@@ -186,6 +191,11 @@ bool mtChar_LdIsTokenseparator(char ch){
 tLdToken* mtLdToken_Fetch(FILE* stream){
 	tLdToken* self = calloc(1,sizeof(tLdToken));
 	while(isspace(fpeekc(stream)))fgetc(stream); // Skip whitespace
+	if(fpeekc(stream)==EOF) return nullptr;
+	if(fpeekc(stream)==';'){ // Comment
+		for(int ch = ';';ch!='\n';ch=fgetc(stream)) if(ch==EOF)break;
+		return mtLdToken_Fetch(stream);
+	};
 	if(mtChar_LdIsTokenseparator(fpeekc(stream))){
 		self->type = eLdTokenkind_Charater;
 		self->ch   = fgetc(stream);
@@ -274,6 +284,12 @@ char* mtLdLinkerscriptentry_ToString(tLdLinkerscriptentry* self){
 				"segment ",
 				mtString_FromInteger(self->segnumber)
 			)
+		:	self->type==eLdLinkerscriptentrykind_Org
+		?	mtString_Format("org %x (%i)",self->offset,self->offset)
+		:	self->type==eLdLinkerscriptentrykind_Symbol
+		?	mtString_Format("symbol %s",self->symbol)
+		:	self->type==eLdLinkerscriptentrykind_Loadsymbol
+		?	mtString_Format("loadsymbol %s",self->symbol)
 		:	mtString_Join(
 				"(unk type ",
 				mtString_Join(
@@ -287,6 +303,7 @@ char* mtLdLinkerscriptentry_ToString(tLdLinkerscriptentry* self){
 // -- Reading Linkerscript --
 
 void LdReadlinkerscript(FILE* archdeffile){
+	printf("LD: [D] Reading Linkerscript\n");
 	for(;;){
 		// Check for whitespace and end of file
 		if(fpeekc(archdeffile)==EOF)return;
@@ -297,6 +314,7 @@ void LdReadlinkerscript(FILE* archdeffile){
 		// Pull token that tells the class of Linkerscript entry
 		tLdToken* tok;
 		tok = mtLdToken_Fetch(archdeffile);
+		if(!tok)break; // Unable to fetch a token == done
 		// Check it's type
 		assert(tok->type == eLdTokenkind_Identifier);
 		if(strcmp(tok->str,"segment")==0){
@@ -305,8 +323,30 @@ void LdReadlinkerscript(FILE* archdeffile){
 			tok = mtLdToken_Fetch(archdeffile);
 			assert(tok->type == eLdTokenkind_Number);
 			self->segnumber = tok->number;
+		}else if(strcmp(tok->str,"org")==0){
+			// org position
+			self->type = eLdLinkerscriptentrykind_Org;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Number);
+			self->offset = tok->number;
+		}else if(strcmp(tok->str,"symbol")==0){
+			// symbol name
+			// Isn't mandatory though.
+			self->type = eLdLinkerscriptentrykind_Symbol;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Identifier);
+			self->symbol = mtString_Clone(tok->str);
+		}else if(strcmp(tok->str,"loadsymbol")==0){
+			// loadsymbol name
+			// Isn't mandatory though.
+			self->type = eLdLinkerscriptentrykind_Loadsymbol;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Identifier);
+			self->symbol = mtString_Clone(tok->str);
 		}else{
-			assert(false); // write a proper error message here
+			fprintf(stderr,"LD: [E] Unrecognized Linkerscript directive \"%s\"\n",tok->str);
+			fprintf(stdout,"LD: [E] Unrecognized Linkerscript directive \"%s\"\n",tok->str);
+			ErfFatal();
 		};
 		mtList_Append(&LdLinkerscript,self);
 	};
@@ -375,12 +415,15 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 				switch(size){
 					case eAsmBinarytokensize_Lobyte:
 						LdCurrentposition+=1;
+						LdCurrentalternativeposition+=1;
 						break;
 					case eAsmBinarytokensize_Hibyte:
 						LdCurrentposition+=1;
+						LdCurrentalternativeposition+=1;
 						break;
 					case eAsmBinarytokensize_Word:
 						LdCurrentposition+=2;
+						LdCurrentalternativeposition+=2;
 						break;
 					default:
 						printf("LD: [E] LdFirstpassfile: "
@@ -423,6 +466,21 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 					rewind(j->item);
 				};
 			};
+			break;
+		case eLdLinkerscriptentrykind_Org:
+			// Change current position to argument provided
+			// Alternative position stays the same.
+			LdCurrentposition=self->offset;
+			break;
+		case eLdLinkerscriptentrykind_Symbol:
+			// Change current position to argument provided
+			// Alternative position stays the same.
+			LdCreateexportedlabel(mtString_Clone(self->symbol),LdCurrentposition);
+			break;
+		case eLdLinkerscriptentrykind_Loadsymbol:
+			// Change current position to argument provided
+			// Alternative position stays the same.
+			LdCreateexportedlabel(mtString_Clone(self->symbol),LdCurrentalternativeposition);
 			break;
 		default:
 			printf("LD: [E] LdFirstpass: "
@@ -522,15 +580,18 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 					case eAsmBinarytokensize_Lobyte:
 						fputc((uint8_t)disp,dstfile);
 						LdCurrentposition+=1;
+						LdCurrentalternativeposition+=1;
 						break;
 					case eAsmBinarytokensize_Hibyte:
 						fputc((uint8_t)(disp>>8),dstfile);
 						LdCurrentposition+=1;
+						LdCurrentalternativeposition+=1;
 						break;
 					case eAsmBinarytokensize_Word:
 						fputc((uint8_t)(disp),dstfile);
 						fputc((uint8_t)(disp>>8),dstfile);
 						LdCurrentposition+=2;
+						LdCurrentalternativeposition+=2;
 						break;
 					default:
 						printf("LD: [E] LdSecondpassfile: "
@@ -570,6 +631,16 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 					rewind(j->item);
 				};
 			};
+			break;
+		case eLdLinkerscriptentrykind_Org:
+			// Change current position to argument provided
+			// Alternative position stays the same.
+			LdCurrentposition=self->offset;
+			break;
+		case eLdLinkerscriptentrykind_Symbol:
+		case eLdLinkerscriptentrykind_Loadsymbol:
+			// Both Linkerscriptentries create a symbol, which isn't done 
+			// in second pass.
 			break;
 		default:
 			printf("LD: [E] LdSecondpass: "
@@ -727,6 +798,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 		};	break;
 		case ARGP_KEY_END: // Create and emit output binary
 			if(!LdNostandardlibrary){
+				printf("LD: [D] Opening standard library\n");
 				// Verify we know what crt0 and libc of existing to use
 				assert(LdArchitecturename);
 				// Load libc
