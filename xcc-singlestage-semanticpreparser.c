@@ -624,6 +624,7 @@ tGType* SppCompilestructure(tGType* self){
 				// Intentionally nothing
 			}else{
 				printf("SPP:[E] SppCompilestructure: Invalid declaration inside structure! \n");
+				ErfError();
 			};
 		};
 		self->structsize=offset;
