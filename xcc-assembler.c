@@ -18,7 +18,7 @@ typedef struct {
 } tAsmSourceline;
 
 typedef enum eAsmTokentype {
-	eAsmTokentype_Charater,
+	eAsmTokentype_Charater = 1,
 	eAsmTokentype_Argument,
 	eAsmTokentype_Newline,
 	eAsmTokentype_Argumenttoken,
@@ -473,8 +473,8 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 								break;
 							default:
 								printf("ASM:[E] mtAsmBinarytoken_Emit: "
-								       "Evalexpr for token <%s>: "
-								       "unrecognized char \'%c\'\n", 
+									   "Evalexpr for token <%s>: "
+									   "unrecognized char \'%c\'\n", 
 									mtAsmToken_ToString(j),j->ch
 								);
 								ErfError();
@@ -503,7 +503,7 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 								AsmLocallabelfilter(j->string));
 							assert(mode==1);
 							mtList_Append(relocations, // Relocate by 
-							                           // label's segment
+													   // label's segment
 								mtAsmRelocationentry_CreateSegmentstart(
 									AsmGetlabelsegment(
 										AsmLocallabelfilter(j->string)
@@ -517,8 +517,8 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 						break;
 					default:
 						printf("ASM:[E] mtAsmBinarytoken_Emit: "
-						       "Evalexpr for token <%s>: "
-						       "unrecognized type %i\n", 
+							   "Evalexpr for token <%s>: "
+							   "unrecognized type %i\n", 
 							mtAsmToken_ToString(j),j->type
 						);
 						ErfError();
@@ -636,6 +636,59 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 			fgetc(src);
 			return mtAsmToken_Get(src);
 			break;
+		case '\'': { // A charater
+			fgetc(src);
+			unsigned value=0;
+			for(bool cont=true;cont;){
+				uint8_t i=0;
+				switch(fpeekc(src)){
+					case EOF:
+						fprintf(
+							stderr,
+							"ASM:[F] mtAsmToken_Get: "
+							"Charater constant: "
+							"Unexcepted end of file\n"
+						);
+						ErfFatal();
+						assert(false);
+						break;
+					case '\'':
+						fgetc(src);
+						cont = false;
+						continue;
+					case '\\':
+						fgetc(src);
+						switch(fpeekc(src)){
+							case EOF:
+								fprintf(
+									stderr,
+									"ASM:[F] mtAsmToken_Get: "
+									"Charater constant: "
+									"Unexcepted end of file\n"
+								);
+								ErfFatal();
+								assert(false);
+								break;
+							case 'n': i='\n'; break;
+							case 'r': i='\r'; break;
+							default:
+								i = fgetc(src);
+						};
+					default:
+						i = fgetc(src);
+						break;
+				};
+				value<<=8;
+				value|=i;
+			};
+			return mtAsmToken_Clone(
+				&(tAsmToken){
+					.type = eAsmTokentype_Number,
+					.number = value,
+				}
+			);
+			break;
+		};	break;
 		case '\"': { // A string
 			fgetc(src);
 			char* str = mtString_Create();
@@ -911,12 +964,7 @@ void AsmReadinstructiondefinition(FILE* src){
 				token = mtAsmToken_Get(src);
 				if(token->type!=eAsmTokentype_Identifier){
 					printf("ASM:[F] AsmReadinstructiondefinition: Unrecoginzed token ");
-					printf("%s ",
-						 token->type==eAsmTokentype_Identifier ?token->string
-						:token->type==eAsmTokentype_Newline    ?"\\n"
-						:token->type==eAsmTokentype_Charater   ?(char[2]){token->ch,0}
-						:"(unknein)"
-					);
+					printf("%s ",mtAsmToken_ToString(token));
 					printf(" when fetching instruction definition's opcode\n");
 					ErfFatal();
 				};
@@ -965,12 +1013,7 @@ void AsmReadinstructiondefinition(FILE* src){
 				mtList_Append(&AsmInstructionsdefined,instruction);
 			}else{
 				printf("ASM:[F] AsmReadinstructiondefinition: Unrecoginzed identifier ");
-				printf("<%s>",
-					 token->type==eAsmTokentype_Identifier ?token->string
-					:token->type==eAsmTokentype_Newline    ?"\\n"
-					:token->type==eAsmTokentype_Charater   ?(char[2]){token->ch,0}
-					:"(unknein)"
-				);
+				printf("<%s>",mtAsmToken_ToString(token));
 				printf(" while fetching instruction definition, excepted <opcode>\n");
 				ErfFatal();
 			};
@@ -981,12 +1024,7 @@ void AsmReadinstructiondefinition(FILE* src){
 			       " when fetching \n");
 			printf("ASM:[F]                               instruction definition class - \n");
 			printf("ASM:[F]                               got ");
-			printf("<%s>",
-				 token->type==eAsmTokentype_Identifier ?token->string
-				:token->type==eAsmTokentype_Newline    ?"\\n"
-				:token->type==eAsmTokentype_Charater   ?(char[2]){token->ch,0}
-				:"(unknein)"
-			);
+			printf("<%s>",mtAsmToken_ToString(token));
 			printf(" while excepted an identifier \n");
 			ErfFatal();
 		};
@@ -1050,13 +1088,7 @@ bool AsmInstructionfinderclojure(
 				printf("ASM:[F] AsmInstructionfinderclojure: Invalid instruction definition: \n");
 				printf("ASM:[F]                              argindex out of range \n");
 				printf("ASM:[F]                              got token ");
-				printf("<%s>",
-					 ((tAsmToken*)i->item)->type==eAsmTokentype_Identifier ?((tAsmToken*)i->item)->string
-					:((tAsmToken*)i->item)->type==eAsmTokentype_Newline    ?"\\n"
-					:((tAsmToken*)i->item)->type==eAsmTokentype_Charater   ?(char[2]){((tAsmToken*)i->item)->ch,0}
-					:((tAsmToken*)i->item)->type==eAsmTokentype_Argument   ?(char[3]){'#',((tAsmToken*)i->item)->ch,0}
-					:"(unknein)"
-				);
+				printf("<%s>",mtAsmToken_ToString(i->item));
 				printf(", excepted <#1> \n");
 				ErfFatal();
 			};
@@ -1072,11 +1104,7 @@ bool AsmInstructionfinderclojure(
 #ifdef qvGTrace
 			if(0)printf("ASM:[T] AsmInstructionfinderclojure: . Fetching argument %i until token <%s> \n",
 				argindex,
-				 ((tAsmToken*)i->item)->type==eAsmTokentype_Identifier ?((tAsmToken*)i->item)->string
-				:((tAsmToken*)i->item)->type==eAsmTokentype_Newline    ?"\\n"
-				:((tAsmToken*)i->item)->type==eAsmTokentype_Charater   ?(char[2]){((tAsmToken*)i->item)->ch,0}
-				:((tAsmToken*)i->item)->type==eAsmTokentype_Argument   ?(char[3]){'#',((tAsmToken*)i->item)->ch,0}
-				:"(unknein)"
+				mtAsmToken_ToString(i->item)
 			);
 #endif
 			while(!mtAsmToken_Equals(matchtoken,j->item)){
@@ -1233,12 +1261,7 @@ void AsmSecondpassline(FILE* dst){
 					printf("ASM:[E] AsmCommonparseline: Undefined instruction < ");
 					printf("%s | ", opcode);
 					for(tListnode* i = arguments->first;i;i=i->next){tAsmToken* j = i->item;
-						printf("%s ",
-							 j->type==eAsmTokentype_Identifier?j->string
-							:j->type==eAsmTokentype_Newline?"\\n"
-							:j->type==eAsmTokentype_Charater?(char[2]){j->ch,0}
-							:"(unknein)"
-						);
+						printf("%s ",mtAsmToken_ToString(i->item));
 					};
 					printf("> \n");
 					ErfError();
@@ -1363,12 +1386,7 @@ void AsmFirstpassline(){
 					printf("ASM:[E] AsmFirstpassline: Undefined instruction < ");
 					printf("%s | ", opcode);
 					for(tListnode* i = arguments->first;i;i=i->next){tAsmToken* j = i->item;
-						printf("%s ",
-							 j->type==eAsmTokentype_Identifier?j->string
-							:j->type==eAsmTokentype_Newline?"\\n"
-							:j->type==eAsmTokentype_Charater?(char[2]){j->ch,0}
-							:"(unknein)"
-						);
+						printf("%s ",mtAsmToken_ToString(i->item));
 					};
 					printf("> \n");
 					ErfError();
