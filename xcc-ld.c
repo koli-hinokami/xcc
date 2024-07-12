@@ -228,7 +228,7 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 	};
 };
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
-	printf("LD: [D] Exporting label %s:%i\n",name,position);
+	printf("LD: [D] Exporting label %-25s:%.4x (%i)\n",name,position,position);
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
 	self->name = name;
@@ -355,7 +355,7 @@ void LdReadlinkerscript(FILE* archdeffile){
 // -- First pass --
 
 void LdFirstpassfile(int currentsegment, FILE* srcfile){
-	printf("LD: [T] LdFirstpassfile: Entered\n");
+	//printf("LD: [T] LdFirstpassfile: Entered\n");
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		//printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
@@ -450,9 +450,8 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 };
 
 void LdFirstpass(tLdLinkerscriptentry* self){
-	printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
-		mtLdLinkerscriptentry_ToString(self)
-	);
+	//printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
+	//	mtLdLinkerscriptentry_ToString(self));
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Parse segment and generate exported symbols' position 
@@ -496,7 +495,7 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 // -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
-	printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
 	int i = 0;
 	//ErfEnter_String("LdSecondpassfile");
 	while(fpeekc(srcfile)!=EOF){
@@ -612,9 +611,8 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 };
 
 void LdSecondpass(tLdLinkerscriptentry* self){
-	printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
-		mtLdLinkerscriptentry_ToString(self)
-	);
+	//printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
+	//	mtLdLinkerscriptentry_ToString(self));
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Emit a segment while applying relocations
@@ -818,7 +816,6 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				}else{
 					mtList_Append(&LdSourcefiles,file);
 				};
-				mtList_Append(&LdSourcefiles,file);
 				// Load crt0
 				fname = mtString_Join(
 					"/etc/xcc/",
