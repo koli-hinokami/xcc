@@ -1233,7 +1233,8 @@ void AsmSecondpassline(FILE* dst){
 					fputc((uint8_t)0,dst);
 					mtAsmToken_Destroy(tok);
 				}else{
-					assert(false);
+					printf("ASM:[E] Second pass: `.global`: Unexcepted token \"%s\"\n",mtAsmToken_ToString(tok));
+					ErfError();
 				};
 				return;
 			}else if(strcmp(tok->string,".extern")==0){
