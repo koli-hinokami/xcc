@@ -1254,6 +1254,18 @@ void AsmSecondpassline(FILE* dst){
 					ErfError();
 				};
 				return;
+			}else if(strcmp(tok->string,".define")==0){
+				mtAsmToken_Destroy(tok);
+				// Define an identifier as a constant
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Identifier);
+				char* identifier = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Number);
+				//AsmCreatelabel_ValueSegment(identifier,tok->number,0);
+				mtAsmToken_Destroy(tok);
+				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);
 				// This time ignore - externed labels are already registered,
