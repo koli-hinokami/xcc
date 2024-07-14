@@ -502,14 +502,19 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 							val = AsmGetlabelvalue( // Label offset
 								AsmLocallabelfilter(j->string));
 							assert(mode==1);
-							mtList_Append(relocations, // Relocate by 
-													   // label's segment
-								mtAsmRelocationentry_CreateSegmentstart(
-									AsmGetlabelsegment(
-										AsmLocallabelfilter(j->string)
-									)
+							if(
+								AsmGetlabelsegment(
+									AsmLocallabelfilter(j->string)
 								)
-							);
+							)
+								mtList_Append(relocations, // Relocate by 
+														   // label's segment
+									mtAsmRelocationentry_CreateSegmentstart(
+										AsmGetlabelsegment(
+											AsmLocallabelfilter(j->string)
+										)
+									)
+								);
 						};
 						break;
 					case eAsmTokentype_Number:
@@ -1130,6 +1135,18 @@ bool AsmInstructionfinderclojure(
 #endif
 	return true;
 };
+void AsmCreatelabel_ValueSegment(char* /* borrows */ name, int value, unsigned char segment){
+	mtList_Append(
+		AsmLabels,
+		mtAsmLabel_Clone(
+			&(tAsmLabel){
+				.name = mtString_Clone(name),
+				.offset = value,
+				.segment= segment,
+			}
+		)
+	);
+};
 void AsmCreatelabel(char* /* borrows */ name){
 	mtList_Append(
 		AsmLabels,
@@ -1362,10 +1379,23 @@ void AsmFirstpassline(){
 				mtAsmToken_Destroy(tok);
 				// Ignore - first pass doesn't bother with globals
 				return;
+			}else if(strcmp(tok->string,".define")==0){
+				mtAsmToken_Destroy(tok);
+				// Define an identifier as a constant
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Identifier);
+				char* identifier = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Number);
+				AsmCreatelabel_ValueSegment(identifier,tok->number,0);
+				mtAsmToken_Destroy(tok);
+				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);
 				// Get identifier and register as external label
 				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Identifier);
 				mtList_Append(&AsmExternallabels,mtString_Clone(tok->string));
 				mtAsmToken_Destroy(tok);
 				return;
