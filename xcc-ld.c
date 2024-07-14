@@ -323,6 +323,12 @@ void LdReadlinkerscript(FILE* archdeffile){
 			tok = mtLdToken_Fetch(archdeffile);
 			assert(tok->type == eLdTokenkind_Number);
 			self->segnumber = tok->number;
+		}else if(strcmp(tok->str,"align")==0){
+			// align val
+			self->type = eLdLinkerscriptentrykind_Align;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Number);
+			self->offset = tok->number;
 		}else if(strcmp(tok->str,"pad")==0){
 			// pad position
 			self->type = eLdLinkerscriptentrykind_Pad;
@@ -472,9 +478,16 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 				};
 			};
 			break;
+		case eLdLinkerscriptentrykind_Align:
+			// Align to address with zeros.
+			while(LdCurrentposition % self->offset != 0){
+				LdCurrentposition            += 1;
+				LdCurrentalternativeposition += 1;
+			};
+			break;
 		case eLdLinkerscriptentrykind_Pad:
 			// Pad to address with zeros.
-			if(LdCurrentposition<self->offset){
+			if(LdCurrentposition>self->offset){
 				printf("LD: [T] LdFirstpass: `pad %x (%i)`: Unable to pad: Already over target address\n",self->offset,self->offset);
 				ErfError();
 			}else{
@@ -647,10 +660,18 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 				};
 			};
 			break;
+		case eLdLinkerscriptentrykind_Align:
+			// Align to address with zeros.
+			while(LdCurrentposition % self->offset){
+				fputc(0,LdTargetfile);
+				LdCurrentposition            += 1;
+				LdCurrentalternativeposition += 1;
+			};
+			break;
 		case eLdLinkerscriptentrykind_Pad:
 			// Pad to address with zeros.
-			if(LdCurrentposition<self->offset){
-				printf("LD: [T] LdFirstpass: `pad %x (%i)`: Unable to pad: Already over target address\n",self->offset,self->offset);
+			if(LdCurrentposition>self->offset){
+				printf("LD: [T] LdSecondpass: `pad %x (%i)`: Unable to pad: Already over target address\n",self->offset,self->offset);
 				ErfError();
 			}else{
 				unsigned offset = self->offset - LdCurrentposition;
