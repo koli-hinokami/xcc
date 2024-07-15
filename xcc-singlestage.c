@@ -454,9 +454,9 @@ bool mtGType_IsFunction(tGType* self){
 };
 bool mtGType_IsArray(tGType* self){
 	if(
-		  (self->atomicbasetype == eGAtomictype_Array)
-		//||(self->atomicbasetype == eGAtomictype_Neararray)
-		//||(self->atomicbasetype == eGAtomictype_Fararray)
+		  self->atomicbasetype == eGAtomictype_Array
+		//||self->atomicbasetype == eGAtomictype_Neararray
+		//||self->atomicbasetype == eGAtomictype_Fararray
 	)return true;
 	return false;
 };

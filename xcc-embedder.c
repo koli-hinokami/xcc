@@ -13,8 +13,13 @@ typedef struct {
 	char* path; // todo
 } tPrIncludelistentry;
 
-tList /* <FILE*> */ includelist;
+tList /* <tPrIncludelistentry*> */ includelist;
 
+void mtPrIncludelistentry_Destroy(tPrIncludelistentry* self){
+	fclose(self->handle);
+	if(self->path) mtString_Destroy(self->path);
+	free(self);
+};
 tPrIncludelistentry* PrGetCurrentinclude(){
 	return (tPrIncludelistentry*)(mtList_GetFirstitem(&includelist));
 };
@@ -29,6 +34,7 @@ char fetchcharater2(){
 		char c=fgetc(PrGetCurrentinclude()->handle);
 		if(c==-1){
 			//eof, mf!
+			mtPrIncludelistentry_Destroy(mtList_GetFirstitem(&includelist));
 			mtList_Removefirst(&includelist);
 			return fetchcharater2();
 		}else{
@@ -88,18 +94,15 @@ void PrIncludefile(char* file){
 	FILE* fhandle = nullptr;
 	char* filename = mtString_Trimfirst(mtString_Trimlast(mtString_Clone(file)));
 	char* fpath = nullptr;
+	// Determine path
 	if(file[0]=='<'){
 		// search for file in standard headers path
-		fpath = mtString_Join(
-			mtString_Join(
-				"/etc/xcc/",
-				mtString_Join(
-					EmArchitecturename,
-					"/"
-				)
-			),
-			filename
-		);
+		char* s1 = mtString_Create();
+		mtString_Append(&s1,"/etc/xcc/");
+		mtString_Append(&s1,EmArchitecturename);
+		mtString_Append(&s1,"/");
+		mtString_Append(&s1,filename);
+		fpath = s1;
 		fhandle = fopen(fpath,"r");
 		if(!fhandle){
 			// File doesn't exist in target arch libc headers -> try 
@@ -117,8 +120,10 @@ void PrIncludefile(char* file){
 	}else{
 		// wtf
 		printf("EM: [E] PrIncludefile: Unknown \"#include\" file starting symbol: %c•%s\n",file[0],file);
+		ErfError();
 		//exit(1);
 	}
+	// Insert file into the list
 	if(fhandle==nullptr){
 		printf("EM: [E] PrIncludefile(\"%s\"): Failed to open file: %i•%s\n",
 			file, errno, strerror(errno)
@@ -129,6 +134,8 @@ void PrIncludefile(char* file){
 		include->path=fpath;
 		mtList_Prepend(&includelist,include);
 	};
+	// Deallocate
+	free(filename);
 };
 void handledirective(){
 	//Here I should find a way to get headers for handling `#include <>`.

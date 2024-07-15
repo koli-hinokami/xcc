@@ -1,6 +1,6 @@
 # Makefile for xcc Retargetable C Crosscompiler - Pretemplate
 
-CC = gcc
+CC = cc
 CCFLAGS = -rdynamic -g -O0 \
  -Wall -Wno-char-subscripts -Wno-unused-function \
  -Werror=int-conversion -Werror=implicit-function-declaration \

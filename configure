@@ -42,6 +42,7 @@ else
 	cat Makefile.pretemplate   >> Makefile
 	for template in "$@"
 	do
+		echo "# configure: Makefile.$template.template" >> Makefile
 		cat Makefile.$template.template >> Makefile
 	done
 	cat Makefile.posttemplate  >> Makefile
