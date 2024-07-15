@@ -6,7 +6,8 @@ CCFLAGS = -rdynamic -g -O0 \
  -Werror=int-conversion -Werror=implicit-function-declaration \
  -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
  -DqszGVersion=\"1.0.1.0\" \
- -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
+ -DqvGDebug -D_qvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
+CCVARFLAGS = 
 #-D__buildlab__=\"$(USER)\"
 CCPOSTFLAGS = 
 TIMESTAMP = `date +%y%m%d-%H%M`
@@ -19,5 +20,3 @@ DEPS = \
 	lists.h \
 	errorreportingfacilities.h \
 	Makefile
-
-

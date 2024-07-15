@@ -86,7 +86,7 @@ configs/jam1/%.obj: configs/jam1/%.asm
 	xcc-assembler -a jam1 -o $@ $<
 
 %: %.c $(DEPS)
-	$(CC) $(CCFLAGS) -o $@ $< $(CCPOSTFLAGS)
+	$(CC) $(CCFLAGS) $(CCVARFLAGS) -o $@ $< $(CCPOSTFLAGS)
 
 
 
