@@ -10,6 +10,7 @@ typedef enum LdArgpOptiontags {
 	eLdArgpOptiontags_Confdir      = 'c',
 	eLdArgpOptiontags_Outputfile   = 'o',
 	eLdArgpOptiontags_Nostdlib     = 'f',
+	eLdArgpOptiontags_Listing      = 'l',
 } eLdArgpOptiontags;
 
 typedef enum eAsmBinarytokensize {
@@ -124,6 +125,14 @@ struct argp_option LdArgpOptions[] = {
 		.doc = "Don't link standard library",
 		.group = null,
 	},
+	{	
+		.name = "listing",
+		.key = eLdArgpOptiontags_Listing,
+		.arg = "listing.lst",
+		.flags = null,
+		.doc = "Listing file. Has all the labels in it.",
+		.group = null,
+	},
 	{	// Terminator entry
 		.name = nullptr,
 		.key = null,
@@ -164,6 +173,7 @@ struct argp LdArgpParserstruct = {
 FILE* LdTargetfile;
 char* LdArchitecturename;
 char* LdConfigdir;
+FILE* LdListingfile;
 
 tList /* <tLdExternlabel> */ LdExportedsymbols;
 tGTargetNearpointer LdCurrentposition,LdCurrentalternativeposition;
@@ -229,6 +239,9 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 };
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
 	printf("LD: [D] Exporting label %-25s:%.4x (%i)\n",name,position,position);
+	if(LdListingfile){
+		fprintf(LdListingfile,"%4x\t%s\n",position,name);
+	};
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
 	self->name = name;
@@ -839,6 +852,19 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			LdNostandardlibrary = true;
 			return 0;
 			break;
+		case eLdArgpOptiontags_Listing:
+			if(LdListingfile){
+				return ARGP_ERR_UNKNOWN;
+			}else{
+				LdListingfile = fopen(optionvalue,"w");
+				if(!LdTargetfile){
+					printf("LD: [E] Unable to create listing file \"%s\": %i•%s\n",
+						optionvalue,errno,strerror(errno));
+					ErfError();
+					return 0;
+				};
+			};
+			break;
 		case ARGP_KEY_ARG: {
 			FILE* srcfile = fopen(optionvalue,"rb");
 			if(!srcfile){
@@ -898,6 +924,9 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			// Second pass on linker script entries - emit while relocating
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
 				LdSecondpass(i->item);
+			// Finalize
+			if(LdListingfile) // Vim modeline
+				fprintf(LdListingfile,"\n;\tvim:tw=78:ts=8:noet:\n");
 			break;
 		default:
 			return ARGP_ERR_UNKNOWN;
