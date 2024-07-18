@@ -1690,6 +1690,8 @@ int main(int argc, char** argv){
 			errno,
 			strerror(errno)
 		);
+		ErfError();
+		exit(0);
 	};
 	FILE* dstfile = fopen(AsmTargetfilename,"wb");
 	if(!dstfile){
