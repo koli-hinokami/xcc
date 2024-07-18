@@ -1659,6 +1659,7 @@ int main(int argc, char** argv){
 		// Read archdef
 		AsmReadinstructiondefinitions(archdeffile);
 		// Dump archdep
+#ifdef qvGTrace
 		if(1){
 			printf("ASM:[D] . Dumping instructions defined \n");
 			fflush(stdout);
@@ -1678,6 +1679,7 @@ int main(int argc, char** argv){
 			};
 			printf("ASM:[D] ' \n");
 		}
+#endif
 	};
 	// Open source/dest files
 	AsmSourcestream = fopen(AsmSourcefilename,"r");
