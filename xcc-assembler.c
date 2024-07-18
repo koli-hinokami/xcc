@@ -88,7 +88,7 @@ typedef struct { // Relocationentry
 
 // -- Preprocessor constants --
 
-#define qiAsmMaxsegments 16
+#define qiAsmMaxsegments 32
 
 // -- Forward declarations --
 

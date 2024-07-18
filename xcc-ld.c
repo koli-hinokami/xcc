@@ -81,7 +81,7 @@ typedef struct {
 
 // -- Preprocessor constants --
 
-#define qiLdMaxsegments 16
+#define qiLdMaxsegments 32
 #define qiLdMaxmodules  32
 
 // -- Forward declarations --
