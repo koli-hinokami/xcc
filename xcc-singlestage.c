@@ -696,7 +696,7 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 	return self;
 };
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
-char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
+char* mtGType_ToString_Embeddable_Legacy(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
 	char *s2;
 	if(self==nullptr){
@@ -761,7 +761,6 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 				)
 			);
 			mtString_Append(&s1," bytes */ ");
-
 			//// No display of member locations right now
 			//// Member locations
 			//for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
@@ -863,6 +862,80 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			s2
 		);
 	};
+};
+char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
+	char* s1 = mtString_Create();
+	if(self==nullptr){
+		mtString_Append(&s1,"totally_invalid");
+	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
+		assert(self->unresolvedsymbol);
+		mtString_Append(&s1,"unresolved<");
+		mtString_Append(&s1,self->unresolvedsymbol);
+		mtString_Append(&s1,">");
+	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
+		assert(self->unresolvedsymbol);
+		mtString_Append(&s1,"enum ");
+		mtString_Append(&s1,self->unresolvedsymbol);
+	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
+		mtString_Append(&s1,"struct ");
+		mtString_Append(&s1,self->unresolvedsymbol?:"(anonymous)");
+		if(self->precompiledstructure){
+			char* s2 = mtString_Format(" ( /* %i fields */ )",
+				mtList_Count(self->precompiledstructure));
+			mtString_Append(&s1,s2);
+			mtString_Destroy(s2);
+		};
+		if(self->structure){
+			char* s2 = mtString_Format(" { /* %i bytes */ }",
+				(int)self->structsize);
+			mtString_Append(&s1,s2);
+			mtString_Destroy(s2);
+		};
+	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"*");
+	}else if(self->atomicbasetype==eGAtomictype_Nearpointer){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"*near");
+	}else if(self->atomicbasetype==eGAtomictype_Farpointer){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"*far");
+	}else if(self->atomicbasetype==eGAtomictype_Array){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		char* s2 = mtString_Format("[%i]",(int)self->arraysize);
+		mtString_Append(&s1,s2);
+		mtString_Destroy(s2);
+	}else if(self->atomicbasetype==eGAtomictype_Function){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"(");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		}
+		mtString_Trimlast(s1);
+		mtString_Append(&s1,")");
+	}else if(self->atomicbasetype==eGAtomictype_Nearfunction){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"(");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		}
+		//mtString_Trimlast(s1);
+		mtString_Append(&s1,")near");
+	}else if(self->atomicbasetype==eGAtomictype_Farfunction){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"(");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		};
+		mtString_Trimlast(s1);
+		mtString_Append(&s1,")far");
+	}else{
+		mtString_Append(&s1,meGAtomictype_ToStringTable[self->atomicbasetype]);
+	};
+	return s1;
 };
 
 // ------------------------------ class tGSymbol ------------------------------
