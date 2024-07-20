@@ -647,6 +647,13 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 				identifier=mtLxFetcher_Peek(fetcher)->string;
 				mtLxFetcher_Advance(fetcher);
 			};
+			// Recognize enum's type
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Colon){
+				mtLxFetcher_Advance(fetcher);
+				type->complexbasetype = LxParseBasetype(fetcher);
+			}else{
+				type->complexbasetype = mtGType_CreateAtomic(eGAtomictype_Int);
+			};
 			// Try to recognize definition of fields
 			tLxFetcher* enumdefinition;
 			type->precompiledenumeration = nullptr;
@@ -1907,7 +1914,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				return mtLxNode_Clone(
 					&(tLxNode){
 						.type=tLexem_Sizeof,
-						.left=LxParseTypeexpression(
+						.left=LxParseTypeexpression2(
 							fetcher
 						)
 					}

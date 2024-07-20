@@ -695,6 +695,19 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 	};
 	return self;
 };
+tGType /* gives ownership */ * mtGType_Warp(tGType /* takeown */ * self){
+	ErfEnter_String("mtGType_Warp");
+	tGType* temp = mtGType_GetBasetype(self);
+	tGType* base = mtGType_GetBasetype(self);
+	for(tGType* i = self;i!=base;){
+		tGType* j = i->complexbasetype;
+		i->complexbasetype=temp;
+		temp = i;
+		i = j;
+	};
+	ErfLeave();
+	return temp;
+};
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
 char* mtGType_ToString_Embeddable_Legacy(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
@@ -943,6 +956,13 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 tGSymbol* mtGSymbol_Create(){
 	return calloc(sizeof(tGSymbol),1);
 };
+tGSymbol* mtGSymbol_CreateConstant(char* name, tGType* type, tGTargetUintmax val){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->symbolkind = mtGSymbol_eType_Constant;
+	temp->type = nullptr;
+	return temp;
+};
 tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){
 	tGSymbol* temp = mtGSymbol_Create();
 	temp->name = name;
@@ -1116,9 +1136,10 @@ tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum m
 	//printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");
 	printf("ss: [T] mtGNamespace_Findsymbol_NameKind(namespace %p, symbol %i•%s): Entered \n",self,kind,name);
 #endif
+	assert(name);
 	// Empty namespace
 	if(self==nullptr){
-		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found \n",self,kind,name);
+		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found: No namespace \n",self,kind,name);
 		return nullptr;
 	};
 
