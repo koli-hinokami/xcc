@@ -304,6 +304,8 @@ char* mtLdLinkerscriptentry_ToString(tLdLinkerscriptentry* self){
 		?	mtString_Format("symbol %s",self->symbol)
 		:	self->type==eLdLinkerscriptentrykind_Loadsymbol
 		?	mtString_Format("loadsymbol %s",self->symbol)
+		:	self->type==eLdLinkerscriptentrykind_Pad
+		?	mtString_Format("pad %x (%i)",self->offset,self->offset)
 		:	mtString_Join(
 				"(unk type ",
 				mtString_Join(
@@ -381,7 +383,9 @@ void LdReadlinkerscript(FILE* archdeffile){
 // -- First pass --
 
 void LdFirstpassfile(int currentsegment, FILE* srcfile){
-	//printf("LD: [T] LdFirstpassfile: Entered\n");
+#ifdef qvGDebug
+	printf("LD: [T] LdFirstpassfile(int currentsegment %i, FILE* src %p): Entered\n",currentsegment,srcfile);
+#endif // qvGDebug
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		//printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
@@ -476,8 +480,10 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 };
 
 void LdFirstpass(tLdLinkerscriptentry* self){
-	//printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
-	//	mtLdLinkerscriptentry_ToString(self));
+#ifdef qvGDebug
+	printf("LD: [D] LdFirstpass(linkerscriptentry <%s>): Entered\n",
+		mtLdLinkerscriptentry_ToString(self));
+#endif // qvGDebug
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Parse segment and generate exported symbols' position 
@@ -539,7 +545,9 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 // -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
-	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+#ifdef qvGDebug
+	printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+#endif // qvGDebug
 	int i = 0;
 	ErfEnter_String("LdSecondpassfile");
 	while(fpeekc(srcfile)!=EOF){
@@ -659,8 +667,10 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 };
 
 void LdSecondpass(tLdLinkerscriptentry* self){
-	//printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
-	//	mtLdLinkerscriptentry_ToString(self));
+#ifdef qvGDebug
+	printf("LD: [D] LdSecondpass(linkerscriptentry <%s>): Entered\n",
+		mtLdLinkerscriptentry_ToString(self));
+#endif // qvGDebug
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Emit a segment while applying relocations
@@ -693,8 +703,9 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 				ErfError();
 			}else{
 				unsigned offset = self->offset - LdCurrentposition;
-				for(unsigned i=offset;--i;)
-					fputc(0,LdTargetfile);
+				if(offset!=0)
+					for(unsigned i=offset;--i;)
+						fputc(0,LdTargetfile);
 				LdCurrentposition            += offset;
 				LdCurrentalternativeposition += offset;
 			};
@@ -952,6 +963,7 @@ void LnNullpointerhandler(int signum){
 	ErfFatal();
 };
 int main(int argc, char** argv){
+	setvbuf(stdout,nullptr,_IONBF,0);
 	signal(SIGSEGV,LnNullpointerhandler);
 	signal(SIGABRT,LnFailedassertionhandler);
 	// Parse arguments
