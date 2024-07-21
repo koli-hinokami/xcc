@@ -704,8 +704,9 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 			}else{
 				unsigned offset = self->offset - LdCurrentposition;
 				if(offset!=0)
-					for(unsigned i=offset;--i;)
+					for(unsigned i=offset;i--;){
 						fputc(0,LdTargetfile);
+					};
 				LdCurrentposition            += offset;
 				LdCurrentalternativeposition += offset;
 			};
@@ -884,6 +885,9 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				ErfError();
 				return 0;
 			};
+#ifdef qvGDebug
+			printf("LD: [D] File %p is \"%s\"\n",srcfile,optionvalue);
+#endif
 			mtList_Append(&LdSourcefiles,srcfile);
 		};	break;
 		case ARGP_KEY_END: // Create and emit output binary
@@ -907,6 +911,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 					ErfError();
 				}else{
 					mtList_Append(&LdSourcefiles,file);
+					printf("LD: [D] File %p is \"%s\"\n",file,fname);
 				};
 				// Load crt0
 				fname = mtString_Join(
@@ -923,6 +928,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 					ErfError();
 				}else{
 					mtList_Append(&LdSourcefiles,file);
+					printf("LD: [D] File %p is \"%s\"\n",file,fname);
 				};
 			};
 			// First pass on linker script entries - get addresses
