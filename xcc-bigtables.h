@@ -245,6 +245,7 @@ enum tTokentype {
 	tSplexem_Logicalnot             = 1073, //
 	tSplexem_Externaldeclaration    = 1074, //
 	tSplexem_Compoundliteral        = 1075, //
+	tSplexem_Continuestatement      = 1076, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated

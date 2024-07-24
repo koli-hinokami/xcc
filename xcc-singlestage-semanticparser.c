@@ -1,6 +1,7 @@
 // Semantic(al) parser
 tSpNode /* Function declaration */ * SpCurrentfunction;
 tSpNode /* `switch();` */ * SpCurrentswitch;
+tSpNode /* `for/switch;` */ * SpCurrentcontinue;
 tSpNode /* `for/switch;` */ * SpCurrentbreak;
 
 // -------------------------- Forward declarations --------------------------
@@ -805,30 +806,33 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return retval;
 			};	break;
 			case tLexem_Forstatement: { //(forloop init cond iter body)
-				tSpNode* i = mtSpNode_Clone(
-					&(tSpNode){
-						.type=tSplexem_Forstatement,                 //for(
-						.initializer=SpParse(self->initializer),     //	initializer;
-						.condition=                                  //	condition
-								self->condition->type                //
-							==	tLexem_Nullexpression                //
-						?	SpParse(self->condition)                 //
-						:	SpInsertintegertobooleancast(            //
-								SpInsertimpliedrvaluecast(           //
-									SpParse(self->condition)         //
-								)                                    // 
-							),                                       // ;
-						.left=mtSpNode_Clone(                        // iterator
-							&(tSpNode){                              //
-								.type=tSplexem_Expressionstatement,  //
-								.left=SpInsertimpliedrvaluecast(     //
-									SpParse(self->left)              //
-								),                                   //
-							}                                        //
-						),                                           // ;
-						.right=SpParse(self->right),                 //)body;
-					}
-				);
+				tSpNode* prevbreak  = SpCurrentbreak;
+				tSpNode* prevcont   = SpCurrentbreak;
+				tSpNode* i = mtSpNode_Create();
+				SpCurrentbreak      = i;
+				SpCurrentcontinue   = i;
+				i->type=tSplexem_Forstatement;               //for(
+				i->initializer=SpParse(self->initializer);   //	initializer;
+				i->condition=                                //	condition
+						self->condition->type                //
+					==	tLexem_Nullexpression                //
+				?	SpParse(self->condition)                 //
+				:	SpInsertintegertobooleancast(            //
+						SpInsertimpliedrvaluecast(           //
+							SpParse(self->condition)         //
+						)                                    // 
+					);                                       // ;
+				i->left=mtSpNode_Clone(                      // iterator
+					&(tSpNode){                              //
+						.type=tSplexem_Expressionstatement,  //
+						.left=SpInsertimpliedrvaluecast(     //
+							SpParse(self->left)              //
+						),                                   //
+					}                                        //
+				);                                           // ;
+				i->right=SpParse(self->right);               //)body;
+				SpCurrentbreak      = prevbreak;
+				SpCurrentcontinue   = prevcont;
 				ErfLeave();
 				return i;
 			};	break;
@@ -858,6 +862,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* i = mtSpNode_Create();
 				i->type = tSplexem_Switchdefault;
 				mtList_Append((SpCurrentswitch->switchlabels),i);
+				ErfLeave();
+				return i;
+			};	break;
+			case tLexem_Continuestatement: {
+				tSpNode* i = mtSpNode_Create();
+				i->type = tSplexem_Continuestatement;
+				i->initializer = SpCurrentcontinue;
 				ErfLeave();
 				return i;
 			};	break;

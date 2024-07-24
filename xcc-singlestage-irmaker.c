@@ -1336,6 +1336,9 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			//	_end:
 			ErfEnter_String("IgCompileStatement: Forloop");
 				tGInstruction* end  = mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				tGInstruction* preiter  = mtGInstruction_CreateCnop();
+				self->boundbreak = end;
+				self->boundcontinue = preiter;
 				ErfEnter_String("IgCompileStatement: Body");
 				tGInstruction* body = IgCompileStatement(self->right);
 				ErfLeave();
@@ -1355,6 +1358,11 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Iterator");
 				tGInstruction* iter = IgCompileStatement(self->left);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Bindind break/continue pointers");
+				//self->boundbreak = end;
+				//self->boundcontinue = iter;
+				preiter->next=iter;
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Binding it together");
 				mtGInstruction_GetLast(init)->next = 
@@ -1451,6 +1459,26 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			};
 			ErfLeave();
 			return i;
+		};	break;
+		case tSplexem_Breakstatement: { // .initializer is pointer to statement to break to
+			assert(self);
+			assert(self->initializer);
+			assert(self->initializer->boundbreak);
+			return mtGInstruction_CreateCodepointer(
+				tInstruction_Jump,
+				eGAtomictype_Void,
+				self->initializer->boundbreak
+			);
+		};	break;
+		case tSplexem_Continuestatement: { // .initializer is pointer to statement to continue to
+			assert(self);
+			assert(self->initializer);
+			assert(self->initializer->boundcontinue);
+			return mtGInstruction_CreateCodepointer(
+				tInstruction_Jump,
+				eGAtomictype_Void,
+				self->initializer->boundcontinue
+			);
 		};	break;
 		default:
 			printf("IG: [E] IgCompileStatement: Unrecognized statement "
