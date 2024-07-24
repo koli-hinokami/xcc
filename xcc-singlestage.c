@@ -1287,6 +1287,14 @@ tGInstruction* mtGInstruction_CreateSegmented(short opcode,enum eGSegment segmen
 	i->opcode.isize=size;
 	return i;
 };
+tGInstruction* mtGInstruction_CreateImmediateCodepointer(int opcode,int size,int val, tGInstruction* jumptarget){
+	tGInstruction* i = mtGInstruction_Create();
+	i->opcode.opr=opcode;
+	i->opcode.isize=size;
+	i->immediate=val;
+	i->jumptarget=jumptarget;
+	return i;
+};
 tGInstruction* mtGInstruction_CreateImmediate(int opcode,int size,int val){
 	tGInstruction* i = mtGInstruction_Create();
 	i->opcode.opr=opcode;

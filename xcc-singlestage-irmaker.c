@@ -1,4 +1,4 @@
-// XCC Intermediate representation creator
+// xcc Intermediate representation creator
 // Developed *simultaneously* with Semanticparser
 
 // -- Globals --
@@ -1179,6 +1179,57 @@ tGInstruction* IgCompilelocalvariable(
 			break;
 	};
 };
+void IgCompileSwitchcases(
+	struct{
+		tGInstruction* cases;
+		tGInstruction* def;
+		enum eGAtomictype type;
+	} * clojureargs,
+	tSpNode* item
+){
+	ErfEnter_String("IgCompileSwitchcases");
+	ErfUpdate_String(
+		mtString_Format(
+			"IgCompileSwitchcases "
+			"(clojure %p "
+				"tGInstruction *(cases = %p),"
+				"tGInstruction *(def=%p), "
+				"eGAtomictype type=%i"
+			") "
+			"(tSpNode *(item=%p))",
+			clojureargs,
+			clojureargs->cases,
+			clojureargs->def,
+			(int)(clojureargs->type),
+			item
+		)
+	);
+	switch(item->type){
+		case tSplexem_Switchdefault:
+			mtGInstruction_GetLast(clojureargs->def)->next=
+				mtGInstruction_CreateCodepointer(
+					tInstruction_Jump,
+					eGAtomictype_Void,
+					item->boundbreak
+				);
+			break;
+		case tSplexem_Switchcase:
+			assert(item->left);
+			assert(item->left->type==tSplexem_Integerconstant);
+			mtGInstruction_GetLast(clojureargs->cases)->next=
+				mtGInstruction_CreateImmediateCodepointer(
+					tInstruction_Compareconstantjumpequal,
+					clojureargs->type,
+					item->left->constant, // item should be case(integerconstant)
+					item->boundbreak
+				);
+			break;
+		default:
+			assert(false);
+			break;
+	};
+	ErfLeave();
+};
 tGInstruction* IgCompileStatement(tSpNode* self){
 	assert(self);
 #ifdef qvGTrace
@@ -1460,6 +1511,71 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			ErfLeave();
 			return i;
 		};	break;
+		case tSplexem_Switchdefault: {
+			return self->boundbreak = mtGInstruction_CreateCnop();
+		};	break;
+		case tSplexem_Switchcase: {
+			return self->boundbreak = mtGInstruction_CreateCnop();
+		};	break;
+		case tSplexem_Switchstatement: { // .switchlabels is list of cases to jump to
+			//	forloop: left
+			//	         irp val, switchcases cje_const val->val, val->label
+			//	         jmp   _default
+			//	_loop:   body
+			//	         iterator
+			//	_cond:   cj##cond  _loop
+			//	_end:
+			ErfEnter_String("IgCompileStatement: Switch");
+				ErfEnter_String("IgCompileStatement: Compilernops");
+				tGInstruction* i = mtGInstruction_CreateCnop(); // The assembled switch
+				tGInstruction* end = mtGInstruction_CreateCnop(); // break target
+				tGInstruction* def = mtGInstruction_CreateCnop(); // default target
+				tGInstruction* cases = mtGInstruction_CreateCnop();
+				self->boundbreak = end;
+				self->boundcontinue = nullptr;
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Body");
+				tGInstruction* body = IgCompileStatement(self->left);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Expression");
+				tGInstruction* expr = IgCompileExpression(self->condition);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Cases");
+				assert(self);
+				assert(self->condition);
+				assert(self->condition->returnedtype);
+				mtList_Foreach_Clojure(
+					self->switchlabels, 
+					(void(*)(void*,void*))IgCompileSwitchcases,
+					&(
+						struct{
+							tGInstruction* cases;
+							tGInstruction* def;
+							enum eGAtomictype type;
+						}
+					){
+						cases,
+						def,
+						self->condition->returnedtype->atomicbasetype
+					}
+				);
+				mtGInstruction_GetLast(def)->next=
+					mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						end
+					);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Tying together");
+				mtGInstruction_GetLast(i)->next = expr;
+				mtGInstruction_GetLast(i)->next = cases;
+				mtGInstruction_GetLast(i)->next = def;
+				mtGInstruction_GetLast(i)->next = body;
+				mtGInstruction_GetLast(i)->next = end;
+				ErfLeave();
+			ErfLeave();
+			return i;
+		};	break;
 		case tSplexem_Breakstatement: { // .initializer is pointer to statement to break to
 			assert(self);
 			assert(self->initializer);
@@ -1634,22 +1750,22 @@ void IgDumpir(tGInstruction** code, FILE* file){
 		"\tirc.programprologue\n"
 	);
 	for(int i=0;i<meGSegment_Count;i++){
-		if(
+		if(	// the segment should be emmited
 			  i==meGSegment_Code
 			||i==meGSegment_Data
 			||i==meGSegment_Readonlydata
 			||i==meGSegment_Udata
 		){
-			fprintf(file,"\tirc.segment %i\n",
+			fprintf(file,"\tirc.segment %i\n", // set segment
 				 i== meGSegment_Code         ? 7
 				:i== meGSegment_Data         ? 8
 				:i== meGSegment_Readonlydata ? 9
 				:i== meGSegment_Udata        ?10
 				:(assert(false),0)
 			);
-			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){
+			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){ //foreach(instructions)
 				fprintf(file,"l_%p:\t",j);
-				if(j->opcode.opr == tInstruction_Extern){
+				if(j->opcode.opr == tInstruction_Extern){ // externing bypass
 					fprintf(file,"v.%s.%s.%s %s\t",
 						TokenidtoName_Compact[j->opcode.opr],
 						meGSegment_ToStringTable[j->opcode.segment],
@@ -1657,8 +1773,8 @@ void IgDumpir(tGInstruction** code, FILE* file){
 						j->label
 					);
 				}else{
-					if(j->label)fprintf(file,"%s:\t",j->label);
-					if(j->opcode.opr == tInstruction_Cast){
+					if(j->label)fprintf(file,"%s:\t",j->label); // emit label
+					if(j->opcode.opr == tInstruction_Cast){ // two types <-> type/segment
 						fprintf(file,"v.%s.%s.%s\t",
 							TokenidtoName_Compact[j->opcode.opr],
 							meGAtomictype_ToStringTable[j->opcode.isize],
@@ -1670,6 +1786,28 @@ void IgDumpir(tGInstruction** code, FILE* file){
 							meGSegment_ToStringTable[j->opcode.segment],
 							meGAtomictype_ToStringTable[j->opcode.isize]
 						);
+					if( // Instructions that need immediate and a label
+						   j->opcode.opr==tInstruction_Compareconstantjumpequal
+					){
+						if(j->jumptarget->label){
+							fprintf(
+								file,
+								"%s, ",
+								j->jumptarget->label
+							);
+						}else{
+							fprintf(
+								file,
+								"l_%p, ",
+								j->jumptarget
+							);
+						}
+						fprintf(
+							file,
+							"%i",
+							(int)j->immediate
+						);
+					};
 					if(	// Instruction that need a label
 						   j->opcode.opr==tInstruction_Jump
 						|| j->opcode.opr==tInstruction_Jumptrue

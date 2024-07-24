@@ -272,3 +272,8 @@ opcode	v.mul.relative.uint16			: call Math_Multiply_16_16
 opcode	v.mul.relative.nearptr			: call Math_Multiply_16_16
 opcode	v.negate.relative.int16			: mov c, 255 | xor a, c | xor b, c | inc a | incc b
 opcode	v.index.relative.nearptr	#1	: mov cd, #1 | add a, c | adc b, d
+opcode	v.cje_const.relative.int16	#1, #2	: mov cd, #1 | sub cd, ab | or c, d | jz #1
+opcode	v.cje_const.relative.uint16	#1, #2	: mov cd, #1 | sub cd, ab | or c, d | jz #1
+opcode	v.cje_const.relative.nearptr	#1, #2	: mov cd, #1 | sub cd, ab | or c, d | jz #1
+opcode	v.cje_const.relative.int8	#1, #2	: mov c, #1 | cmp a, c | jz #1
+opcode	v.cje_const.relative.uint8	#1, #2	: mov c, #1 | cmp a, c | jz #1

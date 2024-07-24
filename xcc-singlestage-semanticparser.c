@@ -844,7 +844,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				i->type = tSplexem_Switchstatement;
 				i->switchlabels = mtList_Create();
 				i->left = SpParse(self->left);
-				i->right = SpParse(self->right);
+				i->condition = SpInsertimpliedrvaluecast(
+					SpParse(self->condition));
 				SpCurrentswitch = prevswitch;
 				SpCurrentbreak  = prevbreak;
 				ErfLeave();

@@ -299,6 +299,7 @@ enum tTokentype {
 	tInstruction_Index              = 1582, //Intended for structures
 	tInstruction_Extern             = 1583, //External symbol
 	tInstruction_Global             = 1584, //Global symbol
+	tInstruction_Compareconstantjumpequal = 1585, //Solely for switches. No other reason to exist.
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -3481,7 +3482,7 @@ char *TokenidtoName_Compact[]={
 	"index"                       ,// 1582
 	"extern"                      ,// 1583
 	"global"                      ,// 1584
-	"?"                           ,// 1585
+	"cje_const"                   ,// 1585
 	"?"                           ,// 1586
 	"?"                           ,// 1587
 	"?"                           ,// 1588
