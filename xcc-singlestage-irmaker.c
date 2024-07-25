@@ -912,11 +912,14 @@ tGInstruction* IgCompileglobalvariable(
 	tGType* type, 
 	tSpNode* self
 ){ // Compile global variable's initializer
+	assert(type);
 	ErfEnter_String(
 		mtString_Format("IgCompileglobalvariable type:<%s> node:%p",
 			mtGType_ToString(type),self)
 	);
 	tGInstruction* retval = nullptr;
+	while(type->atomicbasetype==eGAtomictype_Enumeration)
+		type=type->complexbasetype;
 	if(mtGType_IsScalar(type)){
 		// Scalar type. Compile as initializer
 		{	// Typeset cppreference page just for lulz
@@ -1048,6 +1051,15 @@ tGInstruction* IgCompileglobalvariable(
 				};
 			};
 			break;
+		case eGAtomictype_Structure: {
+			assert(!self);
+			for(tListnode* ptr=type->structure->symbols.first;ptr!=nullptr;ptr=ptr->next){
+				tGSymbol* sym = ptr->item;
+				retval=mtGInstruction_Join_Modify(retval,
+					IgCompileglobalvariable(sym->type,nullptr)
+				);
+			};
+		}; break;
 		default:
 			fprintf(
 				stderr,
