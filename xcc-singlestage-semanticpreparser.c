@@ -151,14 +151,12 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 				ErfUpdate_String("SppGeneratetype: Identifier");
 				if(name)*name=i->identifier;
 				mtGType_Transform(temptype);
-				temptype = mtGType_Warp(temptype);
 				ErfLeave();
 				return temptype;
 			case tLexem_Nullexpression:
 				ErfUpdate_String("SppGeneratetype: Nullexpr");
 				if(name)*name=nullptr;
 				mtGType_Transform(temptype);
-				temptype = mtGType_Warp(temptype);
 				ErfLeave();
 				return temptype;
 			default:
