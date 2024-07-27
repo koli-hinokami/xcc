@@ -110,6 +110,7 @@ tList /* <tAsmLabel* owned> */ * AsmLabels;
 int iAsmRepeattimes;
 unsigned AsmCurrentsegment;
 char* szAsmLastlabel;
+unsigned AsmCurrentsourceline;
 
 struct argp_option AsmArgpOptions[] = {
 	{	
@@ -614,6 +615,7 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 			return mtAsmToken_Get(src);
 		case '\n':
 			fgetc(src);
+			AsmCurrentsourceline++;
 			return mtAsmToken_Clone(
 				&(tAsmToken){
 					.type = eAsmTokentype_Newline,
@@ -1194,6 +1196,7 @@ void AsmSecondpassline(FILE* dst){
 #ifdef qvGTrace
 	printf("ASM:[T] AsmSecondpassline: Entered \n");
 #endif
+	ErfUpdate_String(mtString_Format("Secondpass at line %u",AsmCurrentsourceline));
 	// Clear bound parameters
 	for(int i=0;i<10;i++)AsmBoundparameters[i]=0;
 	// Read instruction
@@ -1344,6 +1347,7 @@ void AsmSecondpassline(FILE* dst){
 	};
 };
 void AsmFirstpassline(){
+	ErfUpdate_String(mtString_Format("Firstpass at line %u",AsmCurrentsourceline));
 	// Clear bound parameters
 	for(int i=0;i<10;i++)AsmBoundparameters[i]=0;
 	// Read instruction
@@ -1706,10 +1710,13 @@ int main(int argc, char** argv){
 	// First pass
 	iAsmRepeattimes = 1;
 	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
+	AsmCurrentsourceline = 1;
 #ifdef qvGDebug
 	printf("ASM:[D] First pass \n");
 #endif
+	ErfEnter_String("Firstpass");
 	while(fpeekc(AsmSourcestream)!=EOF)AsmFirstpassline();
+	ErfLeave();
 	// Interpass seek
 	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
 	if(fseek(AsmSourcestream,0,SEEK_SET)){
@@ -1720,13 +1727,15 @@ int main(int argc, char** argv){
 		);
 	};
 	// Emit header
-
 	// Second pass
 	iAsmRepeattimes = 1;
+	AsmCurrentsourceline = 1;
 #ifdef qvGDebug
 	printf("ASM:[D] Second pass \n");
 #endif
+	ErfEnter_String("Secondpass");
 	while(fpeekc(AsmSourcestream)!=EOF)AsmSecondpassline(dstfile);
+	ErfLeave();
 	// Emit relocations
 	// Close it all
 	fclose(AsmSourcestream);
