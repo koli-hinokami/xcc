@@ -667,6 +667,9 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 			(void(*)(void*))mtGType_Transform_Ignorenullptr
 		);
 	};
+	if(self->atomicbasetype==eGAtomictype_Enumeration){
+		*self=*(self->complexbasetype);
+	};
 	switch(self->atomicbasetype){
 		case eGAtomictype_Char            :self->atomicbasetype=eGAtomictype_Uint8       ;break;
 		case eGAtomictype_Signedchar      :self->atomicbasetype=eGAtomictype_Int8        ;break;
