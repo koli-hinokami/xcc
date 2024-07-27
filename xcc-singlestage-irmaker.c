@@ -74,6 +74,38 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				self->returnedtype->atomicbasetype
 			);
 		};	break;
+		case tSplexem_Bitwiseor: {
+			retval=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
+				tInstruction_Bitwiseor,
+				self->left->returnedtype->atomicbasetype
+			);
+		};	break;
+		case tSplexem_Bitwisexor: {
+			retval=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
+				tInstruction_Bitwisexor,
+				self->left->returnedtype->atomicbasetype
+			);
+		};	break;
 		case tSplexem_Bitwiseand: {
 			retval=IgCompileExpression(self->left);
 			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(

@@ -1753,6 +1753,64 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				ErfLeave();
 				return retval;
 			};	break;
+			case tLexem_Bitwiseor: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				SpArithmeticpromotion(&left,&right);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: Bitwiseor: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Bitwiseor,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Bitwisexor: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				SpArithmeticpromotion(&left,&right);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: Bitwisexor: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Bitwisexor,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
 		};
 		{	// Expressions - increment/decrement
 			//TODO: Handle both lvalues and rvalues
