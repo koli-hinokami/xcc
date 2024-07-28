@@ -518,6 +518,7 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 			};
 			assert(node->type==tLexem_Variabledeclaration);
 			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+			mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 			if(name){ // If we actually got a symbol
 				// Create symbol
 				mtGNamespace_Add(

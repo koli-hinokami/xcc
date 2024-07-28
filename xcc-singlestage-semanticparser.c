@@ -1185,8 +1185,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				assert(mtGType_IsPointer(left->returnedtype));
 				assert(   left->returnedtype->complexbasetype->atomicbasetype
 				       != eGAtomictype_Unresolved);
-				assert(   left->returnedtype->complexbasetype->atomicbasetype
-				       == eGAtomictype_Structure);
+				if(left->returnedtype->complexbasetype->atomicbasetype!=eGAtomictype_Structure){
+					fprintf(stderr,"SP: [E] "
+					               "SpParse: "
+					               "tLexem_Memberbypointer: "
+					               "Type <%s> doesn't to structure\n",
+					               mtGType_ToString(left->returnedtype)
+					);
+					assert(false);
+				};
 				assert(self->right->type==tLexem_Identifier);
 #ifdef qvGDebug
 				if(!left->returnedtype->complexbasetype->structure){
@@ -1224,12 +1231,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					assert(    mtGType_GetValuecategory(left->returnedtype)
 					         ==eGValuecategory_Rightvalue
 						   &&  mtGType_IsPointer(left->returnedtype));
-					assert(  symbol->type->valuecategory 
-					       ==eGValuecategory_Leftvalue);
+					//assert(  symbol->type->valuecategory
+					//       ==eGValuecategory_Leftvalue);
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Structuremember,
-							.returnedtype=symbol->type,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Clone(symbol->type),
+								eGValuecategory_Leftvalue
+							),
 							.left=left,
 							.constant=symbol->allocatedstorage->offset
 						}
