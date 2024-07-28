@@ -1569,7 +1569,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
-					printf("SP: [E] SpParse: Substraction: Types not equal! \n");
+					printf("SP: [E] SpParse: Substraction: Types not equal! %s•%s\n",mtGType_ToString(left->returnedtype),mtGType_ToString(right->returnedtype));
 					ErfError();
 					return nullptr;
 				};
@@ -1748,6 +1748,50 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.returnedtype=left->returnedtype,
 						.left=left,
 						.right=nullptr,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Logicaland: {
+				tSpNode* left = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->left)));
+				tSpNode* right = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->right)));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Logicaland,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Logicalor: {
+				tSpNode* left = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->left)));
+				tSpNode* right = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->right)));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Logicalor,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
 					}
 				);
 				ErfLeave();

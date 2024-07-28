@@ -248,6 +248,8 @@ enum tTokentype {
 	tSplexem_Continuestatement      = 1076, //
 	tSplexem_Bitwiseor              = 1077, //
 	tSplexem_Bitwisexor             = 1078, //
+	tSplexem_Logicaland             = 1079, //
+	tSplexem_Logicalor              = 1080, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
@@ -1390,8 +1392,8 @@ char *TokenidtoName[]={
 	"tSplexem_Continuestatement  ",// 1076
 	"tSplexem_Bitwiseor          ",// 1077
 	"tSplexem_Bitwisexor         ",// 1078
-	"tSplexem_Undefined          ",// 1079
-	"tSplexem_Undefined          ",// 1080
+	"tSplexem_Logicaland         ",// 1079
+	"tSplexem_Logicalor          ",// 1080
 	"tSplexem_Undefined          ",// 1081
 	"tSplexem_Undefined          ",// 1082
 	"tSplexem_Undefined          ",// 1083

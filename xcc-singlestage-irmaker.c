@@ -405,6 +405,22 @@ tGInstruction* IgCompileInvertedconditionaljump(
 		case tSplexem_Logicalnot: {
 			return IgCompileConditionaljump(self->left,jumptarget);
 		};	break;
+		case tSplexem_Logicaland: {
+			return mtGInstruction_Join_Modify(
+				IgCompileInvertedconditionaljump(self->left,jumptarget),
+				IgCompileInvertedconditionaljump(self->right,jumptarget)
+			);
+		};	break;
+		case tSplexem_Logicalor: {
+			tGInstruction* i = mtGInstruction_CreateCnop();
+			return mtGInstruction_Join_Modify(
+				IgCompileConditionaljump(self->left,i),
+				mtGInstruction_Join_Modify(
+					IgCompileInvertedconditionaljump(self->right,jumptarget),
+					i
+				)
+			);
+		};	break;
 		case tSplexem_Equality: {
 			assert(
 				  self->left->returnedtype->atomicbasetype
@@ -658,6 +674,22 @@ tGInstruction* IgCompileConditionaljump(
 	switch(self->type){
 		case tSplexem_Logicalnot: {
 			return IgCompileInvertedconditionaljump(self->left,jumptarget);
+		};	break;
+		case tSplexem_Logicalor: {
+			return mtGInstruction_Join_Modify(
+				IgCompileConditionaljump(self->left,jumptarget),
+				IgCompileConditionaljump(self->right,jumptarget)
+			);
+		};	break;
+		case tSplexem_Logicaland: {
+			tGInstruction* i = mtGInstruction_CreateCnop();
+			return mtGInstruction_Join_Modify(
+				IgCompileInvertedconditionaljump(self->left,i),
+				mtGInstruction_Join_Modify(
+					IgCompileConditionaljump(self->right,jumptarget),
+					i
+				)
+			);
 		};	break;
 		case tSplexem_Equality: {
 			assert(
