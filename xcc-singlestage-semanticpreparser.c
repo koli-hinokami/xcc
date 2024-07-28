@@ -537,7 +537,12 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 						)
 					)
 				);
-				*offset+=mtGType_Sizeof(type);
+				*offset+=mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Clone(type),
+						eGValuecategory_Rightvalue
+					)
+				);
 			}else{
 				// Anonymous structunion
 				SppCompileanonymousstructure(type,offset,self->structure);
@@ -578,7 +583,13 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 						)
 					)
 				);
-				if(mtGType_Sizeof(type)>unionsize)unionsize=mtGType_Sizeof(type);
+				tGTargetSizet sz = mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Clone(type),
+						eGValuecategory_Rightvalue
+					)
+				);
+				if(sz>unionsize)unionsize=sz;
 			}else{
 				// Anonymous structunion
 				SppCompileanonymousstructure(type,offset,self->structure);
@@ -701,7 +712,12 @@ tGType* SppCompilestructure(tGType* self){
 						)
 					);
 					// Advance position
-					offset+=mtGType_Sizeof(type);
+					offset+=mtGType_Sizeof(
+						mtGType_SetValuecategory(
+							mtGType_Clone(type),
+							eGValuecategory_Rightvalue
+						)
+					);
 				}else{
 					// Anonymous structunion
 					SppCompileanonymousstructure(type,&offset,self->structure);
@@ -751,7 +767,13 @@ tGType* SppCompilestructure(tGType* self){
 					)
 				);
 				// Recalculate union size
-				if(mtGType_Sizeof(type)>offset)offset=mtGType_Sizeof(type);
+				tGTargetSizet sz = mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Clone(type),
+						eGValuecategory_Rightvalue
+					)
+				);
+				if(sz>offset)offset=sz;
 			}else{
 				// Anonymous structunion
 				SppCompileanonymousstructure(type,&offset,self->structure);

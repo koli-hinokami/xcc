@@ -223,6 +223,10 @@ opcode	v.cje.relative.nearptr	#1		: sub a, c | sbb b, d | or a, b | je #1
 opcode	v.cjne.relative.int16	#1		: sub a, c | sbb b, d | or a, b | jne #1
 opcode	v.cjne.relative.uint16	#1		: sub a, c | sbb b, d | or a, b | jne #1
 opcode	v.cjne.relative.nearptr	#1		: sub a, c | sbb b, d | or a, b | jne #1
+opcode	v.cje.relative.int8	#1		: cmp a, c | je #1
+opcode	v.cje.relative.uint8	#1		: cmp a, c | je #1
+opcode	v.cjne.relative.int8	#1		: cmp a, c | jne #1
+opcode	v.cjne.relative.uint8	#1		: cmp a, c | jne #1
 opcode	v.tjnz.relative.int8	#1		: test a  | jnz #1
 opcode	v.tjnz.relative.uint8	#1		: test a  | jnz #1
 opcode	v.tjnz.relative.int16	#1		: or a, b | jnz #1

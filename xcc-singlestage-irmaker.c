@@ -413,13 +413,11 @@ tGInstruction* IgCompileInvertedconditionaljump(
 		};	break;
 		case tSplexem_Logicalor: {
 			tGInstruction* i = mtGInstruction_CreateCnop();
-			return mtGInstruction_Join_Modify(
-				IgCompileConditionaljump(self->left,i),
-				mtGInstruction_Join_Modify(
-					IgCompileInvertedconditionaljump(self->right,jumptarget),
-					i
-				)
-			);
+			tGInstruction* j = mtGInstruction_CreateCnop();
+			mtGInstruction_GetLast(i)->next = IgCompileConditionaljump(self->left,j);
+			mtGInstruction_GetLast(i)->next = IgCompileInvertedconditionaljump(self->right,jumptarget);
+			mtGInstruction_GetLast(i)->next = j;
+			return i;
 		};	break;
 		case tSplexem_Equality: {
 			assert(
@@ -683,13 +681,11 @@ tGInstruction* IgCompileConditionaljump(
 		};	break;
 		case tSplexem_Logicaland: {
 			tGInstruction* i = mtGInstruction_CreateCnop();
-			return mtGInstruction_Join_Modify(
-				IgCompileInvertedconditionaljump(self->left,i),
-				mtGInstruction_Join_Modify(
-					IgCompileConditionaljump(self->right,jumptarget),
-					i
-				)
-			);
+			tGInstruction* j = mtGInstruction_CreateCnop();
+			mtGInstruction_GetLast(i)->next = IgCompileInvertedconditionaljump(self->left,j);
+			mtGInstruction_GetLast(i)->next = IgCompileConditionaljump(self->right,jumptarget);
+			mtGInstruction_GetLast(i)->next = j;
+			return i;
 		};	break;
 		case tSplexem_Equality: {
 			assert(
@@ -1489,7 +1485,7 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				ErfEnter_String("IgCompileStatement: Bindind break/continue pointers");
 				//self->boundbreak = end;
 				//self->boundcontinue = iter;
-				preiter->next=iter;
+				//preiter->next=iter;
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Binding it together");
 				mtGInstruction_GetLast(init)->next = 
@@ -1499,6 +1495,7 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 						cond
 					);
 				mtGInstruction_GetLast(init)->next = body;
+				mtGInstruction_GetLast(init)->next = preiter;
 				mtGInstruction_GetLast(init)->next = iter;
 				mtGInstruction_GetLast(init)->next = cond;
 				//mtGInstruction_GetLast(init)->next = 
@@ -1932,6 +1929,7 @@ void IgDumpir(tGInstruction** code, FILE* file){
 						||(j->opcode.opr==tInstruction_Constantshiftleft)
 						||(j->opcode.opr==tInstruction_Constantshiftright)
 						||(j->opcode.opr==tInstruction_Allocatestorage2)
+						||(j->opcode.opr==tInstruction_Index)
 					){
 						fprintf(
 							file,
