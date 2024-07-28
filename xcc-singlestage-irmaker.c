@@ -1699,6 +1699,9 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	ErfUpdate_String(mtString_Join("IgCompileFunction: ",self->symbol->name));
 	IgCurrentfunction = self;
 	// Find the place to write code to
+	assert(self->symbol);
+	assert(self->symbol->allocatedstorage);
+	assert(self->symbol->allocatedstorage->dynamicpointer);
 	tGInstruction* code = self->symbol->allocatedstorage->dynamicpointer;
 	// Set external name
 	code->opcode.opr=tInstruction_Global;
@@ -1795,10 +1798,18 @@ void IgParse(tSpNode* self){
 		case tSplexem_Nulldeclaration:
 			break;
 		case tSplexem_Declarationlist:
-			if(self->left) IgParse(self->left);
-			if(self->right)IgParse(self->right);
+			{
+				tSpNode* i;
+				for(i=self;i&&i->type==tSplexem_Declarationlist;i=i->right)
+					if(i->left)IgParse(i->left);
+				if(i){
+					assert(i->type!=tSplexem_Declarationlist);
+					IgParse(i);
+				};
+			};
 			break;
 		case tSplexem_Functiondeclaration:
+			assert(mtGInstruction_GetLast(GCompiled[meGSegment_Code]));
 			mtGInstruction_GetLast(GCompiled[meGSegment_Code])->next=IgCompileFunction(self);
 			break;
 		case tSplexem_Variabledeclaration:
