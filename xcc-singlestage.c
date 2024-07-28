@@ -717,173 +717,173 @@ tGType /* gives ownership */ * mtGType_Warp(tGType /* takeown */ * self){
 	return temp;
 };
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
-char* mtGType_ToString_Embeddable_Legacy(tGType* /* MfCcMmDynamic */ self){
-	char *s1;
-	char *s2;
-	if(self==nullptr){
-		return mtString_Clone("totally_invalid");
-	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
-		// Unresolved
-		//sprintf(buffer,"unresolved<%s> ",self->unresolvedsymbol);
-		//return self->unresolvedsymbol;
-		assert(self->unresolvedsymbol);
-		s1 = mtString_Join(self->unresolvedsymbol,">");
-		s2 = mtString_Join("unresolved<",s1);
-		free(s1);
-		s1 = mtString_Join(
-			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
-			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
-			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:self->valuecategory==eGValuecategory_Novalue?"novalue "
-			:"unkvalue ",
-			s2
-		);
-		free(s2);
-		return s1;
-	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
-		// Enumeration
-		assert(self->unresolvedsymbol);
-		s1 = mtString_Join(self->unresolvedsymbol,"");
-		s2 = mtString_Join("enum ",s1);
-		free(s1);
-		return s2;
-		//LfiPrint_LxNode("p:",self->precompiledenumeration);
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
-		s1 = mtString_Clone("struct");
-		if(self->unresolvedsymbol){
-			mtString_Append(&s1," ");
-			mtString_Append(&s1,self->unresolvedsymbol);
-		};
-		if(self->precompiledstructure){
-			//mtString_Append(&s1," { ... }");
-			mtString_Append(&s1," ( ");
-			mtString_Append(&s1,"/* ");
-			mtString_Append(&s1,
-				mtString_FromInteger(
-					mtList_Count(self->precompiledstructure)
-				)
-			);
-			mtString_Append(&s1," fields */");
-			// Inlined List.foreach cuz no capturing lambdas *yet*
-			//for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
-			//	mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
-			//	mtString_Append(&s1,"; ");
-			//}
-			mtString_Append(&s1," )");
-		};
-		if(self->structure){
-			//mtString_Append(&s1," { ... }");
-			mtString_Append(&s1," { ");
-			mtString_Append(&s1,"/* ");
-			mtString_Append(&s1,
-				mtString_FromInteger(
-					self->structsize
-				)
-			);
-			mtString_Append(&s1," bytes */ ");
-			//// No display of member locations right now
-			//// Member locations
-			//for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
-			//	mtString_Append(&s1,mtGSymbol_ToString((tGSymbol*)i->item));
-			//	mtString_Append(&s1," ");
-			//}
-			mtString_Append(&s1,"}");
-		};
-		//if(!self->unresolvedsymbol){
-		//	// Occasionally structures are defined only by their fields
-		//	return mtString_Clone("struct");
-		//}else{
-		//	s1 = mtString_Join(self->unresolvedsymbol,"");
-		//	s2 = mtString_Join("struct ",s1);
-		//};
-		return s1;
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
-		return mtString_Join(
-			mtGType_ToString_Embeddable(self->complexbasetype),
-			"*"
-		);
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Nearpointer){ 
-		return mtString_Join(
-			mtGType_ToString_Embeddable(self->complexbasetype),
-			"*near"
-		);
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Farpointer){ 
-		return mtString_Join(
-			mtGType_ToString_Embeddable(self->complexbasetype),
-			"*far"
-		);
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Array){ 
-		return mtString_Join(
-			mtGType_ToString_Embeddable(self->complexbasetype),
-			mtString_Join(
-				"[",
-				mtString_Join(
-					mtString_FromInteger(
-						self->arraysize
-					),
-					"]"
-				)
-			)
-		);
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Function){ 
-		char* s1 = mtString_Clone("");
-		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
-			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
-			mtString_Append(&s1,",");
-		}
-		return mtString_Join(
-			mtGType_ToString_Embeddable(self->complexbasetype),
-			mtString_Join(
-				"(",
-				mtString_Join(
-					s1,
-					")"
-				)
-			)
-		);
-		//LfPrint_GNamespace(self->structure);
-	}else if(self->atomicbasetype==eGAtomictype_Void){ 
-		return mtString_Join(
-			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
-			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
-			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:self->valuecategory==eGValuecategory_Novalue?"novalue "
-			:"unkvalue ",
-			"void"
-		);
-		//printf("void ",self->unresolvedsymbol);
-		//LfPrint_GNamespace(self->structure);
-	}else{
-		// Resolve atomic type to string
-		s1 = "unknown<";
-		s1 = mtString_Join(s1,mtString_FromInteger(self->atomicbasetype));
-		s2 = mtString_Join(s1,">");
-		free(s1);
-		for(
-			GAtomictypetostring_Entry * ptr = GAtomictypetostring;
-			ptr->str;
-			ptr++
-		){
-			if(ptr->atomictype==self->atomicbasetype){
-				s2 = mtString_Clone(ptr->str);
-			};
-		};
-		return mtString_Join(
-			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
-			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
-			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:self->valuecategory==eGValuecategory_Novalue?"novalue "
-			:"unkvalue ",
-			s2
-		);
-	};
-};
+//char* mtGType_ToString_Embeddable_Legacy(tGType* /* MfCcMmDynamic */ self){
+//	char *s1;
+//	char *s2;
+//	if(self==nullptr){
+//		return mtString_Clone("totally_invalid");
+//	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
+//		// Unresolved
+//		//sprintf(buffer,"unresolved<%s> ",self->unresolvedsymbol);
+//		//return self->unresolvedsymbol;
+//		assert(self->unresolvedsymbol);
+//		s1 = mtString_Join(self->unresolvedsymbol,">");
+//		s2 = mtString_Join("unresolved<",s1);
+//		free(s1);
+//		s1 = mtString_Join(
+//			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+//			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
+//			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
+//			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+//			:"unkvalue ",
+//			s2
+//		);
+//		free(s2);
+//		return s1;
+//	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
+//		// Enumeration
+//		assert(self->unresolvedsymbol);
+//		s1 = mtString_Join(self->unresolvedsymbol,"");
+//		s2 = mtString_Join("enum ",s1);
+//		free(s1);
+//		return s2;
+//		//LfiPrint_LxNode("p:",self->precompiledenumeration);
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
+//		s1 = mtString_Clone("struct");
+//		if(self->unresolvedsymbol){
+//			mtString_Append(&s1," ");
+//			mtString_Append(&s1,self->unresolvedsymbol);
+//		};
+//		if(self->precompiledstructure){
+//			//mtString_Append(&s1," { ... }");
+//			mtString_Append(&s1," ( ");
+//			mtString_Append(&s1,"/* ");
+//			mtString_Append(&s1,
+//				mtString_FromInteger(
+//					mtList_Count(self->precompiledstructure)
+//				)
+//			);
+//			mtString_Append(&s1," fields */");
+//			// Inlined List.foreach cuz no capturing lambdas *yet*
+//			//for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
+//			//	mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
+//			//	mtString_Append(&s1,"; ");
+//			//}
+//			mtString_Append(&s1," )");
+//		};
+//		if(self->structure){
+//			//mtString_Append(&s1," { ... }");
+//			mtString_Append(&s1," { ");
+//			mtString_Append(&s1,"/* ");
+//			mtString_Append(&s1,
+//				mtString_FromInteger(
+//					self->structsize
+//				)
+//			);
+//			mtString_Append(&s1," bytes */ ");
+//			//// No display of member locations right now
+//			//// Member locations
+//			//for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
+//			//	mtString_Append(&s1,mtGSymbol_ToString((tGSymbol*)i->item));
+//			//	mtString_Append(&s1," ");
+//			//}
+//			mtString_Append(&s1,"}");
+//		};
+//		//if(!self->unresolvedsymbol){
+//		//	// Occasionally structures are defined only by their fields
+//		//	return mtString_Clone("struct");
+//		//}else{
+//		//	s1 = mtString_Join(self->unresolvedsymbol,"");
+//		//	s2 = mtString_Join("struct ",s1);
+//		//};
+//		return s1;
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
+//		return mtString_Join(
+//			mtGType_ToString_Embeddable(self->complexbasetype),
+//			"*"
+//		);
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Nearpointer){ 
+//		return mtString_Join(
+//			mtGType_ToString_Embeddable(self->complexbasetype),
+//			"*near"
+//		);
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Farpointer){ 
+//		return mtString_Join(
+//			mtGType_ToString_Embeddable(self->complexbasetype),
+//			"*far"
+//		);
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Array){ 
+//		return mtString_Join(
+//			mtGType_ToString_Embeddable(self->complexbasetype),
+//			mtString_Join(
+//				"[",
+//				mtString_Join(
+//					mtString_FromInteger(
+//						self->arraysize
+//					),
+//					"]"
+//				)
+//			)
+//		);
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Function){ 
+//		char* s1 = mtString_Clone("");
+//		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+//			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+//			mtString_Append(&s1,",");
+//		}
+//		return mtString_Join(
+//			mtGType_ToString_Embeddable(self->complexbasetype),
+//			mtString_Join(
+//				"(",
+//				mtString_Join(
+//					s1,
+//					")"
+//				)
+//			)
+//		);
+//		//LfPrint_GNamespace(self->structure);
+//	}else if(self->atomicbasetype==eGAtomictype_Void){ 
+//		return mtString_Join(
+//			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+//			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
+//			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
+//			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+//			:"unkvalue ",
+//			"void"
+//		);
+//		//printf("void ",self->unresolvedsymbol);
+//		//LfPrint_GNamespace(self->structure);
+//	}else{
+//		// Resolve atomic type to string
+//		s1 = "unknown<";
+//		s1 = mtString_Join(s1,mtString_FromInteger(self->atomicbasetype));
+//		s2 = mtString_Join(s1,">");
+//		free(s1);
+//		for(
+//			GAtomictypetostring_Entry * ptr = GAtomictypetostring;
+//			ptr->str;
+//			ptr++
+//		){
+//			if(ptr->atomictype==self->atomicbasetype){
+//				s2 = mtString_Clone(ptr->str);
+//			};
+//		};
+//		return mtString_Join(
+//			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+//			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
+//			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
+//			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+//			:"unkvalue ",
+//			s2
+//		);
+//	};
+//};
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char* s1 = mtString_Create();
 	if(self==nullptr){
@@ -938,20 +938,28 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	}else if(self->atomicbasetype==eGAtomictype_Nearfunction){ 
 		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
 		mtString_Append(&s1,"(");
-		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
-			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
-			mtString_Append(&s1,",");
-		}
-		//mtString_Trimlast(s1);
+		if(self->functionarguments){
+			for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+				mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+				mtString_Append(&s1,",");
+			};
+			//mtString_Trimlast(s1);
+		}else{
+			mtString_Append(&s1,"void");
+		};
 		mtString_Append(&s1,")near");
 	}else if(self->atomicbasetype==eGAtomictype_Farfunction){ 
 		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
 		mtString_Append(&s1,"(");
-		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
-			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
-			mtString_Append(&s1,",");
+		if(self->functionarguments){
+			for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+				mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+				mtString_Append(&s1,",");
+			};
+			mtString_Trimlast(s1);
+		}else{
+			mtString_Append(&s1,"void");
 		};
-		mtString_Trimlast(s1);
 		mtString_Append(&s1,")far");
 	}else{
 		mtString_Append(&s1,meGAtomictype_ToStringTable[self->atomicbasetype]);

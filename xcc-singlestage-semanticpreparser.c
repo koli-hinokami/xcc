@@ -43,16 +43,18 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 					  expr->left==nullptr
 					||expr->left->type==tLexem_Nullexpression
 				)
-			)
-				return nullptr;
-			tGType* type = SppGeneratetype(
-				expr->returnedtype,
-				expr->left,
-				nullptr
-			);
-			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
-			if(!SgNosearchfortypes)SgFindunresolvedtypes_Type(type);
-			retval = mtListnode_Cons(type,nullptr);
+			){
+				retval = nullptr;
+			}else{
+				tGType* type = SppGeneratetype(
+					expr->returnedtype,
+					expr->left,
+					nullptr
+				);
+				mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
+				if(!SgNosearchfortypes)SgFindunresolvedtypes_Type(type);
+				retval = mtListnode_Cons(type,nullptr);
+			};
 		};	break;
 		case tLexem_Nullexpression:
 			ErfUpdate_String("SppParsefunctionarguments: Nullexpression");
