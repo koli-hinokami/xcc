@@ -360,6 +360,8 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	// Return cloned node
 	if(	  (node->type!=tLexem_Switchcase)
 		&&(node->type!=tLexem_Switchdefault)
+		&&(node->type!=tLexem_Continuestatement)
+		&&(node->type!=tLexem_Breakstatement)
 	) node->initializer=SppPreparse(self->initializer,node);
 	node->condition=SppPreparse(self->condition,node);
 	node->left=SppPreparse(self->left,node);

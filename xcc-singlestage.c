@@ -139,7 +139,10 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 			);
 			LfWriteline(buffer);
 		};
-		LfiPrint_SpNode("i:",self->initializer);
+		if(
+			  (self->type!=tSplexem_Breakstatement)
+			&&(self->type!=tSplexem_Continuestatement)
+		) LfiPrint_SpNode("i:",self->initializer);
 		LfiPrint_SpNode("c:",self->condition);
 		LfiPrint_SpNode("l:",self->left);
 		LfiPrint_SpNode("r:",self->right);
@@ -294,6 +297,8 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 			LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
 		}else if(self->type==tLexem_Breakstatement){
 			LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
+		}else if(self->type==tLexem_Continuestatement){
+			LfWriteline("Lf: [M] · i: ¤ Folded bound continue target \n");
 		}else{
 			LfiPrint_LxNode("i:",self->initializer);
 		};

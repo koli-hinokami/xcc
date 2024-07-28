@@ -466,6 +466,7 @@ void SgParse(tLxNode* ast){
 			case tLexem_Greaterthan:
 			case tLexem_Increment:
 			case tLexem_Switchdefault:
+			case tLexem_Continuestatement:
 				break;
 		};
 		default:
@@ -487,6 +488,8 @@ void SgFindunresolvedtypes_LxNode(tLxNode* node){
 	if(
 		  node->type!=tLexem_Switchcase
 		&&node->type!=tLexem_Switchdefault
+		&&node->type!=tLexem_Breakstatement
+		&&node->type!=tLexem_Continuestatement
 	)
 		if(node->initializer)
 			SgFindunresolvedtypes_LxNode(node->initializer);

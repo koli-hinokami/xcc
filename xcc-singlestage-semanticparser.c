@@ -2131,7 +2131,10 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 		
 	};
 	{	// Recurse
-		if(self->initializer) self->initializer = SpOptimize(self->initializer);
+		if(
+			  (self->type!=tSplexem_Breakstatement)
+			&&(self->type!=tSplexem_Continuestatement)
+		) if(self->initializer) self->initializer = SpOptimize(self->initializer);
 		if(self->condition)   self->condition   = SpOptimize(self->condition);
 		if(self->left)        self->left        = SpOptimize(self->left);
 		if(self->right)       self->right       = SpOptimize(self->right);
