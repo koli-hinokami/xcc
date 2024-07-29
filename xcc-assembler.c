@@ -1164,6 +1164,13 @@ void AsmCreatelabel_ValueSegment(char* /* borrows */ name, int value, unsigned c
 	);
 };
 void AsmCreatelabel(char* /* borrows */ name){
+	for(tListnode *i = AsmLabels->first;i;i=i->next){tAsmLabel* j = i->item;
+		if(strcmp(j->name,name)==0){
+			fprintf(stderr,"ASM:[E] Adding duplicate label \"%s\"\n",name);
+			fprintf(stdout,"ASM:[E] Adding duplicate label \"%s\"\n",name);
+			ErfError();
+		};
+	};
 	mtList_Append(
 		AsmLabels,
 		mtAsmLabel_Clone(
