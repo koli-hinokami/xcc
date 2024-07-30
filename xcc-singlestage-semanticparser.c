@@ -1138,11 +1138,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* left = SpParse(self->left);
 				// Don't parse right yet!
 				// ↓ TODO: Allow auto-cast to pointer to structure
+				assert(left->returnedtype);
 				assert(left->returnedtype->atomicbasetype==eGAtomictype_Structure);
+				assert(self->right);
 				assert(self->right->type==tLexem_Identifier);
 				assert(left->returnedtype->structure);
 #ifdef qvGDebug
-				if(!left->returnedtype->complexbasetype->structure){
+				if(!left->returnedtype->structure){
 					fprintf(stderr,"SP: [E] "
 					               "SpParse: "
 					               "tLexem_Memberbypointer: "
