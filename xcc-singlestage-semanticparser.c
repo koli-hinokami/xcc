@@ -1019,7 +1019,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							&(tSpNode){
 								.type=tSplexem_Integerconstant,
 								.returnedtype=mtGType_SetValuecategory(
-									mtGType_Clone(symbol->type),
+									mtGType_Deepclone(symbol->type),
 									eGValuecategory_Rightvalue
 								),
 								.constant=symbol->value,
@@ -1041,7 +1041,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Symbol,
-							.returnedtype=symbol->type,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Deepclone(symbol->type),
+								eGValuecategory_Leftvalue
+							),
 							.symbol=symbol,
 						}
 					);
@@ -1258,7 +1261,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						&(tSpNode){
 							.type=tSplexem_Structuremember,
 							.returnedtype=mtGType_SetValuecategory(
-								mtGType_Clone(symbol->type),
+								mtGType_Deepclone(symbol->type),
 								eGValuecategory_Leftvalue
 							),
 							.left=left,
@@ -1370,7 +1373,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* right = mtSpNode_Promote(
 					SpInsertimpliedrvaluecast(SpParse(self->right)),
 					mtGType_SetValuecategory(
-						mtGType_Clone(left->returnedtype),
+						mtGType_Deepclone(left->returnedtype),
 						eGValuecategory_Rightvalue
 					)
 				);
@@ -1386,7 +1389,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					&(tSpNode){
 						.type=tSplexem_Assign,
 						.returnedtype=mtGType_SetValuecategory(
-							mtGType_Clone(left->returnedtype),
+							mtGType_Deepclone(left->returnedtype),
 							eGValuecategory_Rightvalue
 						),
 						.left=left,
