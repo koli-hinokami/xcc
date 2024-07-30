@@ -1007,7 +1007,26 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return retval;
 			case tLexem_Identifier: 
 				{
-					tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
+					tGSymbol* symbol = nullptr;
+					symbol = mtGNamespace_Findsymbol_NameKind(
+						self->name_space,
+						self->identifier,
+						mtGSymbol_eType_Constant
+					);
+					if(symbol){
+						assert(symbol->type);
+						return mtSpNode_Clone(
+							&(tSpNode){
+								.type=tSplexem_Integerconstant,
+								.returnedtype=mtGType_SetValuecategory(
+									mtGType_Clone(symbol->type),
+									eGValuecategory_Rightvalue
+								),
+								.constant=symbol->value,
+							}
+						);
+					};
+					symbol = mtGNamespace_Findsymbol_NameKind(
 						self->name_space,
 						self->identifier,
 						mtGSymbol_eType_Pointer

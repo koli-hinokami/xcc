@@ -976,7 +976,7 @@ tGSymbol* mtGSymbol_CreateConstant(char* name, tGType* type, tGTargetUintmax val
 	tGSymbol* temp = mtGSymbol_Create();
 	temp->name = name;
 	temp->symbolkind = mtGSymbol_eType_Constant;
-	temp->type = nullptr;
+	temp->type = type;
 	return temp;
 };
 tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){

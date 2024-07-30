@@ -606,6 +606,7 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 	};
 };
 void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUintmax* pos){
+	assert(enumtype);
 	ErfEnter_String(
 		mtString_Format(
 			"SppCompileenumeration_internal: node %i•%s",
@@ -623,7 +624,7 @@ void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUin
 			assert(self->right);
 			assert(self->right->type==tLexem_Integerconstant);
 			pos[0]=self->right->constant;
-			SppCompileenumeration_internal(enumtype->complexbasetype,self->left,pos);
+			SppCompileenumeration_internal(enumtype,self->left,pos);
 			break;
 		case tLexem_Identifier:
 			mtGNamespace_Add(
@@ -654,7 +655,8 @@ void SppCompileenumeration(tGType* self){
 	self->structure = malloc(0); // get a tag
 	tGTargetUintmax position;
 	SppCompileenumeration_internal(
-		self->complexbasetype,
+		self->complexbasetype?:
+			mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int)),
 		self->precompiledenumeration,
 		&position
 	);
