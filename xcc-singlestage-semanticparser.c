@@ -623,7 +623,6 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return node;
 			};	break;
 			case tLexem_Blockstatement: {
-				ErfLeave();
 				retval = mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Blockstatement,
@@ -631,6 +630,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.right=self->right?SpParse(self->right):nullptr,
 					}
 				);
+				ErfLeave();
 				return retval;
 			};	break;
 			case tLexem_Typedefinition:
@@ -841,6 +841,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* prevbreak  = SpCurrentbreak;
 				tSpNode* i = mtSpNode_Create();
 				SpCurrentswitch = i;
+				SpCurrentbreak = i;
 				i->type = tSplexem_Switchstatement;
 				i->switchlabels = mtList_Create();
 				i->left = SpParse(self->left);
