@@ -635,6 +635,7 @@ void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUin
 					pos[0]
 				)
 			);
+			pos[0]++;
 			break;
 		case tLexem_Nullexpression:
 			break;
