@@ -599,11 +599,12 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 		case EOF: // If errno==0 quietly return nullptr elseways yell at the user that we gone bad
 			//if(errno==0)return nullptr;
 			// But now that I think of the special cases like reading arguments while encountering EOF...
-			return mtAsmToken_Clone(
-				&(tAsmToken){
-					.type = eAsmTokentype_Newline,
-				}
-			);
+			if(errno==0)
+				return mtAsmToken_Clone(
+					&(tAsmToken){
+						.type = eAsmTokentype_Newline,
+					}
+				);
 			printf("ASM:[E] mtAsmToken_Get(FILE* %p): Error %i•\"%s\" while fetching charater\n",src,errno,strerror(errno));
 			ErfError();
 			return nullptr;
@@ -664,7 +665,7 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 						continue;
 					case '\\':
 						fgetc(src);
-						switch(fpeekc(src)){
+						switch(i = fgetc(src)){
 							case EOF:
 								fprintf(
 									stderr,
@@ -675,11 +676,22 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 								ErfFatal();
 								assert(false);
 								break;
-							case 'n': i='\n'; break;
-							case 'r': i='\r'; break;
+							case 'a':  i = '\a';       break;
+							case 'b':  i = '\b';       break;
+							case 'e':  i = '\e';       break;
+							case 'f':  i = '\f';       break;
+							case 'n':  i = '\n';       break;
+							case 'r':  i = '\r';       break;
+							case 't':  i = '\t';       break;
+							case 'u':  assert(false);  break;
+							case 'v':  i = '\v';       break;
+							case 'x':  assert(false);  break;
+							case '\'': i = '\'';       break;
+							case '\"': i = '\"';       break;
 							default:
-								i = fgetc(src);
+								//i = fgetc(src);
 						};
+						break;
 					default:
 						i = fgetc(src);
 						break;
@@ -701,10 +713,23 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 			while(fpeekc(src)!='\"'){ // To end of string
 				if(fpeekc(src)=='\\'){ // If escape seen
 					fgetc(src); // Skip the backslash
-					mtString_Append(&str,(char[2]){fgetc(src),0}); 
-					// And handle the escape. Currently just put
-					// whatever charater is after backslash even
-					// if it is string terminator.
+					char buf;
+					switch(buf = fgetc(src)){
+						case 'a':  buf = '\a';      break;
+						case 'b':  buf = '\b';      break;
+						case 'e':  buf = '\e';      break;
+						case 'f':  buf = '\f';      break;
+						case 'n':  buf = '\n';      break;
+						case 'r':  buf = '\r';      break;
+						case 't':  buf = '\t';      break;
+						case 'u':  assert(false);   break;
+						case 'v':  buf = '\v';      break;
+						case 'x':  assert(false);   break;
+						case '\'': buf = '\'';      break;
+						case '\"': buf = '\"';      break;
+						default:
+					};
+					mtString_Append(&str,(char[2]){buf,0}); 
 				}else{ // Else if no escape
 					mtString_Append(&str,(char[2]){fgetc(src),0}); 
 					// Plain add charater to string.
