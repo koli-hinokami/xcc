@@ -787,11 +787,14 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 };
 char* mtAsmToken_ToString(tAsmToken* self){
 	return mtString_Clone(
-		 self->type==eAsmTokentype_Identifier ?self->string
-		:self->type==eAsmTokentype_Newline    ?"\\n"
-		:self->type==eAsmTokentype_Charater   ?(char[2]){self->ch,0}
+		 self->type==eAsmTokentype_Charater   ?(char[2]){self->ch,0}
 		:self->type==eAsmTokentype_Argument   ?(char[3]){'#',self->ch,0}
+		:self->type==eAsmTokentype_Newline    ?"\\n"
+		//:self->type==eAsmTokentype_Argumenttoken ?TODO
 		:self->type==eAsmTokentype_Number     ?mtString_Join("&",mtString_FromInteger(self->number))
+		:self->type==eAsmTokentype_Identifier ?self->string
+		:self->type==eAsmTokentype_Label      ?mtString_Join(self->string,":")
+		:self->type==eAsmTokentype_String     ?mtString_Format("\"%s\"", self->string)
 		:mtString_Format("(token %p unknein type %i)",self,self->type)
 	);
 }
@@ -950,7 +953,26 @@ tGTargetNearpointer AsmGetlabelvalue(char* name){
 		)
 	)->offset;
 };
-
+void AsmEmitByte(FILE* dst, uint8_t byte){
+	tAsmBinarytoken tok;
+	memset(&tok, 0, sizeof(tok));
+	tok.size = eAsmBinarytokensize_Lobyte;
+	tok.type = eAsmBinarytokentype_Raw;
+	tok.label = nullptr;
+	tok.arg = 0;
+	tok.disp = byte;
+	mtAsmBinarytoken_Emit(&tok, dst);
+};
+void AsmDryemitByte(uint8_t byte){
+	tAsmBinarytoken tok;
+	memset(&tok, 0, sizeof(tok));
+	tok.size = eAsmBinarytokensize_Lobyte;
+	tok.type = eAsmBinarytokentype_Raw;
+	tok.label = nullptr;
+	tok.arg = 0;
+	tok.disp = byte;
+	mtAsmBinarytoken_Dryemit(&tok);
+};
 // -- Instruction defining --
 
 void AsmReadinstructiondefinition(FILE* src){
@@ -1289,6 +1311,17 @@ void AsmSecondpassline(FILE* dst){
 				//AsmCreatelabel_ValueSegment(identifier,tok->number,0);
 				mtAsmToken_Destroy(tok);
 				return;
+			}else if(strcmp(tok->string,".sz")==0){
+				mtAsmToken_Destroy(tok);
+				// Emit a byte zeroterminated string
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* str = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				for(char* i = str; *i; i++)
+					AsmEmitByte(dst, *i);
+				AsmEmitByte(dst, 0);
+				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);
 				// This time ignore - externed labels are already registered,
@@ -1426,6 +1459,17 @@ void AsmFirstpassline(){
 				assert(tok->type==eAsmTokentype_Number);
 				AsmCreatelabel_ValueSegment(identifier,tok->number,0);
 				mtAsmToken_Destroy(tok);
+				return;
+			}else if(strcmp(tok->string,".sz")==0){
+				mtAsmToken_Destroy(tok);
+				// Emit a byte zeroterminated string
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* str = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				for(char* i = str; *i; i++)
+					AsmDryemitByte(*i);
+				AsmDryemitByte(0);
 				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);
