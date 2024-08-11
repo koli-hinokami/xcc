@@ -665,7 +665,9 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 						continue;
 					case '\\':
 						fgetc(src);
-						switch(i = fgetc(src)){
+						int j;
+						i = j = fgetc(src);
+						switch(j){
 							case EOF:
 								fprintf(
 									stderr,
@@ -1291,7 +1293,26 @@ void AsmSecondpassline(FILE* dst){
 				FILE* stream = fopen(fname,"r");
 				if(!stream){
 					printf(
-						"AsmCommonparseline: Directive .include: Unable to open file \"%s\": Error %i•%s\n",
+						"AsmSecondpassline: Directive .include: Unable to open file \"%s\": Error %i•%s\n",
+						fname, errno, strerror(errno)
+					);
+				};
+				mtList_Prepend(&AsmIncludelist,stream);
+				mtString_Destroy(fname);
+				return;
+			}else if(strcmp(tok->string,".gl_include")==0){
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* fname = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Newline);
+				mtAsmToken_Destroy(tok);
+				FILE* stream = fopen(mtString_Format("/etc/xcc/%s/%s",AsmArchitecturename,fname),"r");
+				if(!stream){
+					printf(
+						"AsmSecondpassline: Directive .gl_include: Unable to open file \"%s\": Error %i•%s\n",
 						fname, errno, strerror(errno)
 					);
 				};
@@ -1459,6 +1480,25 @@ void AsmFirstpassline(){
 				}else{
 					mtList_Prepend(&AsmIncludelist,stream);
 				};
+				mtString_Destroy(fname);
+				return;
+			}else if(strcmp(tok->string,".gl_include")==0){
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* fname = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Newline);
+				mtAsmToken_Destroy(tok);
+				FILE* stream = fopen(mtString_Format("/etc/xcc/%s/%s",AsmArchitecturename,fname),"r");
+				if(!stream){
+					printf(
+						"AsmSecondpassline: Directive .gl_include: Unable to open file \"%s\": Error %i•%s\n",
+						fname, errno, strerror(errno)
+					);
+				};
+				mtList_Prepend(&AsmIncludelist,stream);
 				mtString_Destroy(fname);
 				return;
 			}else if(strcmp(tok->string,".segment")==0){
