@@ -58,8 +58,8 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 		};	break;
 		case tLexem_Nullexpression:
 			ErfUpdate_String("SppParsefunctionarguments: Nullexpression");
-			printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");
-			retval = nullptr;
+			// Handle just like variadics
+			retval = mtListnode_Cons(nullptr,nullptr);
 			break;
 		case tLexem_Ellipsis:
 			ErfUpdate_String("SppParsefunctionarguments: Ellipsis");
