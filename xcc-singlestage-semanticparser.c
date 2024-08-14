@@ -298,6 +298,10 @@ tSpNode* SpiParsefunctionarguments(tSpNode* ast, tListnode /* <tGType> */ ** arg
 				i = SpInsertimpliedrvaluecast(ast);
 			}else{
 				// Argument type is present
+				mtGType_Verifycast(
+					SpInsertimpliedrvaluecast(ast)->returnedtype,
+					(tGType*)((*argumentslist)->item)
+				);
 				i = mtSpNode_Promote(
 					SpInsertimpliedrvaluecast(ast),
 					(tGType*)((*argumentslist)->item)
@@ -536,7 +540,7 @@ tSpNode* SpCompileinitializer(tGType* type, tLxNode* self){
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
 		printf("SP: [W] SpParse: Nullpointer\n");
-		ErfWarning();
+		//ErfWarning();
 		return nullptr;
 	};
 	if(self->type==tLexem_Identifier){
@@ -1323,13 +1327,6 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};
 			case tLexem_Functioncall: {
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
-				if(left->returnedtype->atomicbasetype!=eGAtomictype_Nearpointer){
-					printf("SP: [F] Unexcepted type when calling a function: %i instead of %i\n",
-						left->returnedtype->atomicbasetype,
-						eGAtomictype_Nearpointer
-					);
-					assert(false);
-				}
 				assert(mtGType_IsPointer(left->returnedtype));
 				assert(mtGType_IsFunction(left->returnedtype->complexbasetype));
 				tSpNode* right = SpParsefunctionarguments(

@@ -1046,6 +1046,8 @@ char* mtGSymbol_ToString(tGSymbol* self){
 	};
 	LfWriteline(buffer);
 };
+void mtGType_Verifycast(tGType* from, tGType* to){ // Throws warnings/errors on invalid casts
+};
 
 // ------------------------------ class tLxNode ------------------------------
 tLxNode* mtLxNode_Create(void){
