@@ -11,6 +11,8 @@ typedef struct {
 } tErfVframe;
 // ------------------- Globals -------------------
 tList /* <tErfVframe> */ ErfVframes;
+bool bErfForce;
+bool bErfFullforce;
 
 // ---------------- Class methods ----------------
 
@@ -113,20 +115,28 @@ void ErfError(){
 	fprintf(stderr,"erf:[E] Error occured!\n");
 	ErfDumpstacktrace();
 	fprintf(stderr,"erf:[E] (end errorlog)\n");
-	exit(1);
+	if(!bErfForce)exit(1);
+};
+void ErfError_String2(char* /* borrows */ string){
+	fprintf(stderr,"%serf:[E] Error occured!\n",string);
+	ErfDumpstacktrace();
+	fprintf(stderr,"erf:[E] (end errorlog)\n");
+	if(!bErfForce)exit(1);
 };
 void ErfFatal_String(char* /* borrows*/ string){
 	fprintf(stderr,"erf:[F] Fatal error occured: %s\n",string);
 	ErfDumpstacktrace();
 	fprintf(stderr,"erf:[F] (end errorlog)\n");
-	exit(1);
+	if(!bErfFullforce)exit(1);
 };
 void ErfFatal(){
 	fprintf(stderr,"erf:[F] Fatal error occured!\n");
 	ErfDumpstacktrace();
 	fprintf(stderr,"erf:[F] (end errorlog)\n");
-	exit(1);
+	if(!bErfFullforce)exit(1);
 };
+void ErfForce(){bErfForce = true;};
+void ErfFullforce(){bErfForce = true;bErfFullforce = true;};
 void* ErfCatchnullptr(void* self){
 	if(!self){
 		fprintf(stderr,"erf:[F] ErfCatchnullptr: Nullpointer caught!\n");

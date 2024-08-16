@@ -154,16 +154,16 @@ void LnCompile(char* file){
 	GSecondaryast = SpOptimize(GSecondaryast);
 	// Compile
 	fprintf(stderr,"L:  [M] IR Generator\n");
-	IgParse(GSecondaryast);
-	fprintf(stderr,"L:  [M] Printing IR\n");
-	printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
-	printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
-	printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
-	printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
-	fprintf(stderr,"L:  [M] Done printing IR\n");
+	Ig2Parse(GSecondaryast);
+	//fprintf(stderr,"L:  [M] Printing IR\n");
+	//printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
+	//printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
+	//printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
+	//printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
+	//fprintf(stderr,"L:  [M] Done printing IR\n");
 	fprintf(stderr,"L:  [M] Emitting IR\n");
-	FILE* dstfile = fopen(mtString_Join(LnTrimextension(file),".ir"),"w");
-	IgDumpir(GCompiled, dstfile);
+	FILE* dstfile = fopen(mtString_Join(LnTrimextension(file),".ir2"),"w");
+	Ig2Dumpir(GCompiled, dstfile);
 	fprintf(stderr,"L:  [M] Done emitting IR\n");
 	fclose(dstfile);
 	fprintf(stderr,"L:  [M] Codegen\n");
@@ -175,7 +175,7 @@ int main(int argc,char* argv[]) {
 	signal(SIGINT,LnInterrupthandler);
 	signal(SIGSEGV,LnNullpointerhandler);
 	signal(SIGABRT,LnFailedassertionhandler);
-	printf("L:  [M] XCC Retargetable C Compiler\n");
+	printf("L:  [M] xcc Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
 	printf("L:      Version 0.9.13.0.universal.jam1-ir\n");
 	printf("L:      ----------------------------------------------------\n");
@@ -183,6 +183,19 @@ int main(int argc,char* argv[]) {
 	printf("L:  [T] Options:\n");
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
+		switch(argv[aindex][1]){
+			case 'f': // Force
+				fprintf(stderr,"L:  [W] Force is used! Things may go wrong!\n");
+				ErfForce();
+				break;
+			case 'F': // FORCE
+				fprintf(stderr,"L:  [F] -- Full force is used! Except segfaults! --\n");
+				ErfFullforce();
+				break;
+			default:
+				printf("L:  [F] Unrecognized option `-%c`\n",argv[aindex][1]);
+				exit(2);
+		};
 		printf("L:  [T]   %s\n",argv[aindex]);
 	};
 	//Files for compilation

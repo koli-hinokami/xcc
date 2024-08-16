@@ -79,11 +79,18 @@ So there can be things like
 
 Base operation.
 
-Excepted anything else here?
+Excepted something else here?
 
 ### Operands
 
  * `cstack` - in this case source/dest is pushed/popped from calculation stack
+ * `acc` - source/dest is the accumulator. That is to allow doing
+   ```
+   v2.mov.i16   acc,    data:2*frame.-2[]UTestarray
+   v2.add.i16   acc, ,  data:2*frame.-2[2]UTestarray
+   v2.add.i16   acc, ,  data:2*frame.-2[4]UTestarray
+   v2.add.i16   data:[]UTestarray_Sum, acc, data:2*frame.-2[6]UTestarray
+   ```
  * aforementioned `<segment>:<deref>@<index>[<displacement>]<base>` -
    will be described later on.
    *<deref> is optional here.*
@@ -91,13 +98,13 @@ Excepted anything else here?
 
  * <segment> is segment to access a variable in
  * <deref> is an optional tag for inserting a dereference before using a
-   variable - `<autoincdectag> <segment> <disp>`. 
+   variable - `<autoincdectag> <segment> <disp>!<base>`. 
    * <autoincdectag> is `+` or `-` to denote having autoincrement or
      autodecrement on the variable.
    * <segment> is the same segment, just for the pre-dereference - rest uses
      segment at operand scope and not at operand->deref scope.
-   * <disp> is combined base+disp for accessing the variable. Whether or not
-     it's legal is up to assembler to decide.
+   * <disp> is displacement from <base> for dereference
+   * <base> is the symbol to dereference from
    * As <deref> is a controversial modifier globally and in my mind alike,
      use of deref is intended to be disableable through Singlestage's
      archdef.

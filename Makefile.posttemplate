@@ -74,6 +74,7 @@ xcc-singlestage: \
 	xcc-singlestage-symbolgen.c \
 	xcc-singlestage-semanticparser.c \
 	xcc-singlestage-irmaker.c \
+	xcc-singlestage-ir2maker.c \
 	xcc-singlestage-fetcher.c \
 	xcc-singlestage-launcher.c
 

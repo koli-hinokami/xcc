@@ -306,6 +306,8 @@ enum tTokentype {
 	tInstruction_Compareconstantjumpequal = 1585, //Solely for switches. No other reason to exist.
 	tInstruction_Bitwiseor          = 1586,
 	tInstruction_Bitwisexor         = 1587,
+	tInstruction_Nearreturn         = 1588,
+	tInstruction_Farreturn          = 1589,
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -3491,8 +3493,8 @@ char *TokenidtoName_Compact[]={
 	"cje_const"                   ,// 1585
 	"or"                          ,// 1586
 	"xor"                         ,// 1587
-	"?"                           ,// 1588
-	"?"                           ,// 1589
+	"ret_near"                    ,// 1588
+	"ret_far"                     ,// 1589
 	"?"                           ,// 1590
 	"?"                           ,// 1591
 	"?"                           ,// 1592

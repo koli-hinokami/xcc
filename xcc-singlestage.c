@@ -1263,6 +1263,9 @@ tGTargetPointer* mtGTargetPointer_CreateStatic(eGSegment segment, tGTargetNearpo
 tGInstruction* mtGInstruction_Create(void){
 	return calloc(sizeof(tGInstruction),1);
 };
+tGInstruction* mtGInstruction_Clone(tGInstruction* self){
+	return memcpy(malloc(sizeof(tGInstruction)),self,sizeof(tGInstruction));
+};
 tGInstruction* mtGInstruction_CreateAllocatestorage(tGTargetSizet size){
 	tGInstruction* i=mtGInstruction_Create();
 	i->opcode.opr=tInstruction_Allocatestorage2;
@@ -1427,5 +1430,6 @@ void GFinalize(){
 #include "xcc-singlestage-symbolgen.c"
 #include "xcc-singlestage-semanticparser.c"
 #include "xcc-singlestage-irmaker.c"
+#include "xcc-singlestage-ir2maker.c"
 #include "xcc-singlestage-launcher.c"
 // the end

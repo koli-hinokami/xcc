@@ -38,6 +38,7 @@ typedef enum eGSegment { // Acts as addressing mode as well
 	meGSegment_Far,             //program-defined bank/segment
 	meGSegment_Count,
 	meGSegment_Immediate,
+	meGSegment_Cstack,
 } eGSegment, eGAddressingmode;
 char* meGSegment_ToStringTable[]= {
 	"relative",
@@ -51,6 +52,11 @@ char* meGSegment_ToStringTable[]= {
 	"far",
 	0,
 	"imm",
+	0,
+	0,
+	0,
+	0,
+	0,
 	0
 };
 typedef enum eGCallingconvention {
@@ -218,12 +224,29 @@ typedef struct tGOpcode {
 	enum eGAtomictype altsize;
 	enum eGSegment segment;
 } tGOpcode;
+typedef struct sIr2Operand {
+	enum eGSegment segment;        // <segment>:
+	tGTargetSizet deref_disp;      // <derefdisp>!
+	struct tGSymbol* deref_symbol; // <derefseg> <derefsymbol>
+	bool do_deref;                 // @
+	tGTargetSizet index_size;      // <size>*
+	tGTargetSizet index_disp;      //
+	struct tGSymbol* index_symbol; // <seg>(<indexdisp>)<base>
+	tGTargetSizet displacement;    // [<%i>]
+	struct tGSymbol* base;         // <base>
+	tGTargetUintmax constant;
+} tIr2Operand;
 typedef struct tGInstruction {
+	// Common
 	tGOpcode opcode; 
 	char* label;
+	char* comment;
 	struct tGInstruction* next;
 	struct tGInstruction* jumptarget;
+	// Primary IR
 	tGTargetUintmax immediate;
+	// Secondary IR
+	tIr2Operand dest, source, source2;
 } tGInstruction;
 typedef struct { // tGTargetPointer
 	bool nonconstant; // TODO: Refactor to use 'dynamic' segment instead of nonconstant specifier
