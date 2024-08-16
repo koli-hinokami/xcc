@@ -33,7 +33,7 @@ MISC if you would like - what normally would be one
 `v.add.relative.i32`.
 
 ### Opcode
-Base operation. 
+Base operation.
 
 There also are some special-purpose opcodes like `v.pha`/`v.plb`. Those are to
 assist Codegen.
@@ -42,23 +42,73 @@ assist Codegen.
 Segment to do operation on.
 Kinda doubles as addressing mode in some cases.
 
-## Secondary IR (?)
+## Secondary IR
 
-Current draft is `v.<opcode>.<segment>.<size>`
+*Not implemented yet.*
 
+Instruction format is `v2.<opcode>.<size> dest, source, source2`.
+First source is omittable *while the comma stays* in which case first source
+is the same as destination.
+
+Source and dest format is `<segment>:<deref>@<index>[<displacement>]<base>`
+Source and dest special cases are `const:<const>` and `cstack`.
+
+`<deref>` part is disableable through Singlestage's archdef.
+
+Example:
+```
+v2.mov.i16 far:data u.u_curdir@1*frame.-2[curdir.str+1]u, const:0
+```
 ### Basics
-Mostly identical to Main IR.
+
+Same as Main IR and Forth except instructions are *compressed* and a lot.
+Instruction has a lot of meaning to it. More than most macroinstructions even.
+This is mostly to work around `xcc-ircompiler`'s limitations.
+
+Most notably Secondary IR is threeoperand with each of three operands
+specifyable as memory addressed by segment-deref-index-displacement-base.
+So there can be things like 
+`v2.add.i16 frame:2*frame.-4[-2], , clojureargs:2*frame.2[0]` -
+ * take a local at -2, 
+ * index it as int16_t array with local at -4
+ * and add in-place a variable from clojure arguments 
+   (commonly given as argument at +2 dereferenced as `void *segment_stack`)
+   at +0 indexed as array of uint16_t by argument at +2
 
 ### Opcode
-Base operation. 
 
-### Opcode modifiers
-- `p`: Pop from stack as in `st` stores and leaves on stack but `st_p` stores
-  and removes from stack
+Base operation.
 
-### Addressing mode
-I know it's stack based but it doesn't mean there won't be fancy composite
-instructions like `v.add_p.abs.dataseg.u16 uUSomerandomvariable`
+Excepted anything else here?
+
+### Operands
+
+ * `cstack` - in this case source/dest is pushed/popped from calculation stack
+ * aforementioned `<segment>:<deref>@<index>[<displacement>]<base>` -
+   will be described later on.
+   *<deref> is optional here.*
+
+
+ * <segment> is segment to access a variable in
+ * <deref> is an optional tag for inserting a dereference before using a
+   variable - `<autoincdectag> <segment> <disp>`. 
+   * <autoincdectag> is `+` or `-` to denote having autoincrement or
+     autodecrement on the variable.
+   * <segment> is the same segment, just for the pre-dereference - rest uses
+     segment at operand scope and not at operand->deref scope.
+   * <disp> is combined base+disp for accessing the variable. Whether or not
+     it's legal is up to assembler to decide.
+   * As <deref> is a controversial modifier globally and in my mind alike,
+     use of deref is intended to be disableable through Singlestage's
+     archdef.
+ * <index> is a way to handle arrays automagically - it's `<size>*<count>`
+   * <size> is type's size to index into array
+   * <count> is `const.<const>` or
+     `<segment>.<symbol+disp>` and is how much to index into array.
+ * <displacement> is a constant offset
+ * <base> is either `cstack` to specity getting base from cstack or a symbol to
+   specify base as a symbol, be it variable or function and internal or
+   external.
 
 # Cfront
 
