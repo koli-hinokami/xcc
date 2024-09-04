@@ -581,11 +581,20 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				break;
 			case tLexem_Externaldeclaration:
 				// -
-				// The thing is, I need to declare a symbol as external 
-				// reference but not definition of this symbol.
-				// So ignoring it is!
+				// . The thing is, I need to declare a symbol as external 
+				// | reference but not definition of this symbol.
+				// ' So ignoring it is!
+				// Instruction unclear, ended up needing to do `.extern label` 
+				// to request it. Will deal with it here.
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Externaldeclaration,
+						.identifier=SppGeneratetype_GetName(
+							self->left),
+					}
+				);
 				ErfLeave();
-				return nullptr;
+				return retval;
 				break;
 		};
 		{	// Statements

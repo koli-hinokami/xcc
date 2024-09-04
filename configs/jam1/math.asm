@@ -89,7 +89,8 @@ Math_Divide_16_8_noHeader:
 ; Returns:    a = quotient 
 ;             d = remainder
 ;             49 cycles!
-Math_Divide_8_8:	proc
+Math_Divide_8_8:	.global
+	proc
 	xor d,d     ; (1) remainder
 Math_Divide_8_8_noHeader:
 	push b      ; (2)
@@ -152,7 +153,8 @@ Math_Divide_8_8_noHeader:
 
 ; Early out version that can be much faster if one param is zero. Or it adds 12 cycles worst case 
 ;             8-65 Cycles 
-Math_Multiply_8_8_zt:	proc
+Math_Multiply_8_8_zt:	.global
+	proc
 	mov tx,Math_Multiply_8_8_retZ
 	test a
 	jz tx
@@ -166,7 +168,8 @@ Math_Multiply_8_8_zt:	proc
 ; Overwrites: 
 ; Returns:    cd result
 ;             53 Cycles  (8086  70-77)
-Math_Multiply_8_8:	proc
+Math_Multiply_8_8:	.global
+	proc
 	push b
 
 	xor c,c       ; set result (low) to zero
@@ -228,7 +231,8 @@ Math_Multiply_8_8:	proc
 	ret
 	endp
 ; return case for zero test version.
-Math_Multiply_8_8_retZ:	proc
+Math_Multiply_8_8_retZ:	.global
+	proc
 	xor c,c
 	mov d,c
 	ret
@@ -251,7 +255,8 @@ Math_Multiply_8_8_8_zt:
 ; Overwrites: d
 ; Returns:    c result
 ;             37 Cycles  
-Math_Multiply_8_8_8:	proc
+Math_Multiply_8_8_8:	.global
+	proc
 	push b
 
 	xor c,c       ; set result (low) to zero
@@ -312,7 +317,8 @@ Math_Multiply_8_8_8_retZ:
 ; Overwrites: 
 ; Returns:    abc result
 ;             9 - 168 Cycles  
-Math_Multiply_16_8:		proc	
+Math_Multiply_16_8:		.global
+	proc	
 	test c
 	jz Math_Multiply_16_8_zero
 
@@ -405,7 +411,7 @@ Math_Multiply_16_8_16_zero:
 ; Overwrites: 
 ; Returns:    abcd result
 ;             63 - 381 Cycles  
-Math_Multiply_16_16:		
+Math_Multiply_16_16:	.global	
 	push ra
 	
 	push a
@@ -454,7 +460,8 @@ Math_Multiply_16_16:
 ; Overwrites: cd
 ; Returns:    ab  result
 ;             73 - 391
-Math_Multiply_fp88_fp88:	proc	
+Math_Multiply_fp88_fp88:	.global
+	proc	
 	push ra
 
 	mov tl,b
@@ -532,7 +539,8 @@ Math_Multiply_fp88_fp88_ResultPos:
 ; Overwrites:   
 ; Returns:    ab  result
 ;             67 - 371
-Math_Square_fp88:	proc
+Math_Square_fp88:	.global
+	proc
 	push ra
 
 	push c
@@ -591,7 +599,8 @@ Math_Square_fp88_Pos:
 ;   Math_Divide_fp88_fp88_denom_unsigned   -  denominator unsigned  (numerator can be negative)  
 ;   Math_Divide_fp88_fp88                  -  Generic version 
 
-Math_Divide_fp88_fp88:	proc
+Math_Divide_fp88_fp88:	.global
+	proc
 	test d
 	jns Math_Divide_fp88_fp88_denom_unsigned
 	
@@ -629,7 +638,8 @@ Math_Divide_fp88_fp88:	proc
 	pop ra	
 	ret 
 	endp
-Math_Divide_fp88_fp88_Both_negative:	proc
+Math_Divide_fp88_fp88_Both_negative:	.global
+	proc
 	; both are negative, so result will be posative 
 	; invert ab
 	push c
@@ -649,7 +659,8 @@ Math_Divide_fp88_fp88_Both_negative:	proc
 	endp
 
 
-Math_Divide_fp88_fp88_denom_unsigned:	proc
+Math_Divide_fp88_fp88_denom_unsigned:	.global
+	proc
 	test b
 	jns Math_Divide_fp88_fp88_unsigned
 	
@@ -685,7 +696,8 @@ Math_Divide_fp88_fp88_denom_unsigned:	proc
 	endp
 	
 
-Math_Divide_fp88_fp88_unsigned:		proc
+Math_Divide_fp88_fp88_unsigned:		.global
+	proc
 	push a
 	
 	xor a,a 
@@ -747,7 +759,8 @@ Math_Divide_fp88_fp88_normalized:
 ; Returns:    a = quotient low
 ;             b = quotient high
 ;             d = remainder (overwrite) 
-Math_Divide_fp88_util_24_8:	proc
+Math_Divide_fp88_util_24_8:	.global
+	proc
 	test d
 	jz Math_Divide_16_8       ; (8) if d is zero,  use the 16/8 version
 
@@ -765,7 +778,8 @@ Math_Divide_fp88_util_24_8:	proc
 ; Returns:    
 ;             a = quotient   
 ;             d = remainder (overwrite) 
-Math_Divide_fp88_util_16_8:	proc
+Math_Divide_fp88_util_16_8:	.global
+	proc
 	test b
 	jz Math_Divide_8_8       ; (8) if d is zero,  use the 16/8 version
 
@@ -777,7 +791,8 @@ Math_Divide_fp88_util_16_8:	proc
 ; Paramaters: abd = numerator 
 ;             c   = denominator
 ; Returns:    abd = quotient 
-Math_Divide_u24_u8:	proc
+Math_Divide_u24_u8:	.global
+	proc
 	push ra
 	test d
 	jnz full_div
@@ -817,7 +832,8 @@ full_div:
 ;             c   = denominator
 ; Returns:    abd = quotient 
 ; Overites:   c
-Math_Divide_s24_u8:	proc
+Math_Divide_s24_u8:	.global
+	proc
 	test d
 	jns Math_Divide_u24_u8   ; if it's not negative, easy option. 
 
@@ -859,7 +875,8 @@ Math_Divide_s24_u8:	proc
 ;             c  = denominator
 ; Overwrites: d
 ; Returns:    ab = quotient
-Math_Divide_fp88_u8:	proc
+Math_Divide_fp88_u8:	.global
+	proc
 
 	test b
 	js _negative
@@ -897,7 +914,8 @@ _negative:
 ;              c  = 0/ff for sign of original;
 ; Time:       10 or 15 (12.5) cycles
 ;             14 or 19 (16.5) cycles if you care about register C
-Math_ABS_16:	proc
+Math_ABS_16:	.global
+	proc
 	xor c,c
 	test b
 	jns Math_ABS_16_done ; 8 cycles

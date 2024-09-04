@@ -1,6 +1,7 @@
 ; vim:ts=8
 	; Jam-1 crt0 for stdcall main(int argc, char** argp, char** envp)
 	; (the code executed when program starts. be careful here)
+	.extern main
 	.segment 1
 _start:	push	ra
 	mov	si,	0
@@ -15,11 +16,11 @@ _start:	push	ra
 	push	a
 	call	main
 	nop
-	mov	ab,	__crt0_leftstring
-	push	b
-	push	a
-	call	puts
-	nop
+	;mov	ab,	__crt0_leftstring
+	;push	b
+	;push	a
+	;call	puts
+	;nop
 	pop	ra
 	nop
 	ret

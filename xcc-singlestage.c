@@ -1172,6 +1172,17 @@ tGInstruction* mtGInstruction_CreateCast(int opcode,int fromsize,int tosize){
 	i->opcode.altsize=tosize;
 	return i;
 };
+tGInstruction* mtGInstruction_CreateExtern(char* /* takeown */ name){
+	tGInstruction* i = mtGInstruction_Create();
+	i->opcode.opr=tInstruction_Extern;
+	i->opcode.isize=eGAtomictype_Void;
+	i->label = name;
+	return i;
+};
+tGInstruction* mtGInstruction_SetLabel(tGInstruction* self,char* /* takeown */ name){
+	self->label = name;
+	return self;
+};
 tGInstruction* mtGInstruction_GetLast(tGInstruction* self){
 	// Normally I'd use a forloop `for(T i = self;i;i=i->next);` but I'm
 	// lazy here so recursion it is.
