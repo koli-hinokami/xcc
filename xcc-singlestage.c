@@ -107,9 +107,9 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 		}else{
 			//exit(6);
 			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
+			LfIndent(buffer);
 		};
 		//exit(6);
-		LfIndent(buffer);
 		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
 		if(self->symbol){
 			sprintf(buffer,
@@ -118,16 +118,14 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 			);
 			LfWriteline(buffer);
 		};
-		if(
-			  (self->type==tLexem_Switchcase)
-			||(self->type==tLexem_Switchdefault)
-		){
-			LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
-		}else if(self->type==tLexem_Breakstatement){
-			LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
-		}else{
-			LfiPrint_SpNode("i:",self->initializer);
+		if(self->switchlabels){
+			mtList_Foreach_Clojure(
+				self->switchlabels,
+				(void(*)(void*,void*))LfiPrint_SpNode,
+				"sc"
+			);
 		};
+		LfiPrint_SpNode("i:",self->initializer);
 		LfiPrint_SpNode("c:",self->condition);
 		LfiPrint_SpNode("l:",self->left);
 		LfiPrint_SpNode("r:",self->right);
@@ -424,6 +422,14 @@ bool mtGType_IsPointer(tGType* self){
 	)return true;
 	return false;
 };
+bool mtGType_IsFunction(tGType* self){
+	if(
+		  (self->atomicbasetype == eGAtomictype_Function)
+		||(self->atomicbasetype == eGAtomictype_Nearfunction)
+		||(self->atomicbasetype == eGAtomictype_Farfunction)
+	)return true;
+	return false;
+};
 bool mtGType_IsArray(tGType* self){
 	if(
 		  (self->atomicbasetype == eGAtomictype_Array)
@@ -456,6 +462,8 @@ tGType* mtGType_GetBasetype(tGType* self){
 	exit(2);
 };
 bool mtGType_IsCastableto(tGType* self,tGType* type){
+	assert(self);
+	assert(type);
 	if(
 		  (self->atomicbasetype==eGAtomictype_Pointer)
 		&&(
@@ -484,6 +492,8 @@ bool mtGType_IsCastableto(tGType* self,tGType* type){
 	return true;
 };
 bool mtGType_Equals(tGType* self,tGType* type){
+	assert(self);
+	assert(type);
 	if(
 		  (self->atomicbasetype==eGAtomictype_Function)
 		&&(type->atomicbasetype==eGAtomictype_Function)
@@ -512,8 +522,16 @@ bool mtGType_Equals(tGType* self,tGType* type){
 	if(self->valuecategory!=type->valuecategory)return false;
 	return self->atomicbasetype==type->atomicbasetype;
 };
-tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+eGValuecategory mtGType_GetValuecategory(tGType /* modifies */ * self){
+#ifdef qvGTrace
 	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+#endif
+	return mtGType_GetBasetype(self)->valuecategory;
+}
+tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+#endif
 	mtGType_GetBasetype(self)->valuecategory=val;
 	return self;
 }

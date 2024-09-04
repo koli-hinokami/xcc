@@ -137,6 +137,18 @@ void mtList_Foreach(ptList self, void(*lambda)(void*)){
 		};
 	};
 };
+void mtList_Foreach_Clojure(ptList self, void(*func)(void* args,void* item), void* args){
+	if(self->last == nullptr){ // List empty
+		return;
+	}else if(self->first == self->last){ // List contains one item
+		func(args,self->first->item);
+	}else { // List normal - two or more items
+		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+			func(args,ptr->item);
+		};
+		return;
+	};
+};
 void mtList_Foreach_Lvalue(ptList self, void(*lambda)(void**)){
 	if(!self){
 		printf("ul: [W] lists.h: mtList_Foreach: self==nullptr \n");

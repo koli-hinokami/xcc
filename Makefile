@@ -10,6 +10,7 @@ TIMESTAMP = `date +%y%m%d-%H%M`
 DEPS = \
 	hyperheader.h \
 	xcc.h \
+	xcc-bigtables.h \
 	softpipe.h \
 	cstrings.h \
 	basictypes.h \

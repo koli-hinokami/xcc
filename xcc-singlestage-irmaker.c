@@ -107,9 +107,8 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			//mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
 			//mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Popright,self->right->returnedtype->atomicbasetype);
 			//mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Add,self->right->returnedtype->atomicbasetype);
-
-			assert(self->left->returnedtype->atomicbasetype==eGAtomictype_Pointer);
-			assert(self->left->returnedtype->complexbasetype->atomicbasetype==eGAtomictype_Function);
+			assert(mtGType_IsPointer(self->left->returnedtype));
+			assert(mtGType_IsFunction(self->left->returnedtype->complexbasetype));
 			mtGInstruction_GetLast(i)->next=IgCompileFunctionarguments(
 				self->right
 			);
@@ -176,7 +175,11 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 	switch(self->type){
 		case tSplexem_Blockstatement: {
 			tGInstruction* i;
-			i=IgCompileStatement(self->left);
+			if(self->left){
+				i=IgCompileStatement(self->left);
+			}else{
+				i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+			};
 			assert(mtGInstruction_GetLast(i));
 			if(self->right)mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
 			return i;
@@ -185,6 +188,14 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			tGInstruction* i;
 			i=IgCompileExpression(self->left);
 			assert(mtGInstruction_GetLast(i));
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Prereturn,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Leaveframe,
+				eGAtomictype_Void
+			);
 			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
 				tInstruction_Return,
 				self->left->returnedtype->atomicbasetype
@@ -231,7 +242,9 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 };
 void IgParse(tSpNode* self){
 	assert(self);
+#ifdef qvGTrace
 	printf("IG: [T] Entered with node %i•%s \n",self->type,TokenidtoName[self->type]);
+#endif
 	switch(self->type){
 		case tSplexem_Nulldeclaration:
 			break;
