@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
@@ -18,6 +19,7 @@
 #include "softpipe.h"
 #include "basictypes.h"
 #include "xcc.h"
+#include "xcc-targetconfiguration.h"
 
 /*
 	Used namespaces:

@@ -7,12 +7,30 @@ tSpNode* mtSpNode_Create(void){
 tSpNode* mtSpNode_Clone(tSpNode* self){
 	return memcpy(malloc(sizeof(tSpNode)),self,sizeof(tSpNode));
 };
-tSpFunctionextinfo* mtSpFunctionextinfo_Create(){
+tSpFunctionextinfo* mtSpFunctionextinfo_Allocate(){
 	return calloc(sizeof(tSpFunctionextinfo),1);
 };
+tSpFunctionextinfo* mtSpFunctionextinfo_Create(){
+	tSpFunctionextinfo* i = mtSpFunctionextinfo_Allocate();
+	i->argumentssize = 0;
+	i->localssize = 0;
+	return i;
+};
+tGTargetPointer* SpAllocateargumentstorage(tSpFunctionextinfo* fextinfo, tGTargetSizet size){
+	fextinfo->argumentssize+=size;
+	return mtGTargetPointer_CreateStatic(
+		meGSegment_Stackframe,
+		GTargetStackframeArgumentsstart
+		+fextinfo->argumentssize-size
+	);
+};
 tGTargetPointer* SpAllocatelocalvarstorage(tSpFunctionextinfo* fextinfo, tGTargetSizet size){
-	fextinfo->localssize-=size;
-	return mtGTargetPointer_CreateStatic(meGSegment_Stackframe,fextinfo->localssize);
+	fextinfo->localssize+=size;
+	return mtGTargetPointer_CreateStatic(
+		meGSegment_Stackframe,
+		GTargetStackframeLocalsstart
+		-fextinfo->localssize
+	);
 };
 tGTargetPointer* SpAllocateglobalvarstorage(tGTargetSizet size){
 	tGInstruction* i = mtGInstruction_CreateAllocatestorage(size);
@@ -42,16 +60,24 @@ void SpCompilefunctionarguments(
 		}else{
 			char* name;
 			if(typeexpr->type==tLexem_Typeexpression){
-				tGType* type = SppGeneratetype(typeexpr->returnedtype,typeexpr->left,&name);
+				tGType* type = SppGeneratetype(
+					typeexpr->returnedtype,
+					typeexpr->left,
+					&name
+				);
+				mtGType_Destroy(type);
+				type=mtGNamespace_Findsymbol_NameKind(
+					name_space,
+					name,
+					mtGSymbol_eType_Pointer
+				)->type;
 				mtGNamespace_Findsymbol_NameKind(
 					name_space,
 					name,
 					mtGSymbol_eType_Pointer
-				)->allocatedstorage=(
-					mtGTargetPointer_CreateStatic(
-						meGSegment_Stackframe,
-						fextinfo->argumentssize
-					)
+				)->allocatedstorage=SpAllocateargumentstorage(
+					fextinfo,
+					mtGType_Sizeof(type)
 				);
 				mtGType_GetBasetype(
 					mtGNamespace_Findsymbol_NameKind(
@@ -60,7 +86,6 @@ void SpCompilefunctionarguments(
 						mtGSymbol_eType_Pointer
 					)->type
 				)->valuecategory=eGValuecategory_Leftvalue;
-				fextinfo->argumentssize+=mtGType_Sizeof(type);
 			}else if(typeexpr->type==tLexem_Ellipsis){
 				//tGType* type = SppGeneratetype(typeexpr->returnedtype,typeexpr->left,&name);
 				mtGNamespace_Add(
@@ -214,12 +239,14 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* node = mtSpNode_Create();
 				node->type = tSplexem_Functiondeclaration;
 				SpCurrentfunction = node;
-				// Generate base type and get name
+				// Get it's name
 				char* name = nullptr;
-				node->returnedtype = SppGeneratetype(self->returnedtype,self->left,&name);
-				mtGType_GetBasetype(node->returnedtype)->valuecategory = eGValuecategory_Leftvalue;
+				//node->returnedtype = SppGeneratetype(self->returnedtype,self->left,&name);
+				mtGType_Destroy(SppGeneratetype(self->returnedtype,self->left,&name));
 				// Bind symbol
 				node->symbol=mtGNamespace_Findsymbol_NameKind(self->name_space,name,mtGSymbol_eType_Pointer);
+				node->returnedtype = node->symbol->type;
+				mtGType_GetBasetype(node->returnedtype)->valuecategory = eGValuecategory_Leftvalue;
 				 // And insert compilernop inside
 				 assert(node->symbol);
 				 node->symbol->allocatedstorage=mtGTargetPointer_CreateDynamic(mtGInstruction_CreateCnop());
@@ -234,7 +261,11 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					functionbase = functionbase->left;
 				};
 				assert(functionbase->type==tLexem_Functioncall);
-				if(self->right)SpCompilefunctionarguments(functionbase->right,node->fextinfo,self->right?self->right->name_space:nullptr);
+				if(self->right)SpCompilefunctionarguments(
+					functionbase->right,
+					node->fextinfo,
+					self->right?self->right->name_space:nullptr
+				);
 				node->right=SpParse(self->right);
 				SpCurrentfunction = nullptr;
 				return node;

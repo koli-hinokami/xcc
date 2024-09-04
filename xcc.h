@@ -3491,7 +3491,7 @@ typedef uint16_t tGTargetNearpointer;
 typedef uint16_t tGTargetSizet;
 typedef uint8_t  tGTargetSegment;
 typedef int      tGTargetUintmax;
-const tGTargetSizet GTargetStackframeArgumentsstart = 4;
+//const tGTargetSizet GTargetStackframeArgumentsstart = 4;
 
 // XCC types
 typedef struct tToken {

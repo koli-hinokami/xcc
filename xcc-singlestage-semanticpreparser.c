@@ -17,7 +17,7 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 	//return nullptr;
 	if(!expr){
 		// wat
-		fprintf(stderr,"SG: [E] SppParsefunctionarguments: Null pointer!\n");
+		fprintf(stderr,"SPP:[E] SppParsefunctionarguments: Null pointer!\n");
 		return nullptr;
 	}else switch(expr->type){
 		case tLexem_Comma:
@@ -221,8 +221,8 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			// Split typeexpr and initializer
 			node->type=tLexem_Variabledeclaration;
 			//node->returnedtype=node->returnedtype;
-			node->left=self->left->left;
-			node->right=self->left->right;
+			node->left=SppPreparse(self->left->left,node);
+			node->right=SppPreparse(self->left->right,node);
 			return node;
 		}else{
 #ifdef qvGTrace

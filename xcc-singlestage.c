@@ -558,6 +558,16 @@ tGType* mtGType_Deepclone(tGType* self){
 	i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
 	return i;
 }
+void mtGType_Deallocate(tGType* self){
+	free(self);
+};
+void mtGType_Destroy(tGType* self){
+	if(self->complexbasetype){
+		mtGType_Destroy(self->complexbasetype);
+	};
+	mtGType_Deallocate(self);
+
+};
 tGType* mtGType_Create_String(char* str){
 	return mtGType_Clone(
 		&(tGType){
