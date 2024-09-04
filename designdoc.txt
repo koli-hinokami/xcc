@@ -1,0 +1,112 @@
+		   .........................................
+                   : Koli's  XCC - Retargetable C Compiler :
+		   '''''''''''''''''''''''''''''''''''''''''
+	           Primary documentation and design document
+Timestamps:
+	28oct2023 17:00 UTC+5       Start of development. Progressing slowly,
+	                            but surely.
+	08apr2024 16:26 UTC+5       Packaging up 1st public release, marked
+	                            by xcc lexing itself into AST at least
+				    without fatal errors. Still got a long way
+				    to go!
+
+Stages:
+	¤ Embedder
+		Responsible for handling `#include`. Did separate from 
+		preprocessor for now unknown reasons.
+		Also handles comments. Don't ask why.
+	¤ Preprocessor
+		Handles directives other than `#include`.
+	(Single-stage compiler begins here){
+	¤ Tokenizer
+		Convers preprocessed code into list of tokens.
+	¤ Lexer
+		Generates Primary AST. Doesn't resolves types or symbols.
+	¤ Symbol list generator
+		Generates list of symbols by traversing Primary AST.
+		(should be) double pass - so forward-referencing types
+		inside type definition works. First stages compiles definition 
+		list, second stage resolves types inside type definitons.
+	¤ Semantic parser
+		Converts Primary AST into Secondary AST which was all the type 
+		information present + some structures converted into 
+		lower-level ones.
+	¤ IR Generator
+		Generates Intermediate representation from Secondary AST, eased
+		by all the type annotations provided by Semantic parser.
+	¤ (absent/platform-dependent) IR Optimizer
+	¤ IR Compiler
+		Compiles IR into assembly. Has all the heavy-weight stuff 
+		needed to do so - register allocators and optimizers of all kind.
+	}; // Single-stage compiler ends here
+	¤ Assembler
+		No comments - your usual assembler
+	¤ Linker
+		Same here.
+	¤ Singlestage
+		Original intention was (and is) to create compiler that can run
+		on 16-bit machines without heavily limiting compiled programs
+		size, hence keeping each stage in it's own executable file, as
+		well keeping intermediate result ondisk, swapping in and out
+		as needed.
+		However, developing such beast is equally hellish, so I decided
+		to keep developing the usual way of having just a C compiler
+		without bothering with swapping and splitting into multiple
+		executables until I finalize everything.
+
+Things to be done:
+	¤ Tokenizer:
+	    Numbers, currrently done as passthrough to `atoi()`
+	¤ Lexer: 
+	    Expressions - identifiers and constants, strings
+	    More declarations
+	    Proper statements
+	    Debug some statements parsed as function calls, if that's a thing?
+	¤ Symbol generator:
+	    Create, make double-pass
+	¤ Semantic parser:
+	    Create
+	    Sort out types
+	¤ IR Generator:
+	    Create
+	¤ IR Compiler:
+	    Create
+	    Register allocator
+	¤ Assembler:
+	    Create proxy to Sharman's CAsm
+	     possibly to flatassembler
+	¤ Linker:
+	    Try to adapt CC65's linker
+	¤ Packer/simulator:
+	    Maybe not make it?
+IR Generator notes:
+	IgCompile(tSpNode* self){
+		switch(self->type){
+			case `switch`:
+				preserve(IgCurrentbreak){
+					IgCurrentbreak=GIrInstruction.CreateCnop();
+					// move on with compilation
+					compiled->last->next=IgCurrentbreak;
+				}
+			case `break`:
+				return GIrInstructon.CreateJump(IgCurrentbreak);
+		}
+	}
+	
+
+Sorted<ascending>(time) todo list:
++	`switch`
++	`case`
+ 	`break`
+		Partially done - break itself is fine, but it's target isn't kept
++ 	`default`
+	Lx:strings
+? 	`printf()` being parsed as `declare auto int functioncall() printf`
+		Doing function call bypass in LxParseDeclaration didn't work, refactoring code
+		Doing some weird things, doesn't errors out anymore, just quietly parses... Compiler development is weird.
++	Weird thingy where xcc-singlestage would segfault with stdout buffers still filled with data. Fixed by killing buffering.
+
+
+
+
+	
