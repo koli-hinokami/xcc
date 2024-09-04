@@ -180,6 +180,20 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		//LfiPrint_LxNode("p:",self->precompiledenumeration);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
+		s1 = mtString_Clone("struct");
+		if(self->unresolvedsymbol){
+			mtString_Append(&s1," ");
+			mtString_Append(&s1,self->unresolvedsymbol);
+		};
+		if(self->precompiledstructure){
+			mtString_Append(&s1," [[precompiled]] { ");
+			mtString_Append(&s1,
+				mtString_FromInteger(
+					mtList_Count(self->precompiledstructure)
+				)
+			);
+			mtString_Append(&s1," fields }");
+		};
 		if(!self->unresolvedsymbol){
 			// Occasionally structures are defined only by their fields
 			return mtString_Clone("struct");

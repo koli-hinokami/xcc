@@ -192,8 +192,9 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 				}else if(ast->left->type==tLexem_Comma){
 					// Handle multiple declarations
 					//printf("SG: [E] SgParse: Variable declaration: Unable to parse declarations with commas \n");
-					for(tLxNode* i=ast->left;i->type==tLexem_Comma;i=i->left){
-						char* name = nullptr;
+					tLxNode* i;
+					char* name = nullptr;
+					for(i=ast->left;i->type==tLexem_Comma;i=i->left){
 						if(i->right->type=tLexem_Assign){ // If initializer is valid                  	
 							tGType* type = SgGeneratetype(ast->returnedtype,i->right->left,&name);	
 							mtGNamespace_Add(                                                      	
@@ -217,6 +218,30 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 							);                                                                     	
 						};                                                                             	
 					};
+					name=nullptr;
+					if(i->type=tLexem_Assign){ // If initializer is valid                  	
+						tGType* type = SgGeneratetype(ast->returnedtype,i->left,&name);	
+						mtGNamespace_Add(                                                      	
+							namespace,                                                     	
+							mtGSymbol_CreateDeferred(
+								name,                                                  	
+								type,                                                  	
+								i->right
+							)                                                              	
+						);                                                                     	
+					}else{
+						tGType* type = SgGeneratetype(ast->returnedtype,i,&name);
+						// Uninitialized                                                       	
+						mtGNamespace_Add(                                                      	
+							namespace,                                                     	
+							mtGSymbol_CreatePointer(                                       	
+								name,                                                  	
+								type,                                                  	
+								nullptr                                                	
+							)                                                              	
+						);                                                                     	
+					};                                                                             	
+
 				}else{
 					// Handle a declaration
 					char* name = nullptr;
@@ -255,8 +280,9 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 			}else if(ast->left->type==tLexem_Comma){
 				// Handle multiple declarations
 				printf("SG: [E] SgParse: typedef: Unable to parse declarations with commas \n");
-				for(tLxNode* i=ast->left;i->type==tLexem_Comma;i=i->left){
-					char* name = nullptr;
+				char* name = nullptr;
+				tLxNode* i=nullptr;
+				for(i=ast->left;i->type==tLexem_Comma;i=i->left){
 					tGType* type = SgGeneratetype(ast->returnedtype,i->right,&name);	
 					mtGNamespace_Add(
 						namespace,
@@ -266,6 +292,15 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 						)
 					);
 				};
+				name = nullptr;
+				tGType* type = SgGeneratetype(ast->returnedtype,i,&name);	
+				mtGNamespace_Add(
+					namespace,
+					mtGSymbol_CreateTypedef(
+						name,
+						type
+					)
+				);
 			}else{
 				// Handle a declaration
 				char* name = nullptr;

@@ -151,6 +151,65 @@ void mtLxFetcher_Print_Limited(tLxFetcher* self){
 		j++;
 	};
 };
+tLxFetcher* mtLxFetcher_FetchuntilParenthesized_Variadic(tLxFetcher* fetcher, int tokenidcount,/*variadic tTokentype tokenid[tokenidcount]*/...){
+#ifdef qvGTrace
+	printf("LX: [T] mtLxFetcher_FetchuntilParenthesized: entered \n");
+#endif
+#ifdef qvGTraceexpressions
+	printf("LX: [T] mtLxFetcher_FetchuntilParenthesized: printing fetcher \n");
+	mtLxFetcher_Print_Limited(fetcher);
+#endif
+	bool found = false;
+	tLxFetcher* targetfetcher = malloc(sizeof(tLxFetcher));
+	targetfetcher->fetchfrom=fetcher->fetchfrom;
+	tListnode /* <tToken> */ * tempptr = nullptr;
+	int parenthesation = 0;
+	for(
+		tempptr = targetfetcher->fetchfrom;
+		tempptr!=null;
+		tempptr=tempptr->next
+	){
+		if(parenthesation<=0){
+			va_list args;
+			va_start(args,tokenidcount);
+			for(int index=0;index<tokenidcount;index++){
+				tTokentype arg = va_arg(args,/*tTokentype*/int);
+				if(arg==((tToken*)tempptr->item)->type){
+					found = true;
+				};
+				if(found)break;
+			};
+			va_end(args);
+		};
+		switch(((tToken*)tempptr->item)->type){
+			case tToken_Openbrackets:
+			case tToken_Opencurlybraces:
+			case tToken_Openparentheses:
+				parenthesation++;
+				break;
+			case tToken_Closebrackets:
+			case tToken_Closecurlybraces:
+			case tToken_Closeparentheses:
+				parenthesation--;
+				break;
+			default:
+				break;
+		};
+		if(found){
+			//found->((tToken*)tempptr->item)->type==va_arg(args,tTokentype)
+			fetcher->fetchfrom=tempptr;
+			targetfetcher->fetchto=tempptr;
+			return targetfetcher;
+		};
+		if(0)if(parenthesation<0){
+			printf("LX: [W] mtLxFetcher_FetchuntilParenthesized: Broken parenthesation! \n");
+			//break;
+		};
+	};
+	printf("LX: [W] mtLxFetcher_FetchuntilParenthesized: Target token not found\n");
+	return nullptr;
+
+};
 tLxFetcher* mtLxFetcher_FetchuntilParenthesized(tLxFetcher* fetcher, tTokentype token){
 #ifdef qvGTrace
 	printf("LX: [T] mtLxFetcher_FetchuntilParenthesized: entered \n");

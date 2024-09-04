@@ -749,6 +749,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				if(parenthesation<0){
 					fprintf(stderr,"LX: [F] LxParseExpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					mtLxFetcher_Print(fetcher);
 					exit(1);
 				};
 				if(parenthesation==0){
@@ -2087,6 +2088,57 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 			}
 		);
 	};
+	// Precedence 14 - Assignments 
+	// Parsed with right-associativity unit
+	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
+		switch(((tToken*)i->item)->type){
+			case tToken_Openparentheses: 
+			case tToken_Openbrackets: 
+			case tToken_Opencurlybraces: 
+				parenthesation++;
+				break;
+			case tToken_Closeparentheses: 
+			case tToken_Closebrackets: 
+			case tToken_Closecurlybraces: 
+				parenthesation--;
+				break;
+			default: {
+				if(parenthesation<0){
+					fprintf(stderr,"LX: [F] LxParseTypeexpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					exit(1);
+				};
+				if(parenthesation==0){
+					switch(((tToken*)i->item)->type){
+						case tToken_Assign:
+							// leftassociative -> full break out of forloop
+#ifdef qvGTraceexpressions
+	printf("LX: [T] LxParseTypeexpression: Precedence 14 - Assignments \n");
+#endif
+							return mtLxNode_Clone(
+								&(tLxNode){
+									.type=tLexem_Comma,
+									.left=LxParseTypeexpression(
+										&(tLxFetcher){
+											.fetchfrom=fetcher->fetchfrom,
+											.fetchto=i
+										}
+									),
+									// Right half is always parsed as a proper expression
+									.right=LxParseExpression(
+										&(tLxFetcher){
+											.fetchfrom=i->next,
+											.fetchto=fetcher->fetchto
+										}
+									)
+								}
+							);
+						default:
+							break;
+					};
+				};
+			};	break;
+		};
+	};
 	//  There should've been .& and ->&
 	// Precedence 2 - a lot of various things
 #ifdef qvGTraceexpressions
@@ -2538,79 +2590,115 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 				//mtLxFetcher_Print(fetcher);
 				tLxNode* initializer = nullptr;
 				// Previously breaked at assignment token
-				tLxFetcher* typeexprfetcher = mtLxFetcher_Fetchuntil_Variadic(fetcher, 
-					2,tToken_Opencurlybraces,tToken_Semicolon
+				tLxFetcher localfetcher = *fetcher;
+				tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized_Variadic(fetcher, 
+					4,tToken_Opencurlybraces,tToken_Semicolon,tToken_Assign,tToken_Comma
 				);
 #ifdef qvGDebug
 				printf("LX: [D] LxParseDeclaration: typeexprfetcher.print \n");
 				mtLxFetcher_Print(typeexprfetcher);
 #endif
-				tLxNode* expr = LxParseTypeexpression(typeexprfetcher);
-				// If no valid type expression
-				if(expr==nullptr){
-					*fetcher=savedfetcher;
-					return nullptr;
-				};
-				//fprintf(stderr,"LX: [F] Unfinished code hit! \n");
-				//exit(2);
-				//printf("LX: [T] %i \n",mtLxFetcher_Peek(fetcher)->type);
-				switch(mtLxFetcher_Peek(fetcher)->type){ // Decide on initializer
-					case tToken_Opencurlybraces: {
+				switch(mtLxFetcher_Peek(fetcher)->type){
+					case tToken_Opencurlybraces:
+						// Probably function
 						printf("LX: [T] LxParseDeclaration: Block statement\n");
 						initializer = LxParseBlockstatement(fetcher);
 						return mtLxNode_Clone(
 							&(tLxNode){
 								.type=tLexem_Functiondeclaration,
 								.returnedtype=basetype,
-								.left=expr,
+								.left=LxParseTypeexpression(typeexprfetcher),
 								.right=initializer
 							}
 						);
-						//mtLxFetcher_Advance(fetcher);
-						//initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Closecurlybraces));
-					};	break;
-					case tToken_Semicolon: {
-						printf("LX: [T] LxParseDeclaration: No initializer\n");
-						mtLxFetcher_Advance(fetcher);
+						break;
+					case tToken_Semicolon:
+						// Plain uninitialized declaration
+					case tToken_Comma:
+						// Probably multideclaration
+					case tToken_Assign:
+						// *Probably* initialized declaration
+						// Either way, all three have been merged into 'multideclaration', so parse identically
+						*fetcher = localfetcher;
+						typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
 						return mtLxNode_Clone(
 							&(tLxNode){
 								.type=tLexem_Variabledeclaration,
 								.returnedtype=basetype,
-								.left=expr,
+								.left=LxParseTypeexpression(typeexprfetcher),
 								.right=nullptr
 							}
 						);
-						//mtLxFetcher_Advance(fetcher);
-						//initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Closecurlybraces));
-					};	break;
-					//case tToken_Assign: { // Now initialized decls are a subtype of uninitialized decls.
-					//	printf("LX: [T] LxParseDeclaration: Expression initializer \n");
-					//	mtLxFetcher_Advance(fetcher);
-					//	initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon));
-					//	mtLxFetcher_Advance(fetcher); // skip `;`
-					//	return mtLxNode_Clone(
-					//		&(tLxNode){
-					//			.type=tLexem_Variabledeclaration,
-					//			.returnedtype=basetype,
-					//			.left=expr,
-					//			.right=initializer
-					//		}
-					//	);
-					//};	break;
-					default: {
-						printf("LX: [F] LxParseDeclaration: Unrecognized initializer or forgotten semicolon\n");
-						mtLxFetcher_Print_Limited(fetcher);
-						exit(1);
-					};	break;
+						break;
+
 				};
-				return mtLxNode_Clone(
-					&(tLxNode){
-						.type=tLexem_Variabledeclaration,
-						.returnedtype=basetype,
-						.left=expr,
-						.right=nullptr
-					}
-				);
+				// Legacy code
+				//tLxNode* expr = LxParseTypeexpression(typeexprfetcher);
+				//// If no valid type expression
+				//if(expr==nullptr){
+				//	*fetcher=savedfetcher;
+				//	return nullptr;
+				//};
+				////fprintf(stderr,"LX: [F] Unfinished code hit! \n");
+				////exit(2);
+				////printf("LX: [T] %i \n",mtLxFetcher_Peek(fetcher)->type);
+				//switch(mtLxFetcher_Peek(fetcher)->type){ // Decide on initializer
+				//	case tToken_Opencurlybraces: {
+				//		printf("LX: [T] LxParseDeclaration: Block statement\n");
+				//		initializer = LxParseBlockstatement(fetcher);
+				//		return mtLxNode_Clone(
+				//			&(tLxNode){
+				//				.type=tLexem_Functiondeclaration,
+				//				.returnedtype=basetype,
+				//				.left=expr,
+				//				.right=initializer
+				//			}
+				//		);
+				//		//mtLxFetcher_Advance(fetcher);
+				//		//initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Closecurlybraces));
+				//	};	break;
+				//	case tToken_Semicolon: {
+				//		printf("LX: [T] LxParseDeclaration: No initializer\n");
+				//		mtLxFetcher_Advance(fetcher);
+				//		return mtLxNode_Clone(
+				//			&(tLxNode){
+				//				.type=tLexem_Variabledeclaration,
+				//				.returnedtype=basetype,
+				//				.left=expr,
+				//				.right=nullptr
+				//			}
+				//		);
+				//		//mtLxFetcher_Advance(fetcher);
+				//		//initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Closecurlybraces));
+				//	};	break;
+				//	//case tToken_Assign: { // Now initialized decls are a subtype of uninitialized decls.
+				//	//	printf("LX: [T] LxParseDeclaration: Expression initializer \n");
+				//	//	mtLxFetcher_Advance(fetcher);
+				//	//	initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon));
+				//	//	mtLxFetcher_Advance(fetcher); // skip `;`
+				//	//	return mtLxNode_Clone(
+				//	//		&(tLxNode){
+				//	//			.type=tLexem_Variabledeclaration,
+				//	//			.returnedtype=basetype,
+				//	//			.left=expr,
+				//	//			.right=initializer
+				//	//		}
+				//	//	);
+				//	//};	break;
+				//	default: {
+				//		printf("LX: [F] LxParseDeclaration: Unrecognized initializer or forgotten semicolon\n");
+				//		mtLxFetcher_Print_Limited(fetcher);
+				//		exit(1);
+				//	};	break;
+				//};
+				//return mtLxNode_Clone(
+				//	&(tLxNode){
+				//		.type=tLexem_Variabledeclaration,
+				//		.returnedtype=basetype,
+				//		.left=expr,
+				//		.right=nullptr
+				//	}
+				//);
 			}else{
 				printf("LX: [F] LxParseDeclaration: Unrecognized declaration! \n");
 				return nullptr;
