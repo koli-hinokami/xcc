@@ -180,6 +180,7 @@ enum tTokentype {
 	tLexem_Rawvariabledeclaration	= 579,
 	tLexem_Namespace		= 580,
 	tLexem_Using			= 581,
+	tLexem_Ellipsis			= 582,
 	//tLexem_	        = 582,
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
@@ -198,7 +199,7 @@ enum tTokentype {
 	tSplexem_Dereference		= 1036,		//
 	tSplexem_Structuremember	= 1037,		//
 	tSplexem_Identifier		= 1038,		//
-	tSplexem_Casttorightvalue	= 1039,		//
+	tSplexem_Cast			= 1039,		//Only casts types by size
 	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
@@ -799,7 +800,7 @@ char *TokenidtoName[]={
 	"tLexem_Rawvariabledeclarati>",// 579
 	"tLexem_Namespace            ",// 580
 	"tLexem_Using                ",// 581
-	"tLexem_Undefined            ",// 582
+	"tLexem_Ellipsis             ",// 582
 	"tLexem_Undefined            ",// 583
 	"tLexem_Undefined            ",// 584
 	"tLexem_Undefined            ",// 585
@@ -1256,7 +1257,7 @@ char *TokenidtoName[]={
 	"tSplexem_Dereference        ",// 1036
 	"tSplexem_Structuremember    ",// 1037
 	"tSplexem_Identifier         ",// 1038
-	"tSplexem_Casttorightvalue   ",// 1039
+	"tSplexem_Cast               ",// 1039
 	"tSplexem_Undefined          ",// 1040
 	"tSplexem_Undefined          ",// 1041
 	"tSplexem_Undefined          ",// 1042

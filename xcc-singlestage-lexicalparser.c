@@ -2740,6 +2740,12 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 						.type = tLexem_Booleanfalse
 					}
 				);
+			case tToken_Ellipsis:
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type = tLexem_Ellipsis
+					}
+				);
 			default: {
 				printf("LX: [T] LxParseTypeexpression: Unrecognized constant - passing through to LxParseType\n");
 				tLxNode* typeexpr;

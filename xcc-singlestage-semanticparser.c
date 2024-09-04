@@ -54,6 +54,18 @@ void SpCompilefunctionarguments(
 						fextinfo->argumentssize-=mtGType_Sizeof(type)
 					)
 				);
+			}else if(typeexpr->type==tLexem_Ellipsis){
+				tGType* type = SppGeneratetype(typeexpr->returnedtype,typeexpr->left,&name);
+				mtGNamespace_Findsymbol_NameKind(
+					name_space,
+					"__xcc_variadic",
+					mtGSymbol_eType_Pointer
+				)->allocatedstorage=(
+					mtGTargetPointer_CreateStatic(
+						meGSegment_Stackframe,
+						fextinfo->argumentssize
+					)
+				);
 			}else{
 				printf("SP: [F] SpCompilefunctionarguments: Unrecognized node %i•%s \n",typeexpr->type,TokenidtoName[typeexpr->type]);
 				LfPrint_LxNode(typeexpr);
@@ -80,13 +92,26 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 	if(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue){
 		tGType* newtype = mtGType_Deepclone(self->returnedtype);
 		mtGType_GetBasetype(newtype)->valuecategory=eGValuecategory_Rightvalue;
-		return mtSpNode_Clone(
-			&(tSpNode){
-				.type=tSplexem_Casttorightvalue,
-				.returnedtype=newtype,
-				.left=self,
-			}
-		);
+		if(newtype->atomicbasetype==eGAtomictype_Array){
+			// lvalue T[] -> rvalue T*
+			newtype->atomicbasetype=eGAtomictype_Pointer;
+			return mtSpNode_Clone(
+				&(tSpNode){
+					.type=tSplexem_Cast,
+					.returnedtype=newtype,
+					.left=self,
+				}
+			);
+		}else{
+			// lvalue T -> dereference rvalue T
+			return mtSpNode_Clone(
+				&(tSpNode){
+					.type=tSplexem_Dereference,
+					.returnedtype=newtype,
+					.left=self,
+				}
+			);
+		};
 	};
 	return self;
 };
@@ -129,8 +154,14 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				node->fextinfo = mtSpFunctionextinfo_Create();
 				node->fextinfo->argumentssize = GTargetStackframeArgumentsstart;
 				assert(self->left);
-				assert(self->left->type==tLexem_Functioncall);
-				SpCompilefunctionarguments(self->left->right,node->fextinfo,self->right->name_space);
+				tLxNode* functionbase = self->left;
+				while(functionbase->left->type!=tLexem_Identifier){
+					assert(functionbase);
+					assert(functionbase->left);
+					functionbase = functionbase->left;
+				};
+				assert(functionbase->type==tLexem_Functioncall);
+				SpCompilefunctionarguments(functionbase->right,node->fextinfo,self->right->name_space);
 				node->right=SpParse(self->right);
 				SpCurrentfunction = nullptr;
 				return node;
@@ -299,13 +330,16 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				};
 			};	break;
 			case tLexem_Dereference: {
-				tSpNode* left = SpParse(self->left);
-				// TODO: Allow for arrays
-				assert(left->returnedtype->atomicbasetype==eGAtomictype_Pointer); // TODO: Allow for arrays
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tGType* returnedtype = mtGType_Deepclone(left->returnedtype);
+				// rvalue T* -> lvalue T
+				assert(returnedtype->atomicbasetype==eGAtomictype_Pointer);
+				returnedtype=returnedtype->complexbasetype;
+				mtGType_GetBasetype(returnedtype)->valuecategory=eGValuecategory_Leftvalue;
 				return mtSpNode_Clone(
 					&(tSpNode){
-						.type=tSplexem_Dereference,
-						.returnedtype=left->returnedtype->complexbasetype,
+						.type=tSplexem_Cast,
+						.returnedtype=returnedtype,
 						.left=left,
 					}
 				);

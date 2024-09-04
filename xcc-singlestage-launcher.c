@@ -60,39 +60,70 @@ void LnCompile(char* file){
 	*/
 	fclose(srcfile);
 	// Lexical parsing
+	fprintf(stderr,"L:  [M] Lexicalparser \n");
 	GLexed = LxParse(GTokenized.first);
-	//LfPrint_LxNode(GLexed);
+	if(0){
+		fprintf(stderr,"L:  [M] Printing First AST \n");
+		LfPrint_LxNode(GLexed);
+		fprintf(stderr,"L:  [M] Done printing First AST \n");
+	};
 	//exit(4);
 	// Preparse
+	fprintf(stderr,"L:  [M] Lexicalpostparser \n");
 	GRootnamespace = mtGNamespace_Create();
 	GLexed->name_space=GRootnamespace;
 	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser produces 
 	                                      // same type of tree that 
 					      // Lexicalparser does
-	LfPrint_LxNode(GLexed);
+	if(1){
+		fprintf(stderr,"L:  [M] Printing Primary AST \n");
+		LfPrint_LxNode(GLexed);
+		fprintf(stderr,"L:  [M] Done printing Primary AST \n");
+	};
+	//exit(4);
 	// Symbol generation - includes structs
+	fprintf(stderr,"L:  [M] Symbolgen \n");
 	SgUnresolvedtypes = mtList_Create();
 	SgUnresolvedstructures = mtList_Create();
 	SgCompilablestructures = mtList_Create();
 	GStructuretypes = mtGNamespace_Create();
 	SgParse(GLexed);
-	LfPrint_GNamespace(GRootnamespace);
+	if(1){
+		fprintf(stderr,"L:  [M] Printing Rootnamespace \n");
+		LfPrint_GNamespace(GRootnamespace);
+		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
+	};
 	// Symbolgen second pass
 	//SgUnresolvedtypes = mtList_Create();
+	fprintf(stderr,"L:  [M] Symbolgen second pass - finding unresolved types\n");
 	SgFindunresolvedtypes(GRootnamespace);
+	fprintf(stderr,"L:  [M] Symbolgen second pass - resolving unresolved types\n");
 	SgResolveunresolvedtypes();
+	fprintf(stderr,"L:  [M] Symbolgen second pass - compiling structures\n");
 	SgCompilestructures();
-	LfPrint_GNamespace(GRootnamespace);
+	if(1){
+		fprintf(stderr,"L:  [M] Printing Rootnamespace \n");
+		LfPrint_GNamespace(GRootnamespace);
+		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
+	};
 	// Symbolgen struct registration
 	//  not done separately anymore!
 	// Semantic parsing - compiles structs
 	//exit(4);
+	fprintf(stderr,"L:  [M] Semanticparser\n");
 	GSecondaryast = SpParse(GLexed);
-	LfPrint_SpNode(GSecondaryast);
+	if(1){
+		fprintf(stderr,"L:  [M] Printing Secondary AST \n");
+		LfPrint_SpNode(GSecondaryast);
+		fprintf(stderr,"L:  [M] Done printing Secondary AST \n");
+	};
 	//exit(4);
 	/// The question is where `struct`s go
 	// Compile
+	fprintf(stderr,"L:  [M] IR Maker\n");
+	fprintf(stderr,"L:  [M] IR Compiler\n");
 	// Write object file
+	fprintf(stderr,"L:  [M] Done compiling\n");
 };
 int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
