@@ -1,6 +1,7 @@
 // ----------- Symbol list generator ------------
 tList /* <tGType> */ * SgUnresolvedtypes;
 tList /* <tGType> */ * SgUnresolvedstructures;
+tList /* <tGType> */ * SgCompilablestructures;
 tGNamespace* GStructuretypes;
 
 void SgRegisterstructure(tGType* type){
@@ -9,6 +10,7 @@ void SgRegisterstructure(tGType* type){
 #endif
 	assert(type);
 	assert(type->atomicbasetype==eGAtomictype_Structure);
+	mtList_Append(SgCompilablestructures,type); 
 	if(type->unresolvedsymbol){
 		// Do we have fields declared?
 		if(type->precompiledstructure){
@@ -20,7 +22,7 @@ void SgRegisterstructure(tGType* type){
 				mtGSymbol_CreateTypedef(type->unresolvedsymbol,type)
 			);
 		}else{
-			// We actually should register is as a structure to be resolved
+			// We actually should register it as a structure to be resolved
 			printf("SG: [T] SgRegisterstructure: registering structure usage \"%s\"\n",type->unresolvedsymbol);
 			mtList_Append(SgUnresolvedstructures,type); 
 		};

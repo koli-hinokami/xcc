@@ -111,6 +111,7 @@ void LfiPrint_GType(char* pr, tGType* self){
 		};
 		sprintf(buffer,"Lf: [M]      ¤ Atomictype: %i:%s \n",self->atomicbasetype,str);
 		LfWriteline(buffer);
+		if(self->complexbasetype)LfiPrint_GType("b:",self->complexbasetype);
 	};
 	LfUnindent("Lf: [M]   \n");
 };
@@ -348,10 +349,10 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 	char buffer[512];
 	char* bufptr=buffer;
 	if(self==nullptr){
-		//exit(5);
+		//exit(6);
 		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
-		LfWriteline(buffer);
-	}else if(self->type==tLexem_Declarationlist){
+		//LfWriteline(buffer);
+	}else if(self->type==tSplexem_Declarationlist){
 		LfiPrint_SpNode("l:",self->left);
 		LfiPrint_SpNode("r:",self->right);
 	}else{
@@ -364,6 +365,7 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 			LfWriteline(buffer);
 			return;
 		}else{
+			//exit(6);
 			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
 		};
 		//exit(6);
@@ -384,6 +386,10 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 		LfiPrint_SpNode("r:",self->right);
 		LfUnindent("Lf: [M]   \n");
 	};
+};
+void LfPrint_SpNode(tSpNode* self){
+	LfiPrint_SpNode("",self);
+	//exit(4);
 };
 void LfPrint_GSymbol(tGSymbol* self){
 	// TODO: Rewrite to use dynamic buffers instead of static 
@@ -431,6 +437,11 @@ tToken* mtToken_Clone(tToken* self){
 
 tGType* mtGType_Create(){
 	return calloc(sizeof(tGType),1);
+}
+tGType* mtGType_CreateAtomic(eGAtomictype type){
+	tGType* i = mtGType_Create();
+	i->atomicbasetype = type;
+	return i;
 }
 tGType* mtGType_Clone(tGType* self){
 	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));

@@ -77,6 +77,8 @@ void LnCompile(char* file){
 	//  not done separately anymore!
 	// Semantic parsing - compiles structs
 	GSecondaryast = SpParse(GLexed);
+	LfPrint_SpNode(GSecondaryast);
+	//exit(4);
 	/// The question is where `struct`s go
 	// Compile
 	// Write object file
