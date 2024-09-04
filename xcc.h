@@ -166,7 +166,10 @@ enum tTokentype {
 	tLexem_Constmodifier	        = 574,
 	tLexem_Volatilemodifier	        = 575,
 	tLexem_Restrictmodifier	        = 576,
-	//tLexem_	        = 577,
+	tLexem_Numericconstant	        = 577,
+	tLexem_Stringconstant	        = 578,
+	//tLexem_	        = 579,
+	//tLexem_	        = 580,
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
 	//tToken_	        	= 1280,		//	Second AST string lexems
@@ -757,12 +760,12 @@ char *TokenidtoName[]={
 	"tLexem_Switchcase           ",// 570
 	"tLexem_Switchdefault        ",// 571
 	"tLexem_Goto                 ",// 572
-	"tLexem_Undefined            ",// 573
-	"tLexem_Undefined            ",// 574
-	"tLexem_Undefined            ",// 575
-	"tLexem_Undefined            ",// 576
-	"tLexem_Undefined            ",// 577
-	"tLexem_Undefined            ",// 578
+	"tLexem_Breakstatement       ",// 573
+	"tLexem_Constmodifier        ",// 574
+	"tLexem_Volatilemodifier     ",// 575
+	"tLexem_Restrictmodifier     ",// 576
+	"tLexem_Numericconstant      ",// 577
+	"tLexem_Stringconstant       ",// 578
 	"tLexem_Undefined            ",// 579
 	"tLexem_Undefined            ",// 580
 	"tLexem_Undefined            ",// 581

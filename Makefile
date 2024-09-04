@@ -2,7 +2,8 @@
 
 CC = gcc
 CFLAGS = -g -O0 -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
--DqvGDebug -D_qvGTrace
+-DqszGVersion=\"1.0.1.0\" \
+-DqvGDebug -D_qvGTrace -D_qvGTraceexpressions
 #-D__buildlab__=\"$(USER)\"
 TIMESTAMP = `date +%y%m%d-%H%M`
 DEPS = hyperheader.h xcc.h softpipe.h cstrings.h basictypes.h lists.h

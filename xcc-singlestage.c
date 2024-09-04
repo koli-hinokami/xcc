@@ -21,7 +21,6 @@ tLxNode* GLexed;
 tGNamespace* GRootnamespace;
 tSpNode* GSecondaryast;
 tList /* <tGIrInstruction> */ GCompiled[/*segment*/meGSegment_Count];
-//tLexem GLexemtree;
 
 int iLfIndentation = 0;
 char* iLfIndentationstring =  "| | | | | | | | | | | | | | | | | | | | ";
@@ -72,6 +71,7 @@ void LfUnindent(char* string){
 	//);
 };
 
+void LfiPrint_LxNode(char* pr,tLxNode* self);
 void LfiPrint_GType(char* pr, tGType* self){
 	char buffer[512];
 	sprintf(buffer,"Lf: [M] %2s ¤ Type: \n",pr);
@@ -79,6 +79,11 @@ void LfiPrint_GType(char* pr, tGType* self){
 	if(self->atomicbasetype==eGAtomictype_Unresolved){
 		sprintf(buffer,"Lf: [M]      ¤ Unresolved: \"%s\" \n",self->unresolvedsymbol);
 		LfWriteline(buffer);
+	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
+		sprintf(buffer,"Lf: [M]      ¤ Enumeration \n");
+		LfWriteline(buffer);
+		//LfiPrint_LxNode("p:",self->precompiledenumeration);
+		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
 		sprintf(buffer,"Lf: [M]      ¤ Structunion \n");
 		LfWriteline(buffer);
@@ -116,6 +121,11 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 		LfiPrint_LxNode("l:",self->left);
 		LfiPrint_LxNode("r:",self->right);
 	}else{
+		if(self->type==tLexem_Integerconstant){
+			sprintf(buffer,"Lf: [M] %2s ∙ ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],self->constant);
+			LfWriteline(buffer);
+			return;
+		};
 		if(self->type==tLexem_Identifier){
 			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],self->identifier);
 		}else{
@@ -468,7 +478,7 @@ int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
-	printf("L:      Version 0.0.2.0.gcc-x86_64-cygwin.homebuildlab.010124-0000\n");
+	printf("L:      Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "0\n");
 	printf("L:      ----------------------------------------------------\n");
 	int aindex=1;
 	//Command-line options

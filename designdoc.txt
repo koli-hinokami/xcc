@@ -9,6 +9,7 @@ Timestamps:
 	                            by xcc lexing itself into AST at least
 				    without fatal errors. Still got a long way
 				    to go!
+	09apr2024 00:21 UTC+5       Packaging Interim release 1. Some bugfixes.
 
 Stages:
 	¤ Embedder
@@ -105,6 +106,7 @@ Sorted<ascending>(time) todo list:
 		Doing function call bypass in LxParseDeclaration didn't work, refactoring code
 		Doing some weird things, doesn't errors out anymore, just quietly parses... Compiler development is weird.
 +	Weird thingy where xcc-singlestage would segfault with stdout buffers still filled with data. Fixed by killing buffering.
+	You can't get away with just one expression parser. You will need a separate one for type expressions.
 
 
 
