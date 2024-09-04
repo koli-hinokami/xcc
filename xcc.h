@@ -192,6 +192,13 @@ enum tTokentype {
 	tSplexem_Returnstatement	= 1030,		//
 	tSplexem_Variabledeclaration	= 1031,		//
 	tSplexem_Nullexpression		= 1032,		//
+	tSplexem_Typecast		= 1033,		//
+	tSplexem_Addition		= 1034,		//
+	tSplexem_Substraction		= 1035,		//
+	tSplexem_Dereference		= 1036,		//
+	tSplexem_Structuremember	= 1037,		//
+	tSplexem_Identifier		= 1038,		//
+	tSplexem_Casttorightvalue	= 1039,		//
 	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
@@ -1242,14 +1249,14 @@ char *TokenidtoName[]={
 	"tSplexem_Functiondeclaration",// 1029
 	"tSplexem_Returnstatement    ",// 1030
 	"tSplexem_Variabledeclaration",// 1031
-	"tSplexem_Undefined          ",// 1032
-	"tSplexem_Undefined          ",// 1033
-	"tSplexem_Undefined          ",// 1034
-	"tSplexem_Undefined          ",// 1035
-	"tSplexem_Undefined          ",// 1036
-	"tSplexem_Undefined          ",// 1037
-	"tSplexem_Undefined          ",// 1038
-	"tSplexem_Undefined          ",// 1039
+	"tSplexem_Nullexpression     ",// 1032
+	"tSplexem_Typecast           ",// 1033
+	"tSplexem_Addition           ",// 1034
+	"tSplexem_Substraction       ",// 1035
+	"tSplexem_Dereference        ",// 1036
+	"tSplexem_Structuremember    ",// 1037
+	"tSplexem_Identifier         ",// 1038
+	"tSplexem_Casttorightvalue   ",// 1039
 	"tSplexem_Undefined          ",// 1040
 	"tSplexem_Undefined          ",// 1041
 	"tSplexem_Undefined          ",// 1042
@@ -1955,9 +1962,9 @@ typedef struct tGInstruction {
 	tGTargetUintmax immediate;
 } tGInstruction;
 typedef struct { // tGTargetPointer
-	bool nonconstant;
+	bool nonconstant; // TODO: Refactor to use 'dynamic' segment instead of nonconstant specifier
 	// Constant pointer - segment-offset:
-	eGSegment segment;
+	eGSegment segment; 
 	tGTargetSegment bank;
 	tGTargetNearpointer offset;
 	// Dynamic pointer - tGInstructon*:
@@ -2019,7 +2026,7 @@ typedef struct tGType {
 	char* unresolvedsymbol;
 	eGAtomictype atomicbasetype;
 	struct tGType * complexbasetype;
-	void /* struct tGNamespace */ * structure;
+	struct tGNamespace * structure;
 	tList /* LxNode<Declaration> */ * precompiledstructure;
 	void /* tLxNode */ * precompiledenumeration;
 	eGValuecategory valuecategory;

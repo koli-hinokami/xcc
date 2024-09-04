@@ -465,6 +465,7 @@ tGType* SppCompilestructure(tGType* self){
 			char* name = nullptr;
 			if(node->type==tLexem_Variabledeclaration){
 				tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+				mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 				if(name){ // If we actually got a symbol
 					// Create symbol
 					mtGNamespace_Add(
@@ -486,9 +487,12 @@ tGType* SppCompilestructure(tGType* self){
 				}else{
 					// Anonymous structunion
 					SppCompileanonymousstructure(type,&offset,self->structure);
-
 				};
+			}else if(node->type==tLexem_Functiondeclaration){
+				// Function inside struct. Get ready for dirty code.
+				assert(false);
 			}else if(node->type==tLexem_Nulldeclaration){
+				// Intentionally nothing
 			}else{
 				printf("SPP:[E] SppCompilestructure: Invalid declaration inside structure! \n");
 			};

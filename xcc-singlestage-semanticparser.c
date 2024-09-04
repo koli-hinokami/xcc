@@ -64,6 +64,32 @@ void SpCompilefunctionarguments(
 		printf("SP: [E] SpCompilefunctionarguments: typeexpr==nullptr \n");
 	};
 };
+tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){
+	return mtSpNode_Clone(
+		&(tSpNode){
+			.type=tSplexem_Typecast,
+			.returnedtype=type,
+			.left=self,
+		}
+	);
+};
+tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
+	if(!self)return self;
+	if(!self->returnedtype)return self;
+	if(!mtGType_GetBasetype(self->returnedtype))return self;
+	if(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue){
+		tGType* newtype = mtGType_Deepclone(self->returnedtype);
+		mtGType_GetBasetype(newtype)->valuecategory=eGValuecategory_Rightvalue;
+		return mtSpNode_Clone(
+			&(tSpNode){
+				.type=tSplexem_Casttorightvalue,
+				.returnedtype=newtype,
+				.left=self,
+			}
+		);
+	};
+	return self;
+};
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(self)printf("SP: [T] Entered with node %i:%s\n",self->type,TokenidtoName[self->type]);
 	if(!self){
@@ -122,19 +148,23 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Returnstatement,
-						.left=SpParse(self->left),
+						.left=SpInsertimpliedrvaluecast(SpParse(self->left)),
 						.fextinfo=SpCurrentfunction->fextinfo
 					}
 				);
 			};	break;
 			case tLexem_Integerconstant:
-				return mtSpNode_Clone(
-					&(tSpNode){
-						.type=tSplexem_Integerconstant,
-						.returnedtype=mtGType_CreateAtomic(eGAtomictype_Int),
-						.constant=self->constant
-					}
-				);
+				{
+					tGType* type = mtGType_CreateAtomic(eGAtomictype_Int);
+					mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Rightvalue;
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_CreateAtomic(eGAtomictype_Int),
+							.constant=self->constant
+						}
+					);
+				};
 			case tLexem_Typedefinition:
 				// Typedefs are already handled in symbolgen
 				return nullptr;
@@ -170,7 +200,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							.type=tSplexem_Variabledeclaration,
 							.returnedtype=type,
 							//.identifier=name,
-							.symbol=symbol
+							.symbol=symbol,
+							.right=SpInsertimpliedrvaluecast(SpParse(self->right)),
 						}
 					);
 				};
@@ -196,43 +227,89 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.symbol=symbol,
 					}
 				);
-			//case tLexem_Variabledeclaration: {
-			//	char* name = nullptr;
-			//	if(self->left->type==tLexem_Assign){
-			//		return mtSpNode_Clone(
-			//			&(tSpNode){
-			//				.type=tSplexem_Symbol,
-			//				.returnedtype=SgGeneratetype(self->returnedtype,self->left->left,&name),
-			//				.symbol=symbol,
-			//				.right=SgParse(self->left->right), // if no multideclarations - self->right
-			//			}
-			//		);
-			//	}else{
-			//	};
-			//	
-			//};	break;
-			//case tLexem_Substraction: {
-			//	tSpNode* left = SgParse(self->left);
-			//	tSpNode* right = SgParse(self->right);
-			//	return mtSpNode_Clone(
-			//		&(tSpNode){
-			//			.type=tSplexem_Substraction,
-			//			.returnedtype=mtGType_Biggest(left->returnedtype,right->returnedtype),
-			//			.left=left,
-			//			.right=right,
-			//		}
-			//	);
-			//};	break;
-			//case tLexem_Dereference: {
-			//	tSpNode* left = SgParse(self->left);
-			//	return mtSpNode_Clone(
-			//		&(tSpNode){
-			//			.type=tSplexem_Dereference,
-			//			.returnedtype=mtGType_Dereference(left->returnedtype),
-			//			.left=left,
-			//		}
-			//	);
-			//};
+			case tLexem_Add: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+					left=mtSpNode_Promote(left,right->returnedtype);
+				if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+					right=mtSpNode_Promote(right,left->returnedtype);
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Addition,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+			};	break;
+			case tLexem_Substract: {
+				tSpNode* left = SpParse(self->left);
+				tSpNode* right = SpParse(self->right);
+				if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+					left=mtSpNode_Promote(left,right->returnedtype);
+				if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+					right=mtSpNode_Promote(right,left->returnedtype);
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Substraction,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+			};	break;
+			case tLexem_Structuremember: {
+				tSpNode* left = SpParse(self->left);
+				// Don't parse right yet!
+				// ↓ TODO: Allow auto-cast to pointer to structure
+				assert(left->returnedtype->atomicbasetype==eGAtomictype_Structure);
+				assert(self->right->type==tLexem_Identifier);
+				tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
+					left->returnedtype->structure,
+					self->right->identifier,
+					mtGSymbol_eType_Pointer
+				);
+				assert(symbol->allocatedstorage);
+				//assert(symbol->allocatedstorage->nonconstant);
+				if(
+					  (!symbol->allocatedstorage->nonconstant) // constant
+					&&(symbol->allocatedstorage->segment       // and relative
+					   ==meGSegment_Relative)
+				){
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Structuremember,
+							.returnedtype=symbol->type,
+							.left=left,
+							.constant=symbol->allocatedstorage->offset
+						}
+					);
+				}else{
+					// Static structure member
+					return mtSpNode_Clone( // Dirty hackery to make everything work
+						&(tSpNode){
+							.type=tSplexem_Identifier,
+							.returnedtype=symbol->type,
+							.symbol=symbol,
+						}
+					);
+				};
+			};	break;
+			case tLexem_Dereference: {
+				tSpNode* left = SpParse(self->left);
+				// TODO: Allow for arrays
+				assert(left->returnedtype->atomicbasetype==eGAtomictype_Pointer); // TODO: Allow for arrays
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Dereference,
+						.returnedtype=left->returnedtype->complexbasetype,
+						.left=left,
+					}
+				);
+			};
 			default:
 				printf("SP: [E] SpParse: unrecognized node %i:%s\n",self->type,TokenidtoName[self->type]);
 				return nullptr;

@@ -213,7 +213,7 @@ char* mtLxNode_ToString(tLxNode* self){
 			);
 			break;
 		case tLexem_Integerconstant:
-			sprintf(buffer," ∙ ¤ Lexem %i:%s:%i",self->type,TokenidtoName[self->type],self->constant);
+			sprintf(buffer,"intconstant(%i)",self->type,TokenidtoName[self->type],self->constant);
 			return mtString_Clone(buffer);
 		case tLexem_Identifier:
 			sprintf(buffer,"identifier\"%s\"",self->identifier);
@@ -232,7 +232,7 @@ char* mtLxNode_ToString(tLxNode* self){
 			}else if(self->type==tLexem_Breakstatement){
 				//LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
 				mtString_Append(&bufptr," (i:breaktarget)");
-			}else{
+			}else if(self->initializer){
 				//LfiPrint_LxNode("i:",self->initializer);
 				mtString_Append(&bufptr," (i:");
 				mtString_Append(&bufptr,mtLxNode_ToString(self->initializer));
@@ -241,15 +241,21 @@ char* mtLxNode_ToString(tLxNode* self){
 			//LfiPrint_LxNode("c:",self->condition);
 			//LfiPrint_LxNode("l:",self->left);
 			//LfiPrint_LxNode("r:",self->right);
-			mtString_Append(&bufptr," (c:");
-			mtString_Append(&bufptr,mtLxNode_ToString(self->condition));
-			mtString_Append(&bufptr,")");
-			mtString_Append(&bufptr," (l:");
-			mtString_Append(&bufptr,mtLxNode_ToString(self->left));
-			mtString_Append(&bufptr,")");
-			mtString_Append(&bufptr," (r:");
-			mtString_Append(&bufptr,mtLxNode_ToString(self->right));
-			mtString_Append(&bufptr,")");
+			if(self->condition){
+				mtString_Append(&bufptr," (c:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->condition));
+				mtString_Append(&bufptr,")");
+			};
+			if(self->left){
+				mtString_Append(&bufptr," (l:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->left));
+				mtString_Append(&bufptr,")");
+			};
+			if(self->right){
+				mtString_Append(&bufptr," (r:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->right));
+				mtString_Append(&bufptr,")");
+			};
 			return bufptr;
 			break;
 	};
@@ -296,7 +302,7 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			// Inlined List.foreach cuz no capturing lambdas *yet*
 			//for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
 			//	mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
-			//	mtString_Append(&s1,";");
+			//	mtString_Append(&s1,"; ");
 			//}
 			mtString_Append(&s1," )");
 		};
@@ -309,9 +315,15 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 					self->structsize
 				)
 			);
-			mtString_Append(&s1," bytes */");
+			mtString_Append(&s1," bytes */ ");
+
 			// No display of member locations right now
-			mtString_Append(&s1," }");
+			// Member locations
+			for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
+				mtString_Append(&s1,mtGSymbol_ToString((tGSymbol*)i->item));
+				mtString_Append(&s1," ");
+			}
+			mtString_Append(&s1,"}");
 		};
 		//if(!self->unresolvedsymbol){
 		//	// Occasionally structures are defined only by their fields
@@ -344,7 +356,7 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Void){ 
 		return mtString_Clone("void");
-		printf("void ",self->unresolvedsymbol);
+		//printf("void ",self->unresolvedsymbol);
 		//LfPrint_GNamespace(self->structure);
 	}else{
 		// Resolve atomic type to string
@@ -361,7 +373,12 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 				s2 = mtString_Clone(ptr->str);
 			};
 		};
-		return s2;
+		return mtString_Join(
+			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
+			:"novalue ",
+			s2
+		);
 	};
 };
 void LfiPrint_SpNode(char* pr,tSpNode* self){
@@ -410,6 +427,15 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 		LfiPrint_SpNode("c:",self->condition);
 		LfiPrint_SpNode("l:",self->left);
 		LfiPrint_SpNode("r:",self->right);
+		if(
+			self->type==tSplexem_Structuremember
+		){
+			sprintf(buffer,
+				"Lf: [M] ∙ n: ¤ Offset %i \n",
+				self->constant
+			);
+			LfWriteline(buffer);
+		};
 		LfUnindent("Lf: [M]   \n");
 	};
 };
@@ -483,6 +509,12 @@ tGType* mtGType_CreateAtomic(eGAtomictype type){
 tGType* mtGType_Clone(tGType* self){
 	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
 }
+tGType* mtGType_Deepclone(tGType* self){
+	if(!self)return nullptr;
+	tGType* i = mtGType_Clone(self);
+	i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
+	return i;
+}
 tGType* mtGType_Create_String(char* str){
 	return mtGType_Clone(
 		&(tGType){
@@ -493,6 +525,22 @@ tGType* mtGType_Create_String(char* str){
 }
 tGType* mtGType_Compose(tGType* t1,tGType* t2){
 	fprintf(stderr,"G:  [F] mtGType_Compose: Unfinished code hit! \n");
+	exit(2);
+};
+tGType* mtGType_GetBasetype(tGType* self){
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_GetBasetype: entered \n");
+#endif
+	assert(self);
+	if(
+		  (self->atomicbasetype==eGAtomictype_Pointer)
+		||(self->atomicbasetype==eGAtomictype_Array)
+		||(self->atomicbasetype==eGAtomictype_Function)
+	){
+		return mtGType_GetBasetype(self->complexbasetype);
+	}else{
+		return self;
+	};
 	exit(2);
 };
 tGSymbol* mtGSymbol_Create(){
@@ -703,6 +751,9 @@ tGInstruction* mtGInstruction_GetLast(tGInstruction* self){
 	}
 };
 // --------------------- Tokenizer ---------------------
+void GInitializePerfile(){
+	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
+};
 void GFinalize(){
 };
 #include "xcc-singlestage-tokenizer.c"

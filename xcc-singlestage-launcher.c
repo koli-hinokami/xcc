@@ -29,6 +29,7 @@
 
 void LnCompile(char* file){
 	printf("L:  [M] Compiling \"%s\"\n",file);
+	GInitializePerfile();
 	// preprocess file
 	//char* filename = LnTrimextension(file);
 	//LnParsefile("cpp",filename,".c",".cpr",0);
@@ -85,6 +86,7 @@ void LnCompile(char* file){
 	// Symbolgen struct registration
 	//  not done separately anymore!
 	// Semantic parsing - compiles structs
+	//exit(4);
 	GSecondaryast = SpParse(GLexed);
 	LfPrint_SpNode(GSecondaryast);
 	//exit(4);

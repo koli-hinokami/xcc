@@ -343,7 +343,7 @@ tLxNode* LxParseBlockstatement(tLxFetcher* fetcher){
 };
 
 tGType* LxParseBasetype(tLxFetcher* fetcher){
-	tGType* type = malloc(sizeof(tGType));
+	tGType* type = mtGType_Create();
 	tLxFetcher savedfetcher = *fetcher;
 	// Clear structure
 	type->atomicbasetype = null;

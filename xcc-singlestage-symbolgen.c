@@ -190,6 +190,7 @@ void SgRegisterfunctionarguments(tLxNode* self,tGNamespace* namespace){
 			char* name;
 		
 			tGType* type = SppGeneratetype(self->returnedtype,self->left,&name);
+			mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 			mtGNamespace_Add(
 				namespace,
 				mtGSymbol_CreatePointer(
@@ -202,7 +203,7 @@ void SgRegisterfunctionarguments(tLxNode* self,tGNamespace* namespace){
 			// Nothing here
 		}else {
 			// Someone, put an error message here!
-			printf("SP: [E] SgRegisterfunctionarguments: Unrecognized node %i•%s \n",self->type,TokenidtoName[self->type]);
+			printf("SG: [E] SgRegisterfunctionarguments: Unrecognized node %i•%s \n",self->type,TokenidtoName[self->type]);
 			assert(false);
 		};
 	}else{
@@ -249,6 +250,9 @@ void SgParse(tLxNode* ast){
 			tGType* type = SgGeneratetype(
 				ast->returnedtype,ast->left,&name
 			);
+			assert(type);
+			assert(mtGType_GetBasetype(type));
+			mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 			mtGNamespace_Add( // Register function itself
 				ast->parentnode->name_space,
 				mtGSymbol_CreatePointer(
@@ -289,6 +293,7 @@ void SgParse(tLxNode* ast){
 					// Handle a declaration
 					char* name = nullptr;
 					tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
+					mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 					//if(ast->right){
 					//	mtGNamespace_Add(
 					//		ast->name_space,
