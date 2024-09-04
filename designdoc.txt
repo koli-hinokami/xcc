@@ -49,10 +49,15 @@ Timestamps:
 	06may2024 03:42             Publicrelease 8 Interim 4.
 	07may2024 02:58             Publicrelease 8 Interim 5.
 	07may2024 16:57             Publicrelease 8 Interim 6.
+
 	09may2024 03:12             Publicrelease 9. Charaterized by going for 
 	                            developing Semanticparser and IR Generator 
 				    simultaneously and first properly generated 
 				    code.
+	09may2024 19:59             Publicrelease 9 Interim 1. Changelog lost.
+	10may2024 01:03             Publicrelease 9 Interim 2. Changelog lost.
+	14may2024 00:46             Publicrelease 9 Interim 3. Changelog lost.
+
 C Grammar deviations:
 
 	• Logical AND/OR operators `&&` and `||` are lower priority compared to 
@@ -82,28 +87,35 @@ Stages:
 		Mostly functions for working with Primary AST. Has a stub for
 		SppParse which is the Preparser itself but not really used
 	¤ Symbol list generator
-		.Generates list of symbols by traversing Primary AST.
-		|(should be) double pass - so forward-referencing types
-		|inside type definition works. First stages compiles definition 
-		'list, second stage resolves types inside type definitons.
+		. Generates list of symbols by traversing Primary AST.
+		| Double pass - so forward-referencing types
+		| inside type definition works. First stages compiles definition 
+		| list, second stage resolves types inside type definitons.
+		| As development was progressing, wild third stage appeared!
+		' Third stage compiles structures
 		It's substages:
 		• Registering symbols and structures
 		• Compiling structures
 		• Resolving structures used as `struct identifier`
 	¤ Semantic parser
-		Converts Primary AST into Secondary AST which was all the type 
+		Converts Primary AST into Secondary AST which has all the type 
 		information present + some structures converted into 
 		lower-level ones.
+	¤ Semanticpostparser
+		The heavyweight optimization with unused subroutine removal
+		and single-static-assignment trees and alike.
 	¤ IR Generator
 		Generates Intermediate representation from Secondary AST, eased
 		by all the type annotations provided by Semantic parser.
 	¤ (absent/platform-dependent) IR Optimizer
 		Likely to actually be Optimizing IR Generator.
 		(Although 'optimizing' may be too much - the heavyweight 
-		optimization has to be provided as Semanticpostparser.)
+		 optimization has to be provided as Semanticpostparser.)
 	¤ IR Compiler
 		Compiles IR into assembly. Has all the heavy-weight stuff 
 		needed to do so - register allocators and optimizers of all kind.
+		(Jam-1 frontend won't have register allocator, neither it's the
+		 intention - I intend to keep *no* register allocators in use.)
 	}; // Single-stage compiler ends here
 	¤ Assembler
 		No comments - your usual assembler
