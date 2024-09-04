@@ -207,6 +207,13 @@ enum tTokentype {
 	tSplexem_Multiplication		= 1044,		//
 	tSplexem_Division		= 1045,		//
 	tSplexem_Modulo			= 1046,		//
+	tSplexem_Ifstatement		= 1047,		//
+	tSplexem_Whilestatement		= 1048,		//
+	tSplexem_Forstatement		= 1049,		//
+	tSplexem_Switchstatement	= 1050,		//
+	tSplexem_Breakstatement		= 1051,		//
+	tSplexem_Equality		= 1052,		//
+	tSplexem_Nonequality		= 1053,		//
 	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
@@ -1288,13 +1295,13 @@ char *TokenidtoName[]={
 	"tSplexem_Multiplication     ",// 1044
 	"tSplexem_Division           ",// 1045
 	"tSplexem_Modulo             ",// 1046
-	"tSplexem_Undefined          ",// 1047
-	"tSplexem_Undefined          ",// 1048
-	"tSplexem_Undefined          ",// 1049
-	"tSplexem_Undefined          ",// 1050
-	"tSplexem_Undefined          ",// 1051
-	"tSplexem_Undefined          ",// 1052
-	"tSplexem_Undefined          ",// 1053
+	"tSplexem_Ifstatement        ",// 1047
+	"tSplexem_Whilestatement     ",// 1048
+	"tSplexem_Forstatement       ",// 1049
+	"tSplexem_Switchstatemen     ",// 1050
+	"tSplexem_Breakstatement     ",// 1051
+	"tSplexem_Equality           ",// 1052
+	"tSplexem_Nonequality        ",// 1053
 	"tSplexem_Undefined          ",// 1054
 	"tSplexem_Undefined          ",// 1055
 	"tSplexem_Undefined          ",// 1056
@@ -3526,6 +3533,9 @@ typedef enum eGAtomictype {
 	eGAtomictype_Pointer = 5,
 	eGAtomictype_Array = 6,
 	eGAtomictype_Function = 7,
+	eGAtomictype_Farpointer = 40,
+	eGAtomictype_Fararray = 41,
+	eGAtomictype_Farfunction = 42,
 	// IR-side types (and optionally C-side)
 	eGAtomictype_Int8 = 8,
 	eGAtomictype_Uint8 = 9,
@@ -3595,6 +3605,7 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Unsignedlong              , "unsigned long" },
 	{ eGAtomictype_Longlong                  , "long long" },
 	{ eGAtomictype_Unsignedlonglong          , "unsigned long long" },
+	{ eGAtomictype_Boolean                   , "bool" },
 	{ eGAtomictype_Float                     , "float" },
 	{ eGAtomictype_Double                    , "double" },
 	{ eGAtomictype_Longdouble                , "long double" },

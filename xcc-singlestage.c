@@ -170,6 +170,10 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 		//exit(6);
 		LfIndent(buffer);
 		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
+		if(self->name_space){
+			sprintf(buffer,"Lf: [M] ∙ n: ¤ Namespace %p•%s ->%p \n",self->name_space,self->name_space->name,self->name_space->parentnamespace);
+			LfWriteline(buffer);
+		};
 		if(
 			  (self->type==tLexem_Switchcase)
 			||(self->type==tLexem_Switchdefault)
@@ -436,11 +440,11 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 		LfiPrint_SpNode("r:",self->right);
 	}else{
 		if(self->type==tSplexem_Integerconstant){
-			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],(int)self->constant);
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s:%i \n",pr,self->type,TokenidtoName[self->type],mtGType_ToString(self->returnedtype),(int)self->constant);
 			LfWriteline(buffer);
 			return;
 		}else if(self->type==tSplexem_Symbol){
-			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],mtGSymbol_ToString(self->symbol));
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s:%s \n",pr,self->type,TokenidtoName[self->type],mtGType_ToString(self->returnedtype),mtGSymbol_ToString(self->symbol));
 			LfWriteline(buffer);
 			return;
 		}else{
@@ -643,6 +647,10 @@ bool mtGType_Equals(tGType* self,tGType* type){
 	if(self->valuecategory!=type->valuecategory)return false;
 	return self->atomicbasetype==type->atomicbasetype;
 };
+tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+	mtGType_GetBasetype(self)->valuecategory=val;
+	return self;
+}
 tGSymbol* mtGSymbol_Create(){
 	return calloc(sizeof(tGSymbol),1);
 };
@@ -656,14 +664,14 @@ tGNamespace* mtGNamespace_CreateInherit(tGNamespace* parent){
 };
 tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum mtGSymbol_eType kind){
 #ifdef qvGTrace
-	printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");
+	//printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");
+	printf("ss: [T] mtGNamespace_Findsymbol_NameKind(namespace %p, symbol %i•%s): Entered \n",self,kind,name);
 #endif
 	// Empty namespace
 	if(self==nullptr){
 		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found \n",self,kind,name);
 		return nullptr;
 	};
-	printf("ss: [T] mtGNamespace_Findsymbol_NameKind(namespace %p, symbol %i•%s): Entered \n",self,kind,name);
 
 	// Search in list
 	for(tListnode* ptr=self->symbols.first;ptr!=nullptr;ptr=ptr->next){

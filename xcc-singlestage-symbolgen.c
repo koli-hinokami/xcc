@@ -344,6 +344,7 @@ void SgParse(tLxNode* ast){
 			};
 		};	break;
 		case tLexem_Typedefinition:
+			//
 #ifdef qvGTrace
 			printf("SG: [T] SgParse: Type declaration \n");
 #endif
@@ -367,8 +368,24 @@ void SgParse(tLxNode* ast){
 				);
 			};
 			break;
+		case tLexem_Forstatement:
+			SgParse(ast->initializer);
+		case tLexem_Ifstatement:
+			SgParse(ast->condition);
+			SgParse(ast->left);
+			SgParse(ast->right);
+			break;
+		{	// Ignorable lexems
+			case tLexem_Equals:
+			case tLexem_Identifier:
+			case tLexem_Nullexpression:
+			case tLexem_Decrement:
+			case tLexem_Postdecrement:
+				break;
+		};
 		default:
 			fprintf(stderr,"SG: [E] SgParse: Unrecognized node type %i:%s\n",ast->type,TokenidtoName[ast->type]);
+			GError();
 			break;
 	};
 };

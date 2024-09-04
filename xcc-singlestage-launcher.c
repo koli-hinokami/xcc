@@ -74,7 +74,7 @@ void LnCompile(char* file){
 	GLexed->name_space=GRootnamespace;
 	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser produces 
 	                                      // same type of tree that 
-					      // Lexicalparser does
+	                                      // Lexicalparser does
 	if(1){
 		fprintf(stderr,"L:  [M] Printing Primary AST \n");
 		LfPrint_LxNode(GLexed);
@@ -117,7 +117,7 @@ void LnCompile(char* file){
 		LfPrint_SpNode(GSecondaryast);
 		fprintf(stderr,"L:  [M] Done printing Secondary AST \n");
 	};
-	//exit(4);
+	exit(4);
 	/// The question is where `struct`s go
 	// Compile
 	fprintf(stderr,"L:  [M] IR Generator\n");

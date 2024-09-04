@@ -37,7 +37,7 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 						expr->left,
 						nullptr
 					);
-					mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Novalue;
+					mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
 					return mtListnode_Cons(type,nullptr);
 				};	break;
 				case tLexem_Nullexpression:
@@ -206,6 +206,8 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
+			node->initializer=SppPreparse(self->initializer,node);
+			node->condition=SppPreparse(self->condition,node);
 			node->left=SppPreparse(node1,node);
 			node->right=SppPreparse(node2,node);
 			free(node1);
@@ -249,6 +251,8 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			
 			node->type=tLexem_Declarationlist;
 			node->returnedtype=nullptr;
+			node->initializer=SppPreparse(self->initializer,node);
+			node->condition=SppPreparse(self->condition,node);
 			node->left=SppPreparse(node1,node);
 			node->right=SppPreparse(node2,node);
 			return node;
@@ -258,6 +262,8 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 		};
 	};
 	// Return cloned node
+	node->initializer=SppPreparse(self->initializer,node);
+	node->condition=SppPreparse(self->condition,node);
 	node->left=SppPreparse(self->left,node);
 	node->right=SppPreparse(self->right,node);
 	return node;

@@ -1,4 +1,4 @@
-/* // Koli's List library for pure C - actively using heap
+/* // Koli's List library for pure C - using heap a lot
  *
  */
 #ifndef qvmtList_MfIncluded
