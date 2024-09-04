@@ -215,6 +215,7 @@ typedef struct tGOpcode {
 } tGOpcode;
 typedef struct tGInstruction {
 	tGOpcode opcode; 
+	char* label;
 	struct tGInstruction* next;
 	struct tGInstruction* jumptarget;
 	tGTargetUintmax immediate;

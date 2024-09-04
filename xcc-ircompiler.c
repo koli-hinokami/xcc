@@ -22,6 +22,7 @@ typedef enum eIrcTokentype {
 	eIrcTokentype_Argumenttoken,
 	eIrcTokentype_StringedtokensStart,
 	eIrcTokentype_Identifier,
+	eIrcTokentype_String,
 	eIrcTokentype_Label,
 } eIrcTokentype;
 
@@ -221,6 +222,29 @@ tIrcToken* mtIrcToken_Get(FILE* src){ // Constructor
 			fgetc(src);
 			return mtIrcToken_Get(src);
 			break;
+		case '\"': { // A string
+			fgetc(src);
+			char* str = mtString_Create();
+			while(fpeekc(src)!='\"'){ // To end of string
+				if(fpeekc(src)=='\\'){ // If escape seen
+					fgetc(src); // Skip the backslash
+					mtString_Append(&str,(char[2]){fgetc(src),0}); 
+					// And handle the escape. Currently just put
+					// whatever charater is after backslash even
+					// if it is string terminator.
+				}else{ // Else if no escape
+					mtString_Append(&str,(char[2]){fgetc(src),0}); 
+					// Plain add charater to string.
+				};
+			};
+			fgetc(src); // Skip string terminator
+			return mtIrcToken_Clone(
+				&(tIrcToken){
+					.type  = eIrcTokentype_String,
+					.string= str,
+				}
+			);
+		};	break;
 		default: {
 #ifdef qvGTrace
 			printf("IRC:[T] mtIrcToken_Get: Unrecognized char %i•%c\n",fpeekc(src),fpeekc(src));
@@ -290,6 +314,9 @@ void mtIrcToken_Emit(tIrcToken* self,FILE* dst){
 			break;
 		case eIrcTokentype_Charater:
 			fprintf(dst,"%c ",self->ch);
+			break;
+		case eIrcTokentype_String:
+			fprintf(dst,"\"%s\"",self->string);
 			break;
 		default:
 			printf("IRC:[E] mtIrcToken_Emit: Unrecognized token type %i\n",self->type);

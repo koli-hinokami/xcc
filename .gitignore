@@ -50,3 +50,9 @@ modules.order
 Module.symvers
 Mkfile.old
 dkms.conf
+
+# Makefile - cuz it's meant to be compiled from templates now
+/Makefile
+# Packaged xcc
+/xcc-crosscompiler.deb
+# Unsorted
