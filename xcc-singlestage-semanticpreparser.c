@@ -10,6 +10,8 @@ tSppNode* mtSppNode_Create(){
 
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name);
+void SgFindunresolvedtypes_Type(tGType* type);
+
 tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 #ifdef qvGTrace
 	printf("SPP:[T] SppParsefunctionarguments: entered\n");
@@ -34,6 +36,7 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 				nullptr
 			);
 			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
+			SgFindunresolvedtypes_Type(type);
 			return mtListnode_Cons(type,nullptr);
 		};	break;
 		case tLexem_Nullexpression:
@@ -203,11 +206,11 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
 			node1->type=tLexem_Rawvariabledeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
-			node1->returnedtype=node->returnedtype;
+			node1->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
 			node2->type=tLexem_Rawvariabledeclaration;
-			node2->returnedtype=node->returnedtype;
+			node2->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
@@ -252,11 +255,11 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
 			node1->type=tLexem_Rawexternaldeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
-			node1->returnedtype=node->returnedtype;
+			node1->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
 			node2->type=tLexem_Rawexternaldeclaration;
-			node2->returnedtype=node->returnedtype;
+			node2->returnedtype=mtGType_Deepclone(node->returnedtype);
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
@@ -286,11 +289,11 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 				// Split and recurse
 				tLxNode* node1 = mtLxNode_Create();
 				node1->type=tLexem_Typedefinition; 
-				node1->returnedtype=node->returnedtype;
+				node1->returnedtype=mtGType_Deepclone(node->returnedtype);
 				node1->left=self->left->left;
 				tLxNode* node2 = mtLxNode_Create();
 				node2->type=tLexem_Typedefinition;
-				node2->returnedtype=node->returnedtype;
+				node2->returnedtype=mtGType_Deepclone(node->returnedtype);
 				node2->left=self->left->right;
 				
 				node->type=tLexem_Declarationlist;
@@ -366,8 +369,7 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 #ifdef qvGIgnorefatals
 			return 0;
 #else
-			GFinalize();
-			exit(1);
+			GError();
 #endif
 			assert(false);
 		// Internal types
@@ -617,7 +619,9 @@ tGType* SppForceresolvetype(tGType* self, tGNamespace* namespace){
 		self->unresolvedsymbol,
 		mtGSymbol_eType_Typedef
 	)->type;
+	assert(self);
 	*self=*type;
 	mtGType_SetValuecategory(self,valcat);
+	assert(self->atomicbasetype!=eGAtomictype_Unresolved);
 	return self;
 };

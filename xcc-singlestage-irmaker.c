@@ -86,7 +86,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				tInstruction_Popright,self->right->returnedtype->atomicbasetype
 			);
 			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
-				tInstruction_Multiply,self->right->returnedtype->atomicbasetype
+				tInstruction_Substract,self->right->returnedtype->atomicbasetype
 			);
 			return i;
 		};	break;

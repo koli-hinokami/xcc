@@ -1,4 +1,4 @@
-// ------------ Enormous tables for XCC Retargetable C Compiler ------------
+// ------------ Enormous tables for xcc Retargetable C Compiler ------------
 enum tTokentype {			
 	tToken_Null                     = 0 ,   //      Stringless tokens
 	tToken_Memberbypointer          = 1 ,   //->
@@ -237,6 +237,7 @@ enum tTokentype {
 	tSplexem_Shiftleft              = 1066, //
 	tSplexem_Shiftright             = 1067, //
 	tSplexem_Negation               = 1068, //
+	tSplexem_Bitwiseand             = 1069, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Second AST string lexems
 	//                                      //        Actually are deprecated
@@ -1361,7 +1362,7 @@ char *TokenidtoName[]={
 	"tSplexem_Shiftleft          ",// 1066
 	"tSplexem_Shiftright         ",// 1067
 	"tSplexem_Negation           ",// 1068
-	"tSplexem_Undefined          ",// 1069
+	"tSplexem_Bitwiseand         ",// 1069
 	"tSplexem_Undefined          ",// 1070
 	"tSplexem_Undefined          ",// 1071
 	"tSplexem_Undefined          ",// 1072

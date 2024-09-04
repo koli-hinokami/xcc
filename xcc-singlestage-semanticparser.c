@@ -86,7 +86,14 @@ void SpCompilefunctionarguments(
 					mtGSymbol_eType_Pointer
 				)->allocatedstorage=SpAllocateargumentstorage(
 					fextinfo,
-					mtGType_Sizeof(type)
+					mtGType_Sizeof(
+						mtGType_SetValuecategory(
+							mtGType_Deepclone(
+								type
+							),
+							eGValuecategory_Rightvalue
+						)
+					)
 				);
 				mtGType_GetBasetype(
 					mtGNamespace_Findsymbol_NameKind(
@@ -133,6 +140,8 @@ tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){ // should've been called 
 #ifdef qvGTrace
 	printf("SP: [T] mtSpNode_Promote: entered\n");
 #endif
+	assert(self);
+	assert(self);
 	assert(mtGType_IsCastableto(self->returnedtype,type));
 	if(mtGType_Equals(self->returnedtype,type))return self;
 	if(self->type==tSplexem_Integerconstant)
@@ -277,6 +286,91 @@ tSpNode* SpParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ * argume
 	tListnode* args = argumentslist;
 	return SpiParsefunctionarguments(ast,&args);
 };
+void SpArithmeticpromotion(tSpNode* *left, tSpNode* *right){
+	// If the types are the same, that type is the common type.
+	if(mtGType_Equals(left[0]->returnedtype,right[0]->returnedtype))return;
+	// { Here comes my tweak - when you add scalar to pointer,
+	//   weird things happen:
+	if(mtGType_IsPointer(left[0]->returnedtype)){
+		*right=mtSpNode_Clone(
+			&(tSpNode){ // mul<ptr> cast<ptr>right cast<ptr>sizeof(left[])
+				.type=tSplexem_Multiplication,
+				.returnedtype=mtGType_SetValuecategory( //ptr
+					mtGType_Transform(
+						mtGType_CreatePointer(
+							mtGType_CreateAtomic(
+								eGAtomictype_Void
+							)
+						)
+					),
+					eGValuecategory_Rightvalue
+				),
+				.left=mtSpNode_Clone( // cast<ptr> right
+					&(tSpNode){
+						.type=tSplexem_Cast,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_Transform(
+								mtGType_CreatePointer(
+									mtGType_CreateAtomic(
+										eGAtomictype_Void
+									)
+								)
+							),
+							eGValuecategory_Rightvalue
+						),
+						.left=*right,
+					}
+				),
+				.right=mtSpNode_Clone( // cast<ptr>sizeof(left[])
+					&(tSpNode){
+						.type=tSplexem_Integerconstant,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_Transform(
+								mtGType_CreatePointer(
+									mtGType_CreateAtomic(
+										eGAtomictype_Void
+									)
+								)
+							),
+							eGValuecategory_Rightvalue
+						),
+						.constant=mtGType_Sizeof(
+							left[0]->returnedtype->complexbasetype
+						),
+					}
+				),
+			}
+		);
+		return;
+	};
+	// }
+	// Else, the types are different:
+	{
+		// . If the types have the same signedness (both signed or both 
+		// | unsigned), the operand whose type has the lesser conversion 
+		// ' rank1 is implicitly converted2 to the other type.
+		// • Note that conversion rank here is pure size of type.
+		// Else, the operands have different signedness:
+		{
+			// . If the unsigned type has conversion rank greater than or 
+			// | equal to the rank of the signed type, then the operand 
+			// | with the signed type is implicitly converted to the 
+			// ' unsigned type.
+			// . Else, the unsigned type has conversion rank less than 
+			// ' the signed type: 
+			{
+				// . If the signed type can represent all values of the 
+				// | unsigned type, then the operand with the unsigned 
+				// ' type is implicitly converted to the signed type.
+				// . Else, both operands undergo implicit conversion to 
+				// | the unsigned type counterpart of the signed 
+				// ' operand's type.
+			}
+		}
+	}
+	printf("SP: [W] SpArithmeticpromotion: Unimplemented code hit!\n");
+	ErfWarning();
+};
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
 		printf("SP: [W] SpParse: Nullpointer\n");
@@ -364,6 +458,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//return nullptr;
 				{
 					char* name;
+					// Get type
 					tGType* type = mtGType_SetValuecategory(
 						SppGeneratetype(
 							self->returnedtype,
@@ -372,33 +467,57 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						),
 						eGValuecategory_Leftvalue
 					);
+					// Get symbol
 					tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
 						self->name_space,
 						name,
 						mtGSymbol_eType_Pointer
 					);
+					// Update symbol's type
 					symbol->type=SppForceresolvetype(
 						symbol->type,self->name_space);
 					type=symbol->type;
+					// Allocate storage
 					if(SpCurrentfunction){
+						// Allocate local var
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocatelocalvarstorage(
 							SpCurrentfunction->fextinfo,
-							mtGType_Sizeof(symbol->type)
+							mtGType_Sizeof(
+								mtGType_SetValuecategory(
+									mtGType_Deepclone(
+										symbol->type
+									),
+									eGValuecategory_Rightvalue
+								)
+							)
 						);
 					}else{
+						// Allocate global var
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocateglobalvarstorage(
-							mtGType_Sizeof(symbol->type)
+							mtGType_Sizeof(
+								mtGType_SetValuecategory(
+									mtGType_Deepclone(
+										symbol->type
+									),
+									eGValuecategory_Rightvalue
+								)
+							)
 						);
 					};
+					// Massage right node's type
+					tSpNode* right = SpInsertimpliedrvaluecast(
+						SpParse(self->right));
+					if(right) right=mtSpNode_Promote(right,type);
+					// Return node
 					return mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Variabledeclaration,
 							.returnedtype=type,
 							//.identifier=name,
 							.symbol=symbol,
-							.right=SpInsertimpliedrvaluecast(SpParse(self->right)),
+							.right=right,
 						}
 					);
 				};
@@ -530,6 +649,40 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};	break;
 		};
 		{	// Expressions - terms
+			case tLexem_Booleantrue:
+				{
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Transform(
+									mtGType_CreateAtomic(
+										eGAtomictype_Boolean
+									)
+								),
+								eGValuecategory_Rightvalue
+							),
+							.constant=1
+						}
+					);
+				};
+			case tLexem_Booleanfalse:
+				{
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Integerconstant,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Transform(
+									mtGType_CreateAtomic(
+										eGAtomictype_Boolean
+									)
+								),
+								eGValuecategory_Rightvalue
+							),
+							.constant=0
+						}
+					);
+				};
 			case tLexem_Integerconstant:
 				{
 					tGType* type = mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int));
@@ -578,6 +731,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					self->identifier,
 					mtGSymbol_eType_Pointer
 				);
+				if(!symbol){
+					fprintf(stderr,"SP: [E] SpParse: Undefined symbol \"%s\"\n",
+						self->identifier);
+					printf("SP: [E] SpParse: Undefined symbol \"%s\"\n",
+						self->identifier);
+					ErfError();
+				};
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Symbol,
@@ -945,8 +1105,12 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	left=mtSpNode_Promote(left,right->returnedtype);
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
+				SpArithmeticpromotion(&left,&right);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
-					printf("SP: [E] SpParse: Addition: Types not equal! \n");
+					printf("SP: [E] SpParse: Addition: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
 					ErfError();
 					return nullptr;
 				};
@@ -1092,6 +1256,31 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					}
 				);
 			};	break;
+			case tLexem_Bitwiseand: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: Bitwiseand: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Bitwiseand,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+			}
 		};
 		{	// Expressions - increment/decrement
 			//TODO: Handle both lvalues and rvalues

@@ -83,6 +83,8 @@ void mtString_Append(char** s1,char* s2){
 	*s1=str;
 };
 void mtString_Appendchar(char** s1,char s2){
+	assert(s1);
+	assert(*s1);
 	char s3[2] = {s2,0};
 	char* str=mtString_Join(*s1,s3);
 	free(*s1);

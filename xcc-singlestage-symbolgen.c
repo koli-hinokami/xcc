@@ -279,7 +279,7 @@ void SgParse(tLxNode* ast){
 			);
 			if(ast->right){
 				mtGNamespace_Add( // And it's namespace... you need to
-						  // take care of locals, after all...
+				                  // take care of locals, after all...
 					ast->parentnode->name_space,
 					mtGSymbol_CreateNamespace(
 						name,
@@ -456,8 +456,10 @@ void SgRegisterunresolvedtype(tGType* type){
 };
 void SgFindunresolvedtypes_Type(tGType* type);
 void SgFindunresolvedtypes_LxNode(tLxNode* node){
-	printf("SG: [T] SgFindunresolvedtypes_LxNode: Entered\n");
 	assert(node);
+	printf("SG: [T] SgFindunresolvedtypes_LxNode: Entered with node %i•%s\n",
+		node->type,TokenidtoName[node->type]
+	);
 	if(
 		  node->type!=tLexem_Switchcase
 		&&node->type!=tLexem_Switchdefault
@@ -467,9 +469,7 @@ void SgFindunresolvedtypes_LxNode(tLxNode* node){
 	if(node->condition)  SgFindunresolvedtypes_LxNode(node->condition);
 	if(node->left)       SgFindunresolvedtypes_LxNode(node->left);
 	if(node->right)      SgFindunresolvedtypes_LxNode(node->right);
-	if(node->type==tLexem_Variabledeclaration){
-		SgFindunresolvedtypes_Type(node->returnedtype);
-	};
+	if(node->returnedtype)SgFindunresolvedtypes_Type(node->returnedtype);
 	//else{
 	//	printf("SG: [E] SgFindunresolvedtypes_LxNode: Unexcepted node type %i:%s inside node %s \n",
 	//		node->type,TokenidtoName[node->type],
@@ -489,6 +489,8 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			SgRegisterunresolvedtype(type);
 			break;
 		case eGAtomictype_Function:
+		case eGAtomictype_Nearfunction:
+		case eGAtomictype_Farfunction:
 			mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgFindunresolvedtypes_Type);
 		case eGAtomictype_Pointer:
 		case eGAtomictype_Array:
@@ -499,6 +501,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgFindunresolvedtypes_LxNode);
 			//SgRegistercompilablestructure(type);
 		default:
+			
 	};
 };
 void SgFindunresolvedtypes(tGNamespace* name_space);
@@ -545,6 +548,7 @@ tGType* SgResolvetype(tGNamespace* name_space, char* name){
 			// wronge name
 		}else {
 			// finally! I found thee!
+			assert(symbol->type->atomicbasetype!=eGAtomictype_Unresolved);
 			return symbol->type;
 		}
 	};
@@ -554,11 +558,15 @@ tGType* SgResolvetype(tGNamespace* name_space, char* name){
 };
 void SgResolveunresolvedtypes_Resolvetype(tGType* type){
 	printf("SG: [T] SgResolveunresolvedtypes_Resolvetype: Resolving type \"%s\"\n",type->unresolvedsymbol);
+	eGValuecategory valcat=type->valuecategory;
+	if(type->atomicbasetype!=eGAtomictype_Unresolved)return;
 	tGType* temp = SgResolvetype(GRootnamespace,type->unresolvedsymbol);
 	if(temp==nullptr){
-		fprintf(stderr,"SG: [F] SgResolveunresolvedtypes_Resolvetype: Unable to resolve type \"%s\"! Bad things will happen but continuing anyway! \n",type->unresolvedsymbol);
+		fprintf(stderr,"SG: [E] SgResolveunresolvedtypes_Resolvetype: Unable to resolve type \"%s\"! \n",type->unresolvedsymbol);
+		ErfError();
 	}else{
 		*type = *temp;
+		type->valuecategory=valcat;
 	}
 };
 void SgResolveunresolvedtypes(){

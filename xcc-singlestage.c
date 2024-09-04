@@ -457,7 +457,7 @@ tGType* mtGType_Compose(tGType* t1,tGType* t2){
 };
 tGType* mtGType_GetBasetype(tGType* self){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_GetBasetype: entered \n");
+	//printf("ss: [T] mtGType_GetBasetype: entered \n");
 #endif
 	assert(self);
 	if(
@@ -466,7 +466,7 @@ tGType* mtGType_GetBasetype(tGType* self){
 		||(self->atomicbasetype==eGAtomictype_Function)
 	){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_GetBasetype: got it \n");
+	//printf("ss: [T] mtGType_GetBasetype: got it \n");
 #endif
 		return mtGType_GetBasetype(self->complexbasetype);
 	}else{
@@ -642,12 +642,14 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		// Unresolved
 		//sprintf(buffer,"unresolved<%s> ",self->unresolvedsymbol);
 		//return self->unresolvedsymbol;
+		assert(self->unresolvedsymbol);
 		s1 = mtString_Join(self->unresolvedsymbol,">");
 		s2 = mtString_Join("unresolved<",s1);
 		free(s1);
 		return s2;
 	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
 		// Enumeration
+		assert(self->unresolvedsymbol);
 		s1 = mtString_Join(self->unresolvedsymbol,"");
 		s2 = mtString_Join("enum ",s1);
 		free(s1);
