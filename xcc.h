@@ -1144,6 +1144,7 @@ typedef enum eGAtomictype {
 	eGAtomictype_Enumeration,
 	eGAtomictype_Unresolved,
 	// Internal types
+	eGAtomictype_Union, // Temporary type - gets converted to struct later on
 	eGAtomictype_Pointer,
 	eGAtomictype_Array,
 	eGAtomictype_Function,
@@ -1300,7 +1301,7 @@ typedef struct tGType {
 	void /* tLxNode */ * precompiledenumeration;
 	eGValuecategory valuecategory;
 	eGTypequalifiers typequalifiers;
-	tListnode /* <tGType> */ * functionargumets;
+	tListnode /* <tGType> */ * functionarguments;
 	tListnode /* <tGType> */ * templatemodifiers;
 } tGType;
 typedef struct tGNamespace {

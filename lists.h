@@ -65,7 +65,11 @@ void mtList_Prepend(ptList self, void* item){
 	};
 };
 void mtList_Append(ptList self, void* item){
-	if(self->last == nullptr){ // List empty
+	if(self==nullptr){
+		// who is the idiot who tries to append an item to nowhere
+		printf("ul: [E] lists.h: mtList_Append: who is the idiot who tries to append an item to nowhere \n");
+		return;
+	}else if(self->last == nullptr){ // List empty
 		self->last = mtListnode_Cons(item,nullptr);
 		self->first = self->last;
 	}else if(self->first == self->last){ // List contains one item
@@ -146,7 +150,15 @@ void* mtList_Find_Lambda(ptList self, bool(*lambda)(void* item)){
 //		return nullptr;
 //	};
 //};
+
+// --------------------- tListnode family of functions -----------------------
+
+void mtListnode_Foreach(tListnode* self, void(*lambda)(void*)){
+	for(tListnode* i=self;i!=nullptr;i=i->next)lambda(i->item);
+};
+
 //template<T> struct ttListnode {void* item;ttListnode<T> next;};
 //template<T> struct ttList {ttListnode<T> first;ttListnode<T> last;};
+
 #endif // qvmtList_MfIncluded
 

@@ -8,6 +8,7 @@
 #include <stdbool.h>
 #include <ctype.h>
 #include <errno.h>
+#include <assert.h>
 
 #define nullptr ((void*)0)
 #define null 0

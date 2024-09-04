@@ -11,6 +11,15 @@ Timestamps:
 				    to go!
 	09apr2024 00:21 UTC+5       Packaging Interim release 1. Some bugfixes.
 	09apr2024 15:30 UTC+5       Packaging Interim 1b. No changes.
+	14apr2024 01:00 UTC+5       Packaging Publicrelease 2. Changelog got lost.
+	16apr2024 16:11 UTC+5       Packaging Publicrelease 3. Changelog got lost.
+	19apr2024 22:49 UTC+5       Second major crisis after I already forgot what
+	                            (there clearly already was one befure but what 
+				    it was got lost and forgotten, sadly) - 
+				    I have to once again descend into code of 
+				    Lexer this time to change how Typedeclarations
+				    and Variabledeclarations are returned. Turns out,
+				    current format breaks at declarations with commas.
 
 Stages:
 	¤ Embedder

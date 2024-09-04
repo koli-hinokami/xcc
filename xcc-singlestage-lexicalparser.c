@@ -408,6 +408,35 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 				mtLxFetcher_Advance(fetcher);
 			};
 			// Try to recognize definition of fields
+			tList* declarations = nullptr;
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces){
+				mtLxFetcher_Advance(fetcher);
+				declarations = mtList_Create();
+				while(mtLxFetcher_Peek(fetcher)->type!=tToken_Closecurlybraces){
+					mtList_Append(declarations,LxParseDeclaration(fetcher));
+				};
+				mtLxFetcher_Advance(fetcher);
+			};
+			// Yell at user if both identifier and fields destcription are absent
+			if((identifier==nullptr) && (mtList_Count(declarations)==0)){
+				fprintf(stderr,"LX: [F] LxParseBasetype: `struct` w/o both identifier and fields declaration \n");
+				exit(2);
+			};
+			// Assemble field
+			type->precompiledstructure = declarations;
+			type->unresolvedsymbol = identifier;
+		};	break;
+		case tToken_Keywordunion: {
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Union;
+			printf("LX: [T] LxParseBasetype: Parsing union\n");
+			// Try to recognize optional identifier
+			char* identifier = nullptr;
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Identifier){
+				identifier=mtLxFetcher_Peek(fetcher)->string;
+				mtLxFetcher_Advance(fetcher);
+			};
+			// Try to recognize definition of fields
 			tList* declarations = mtList_Create();
 			if(mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces){
 				mtLxFetcher_Advance(fetcher);
@@ -418,7 +447,7 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			};
 			// Yell at user if both identifier and fields destcription are absent
 			if((identifier==nullptr) && (mtList_Count(declarations)==0)){
-				fprintf(stderr,"LX: [F] LxParseBasetype: `struct` w/o both identifier and fields declaration \n");
+				fprintf(stderr,"LX: [F] LxParseBasetype: `union` w/o both identifier and fields declaration \n");
 				exit(2);
 			};
 			// Assemble field
@@ -2618,7 +2647,7 @@ tLxNode* LxParse(tListnode* startpoint){
 	printf("LX: [T] Parsing program! \n");
 #endif
 	tLxNode* i = LxParseProgram(&(tLxFetcher){.fetchfrom=startpoint,.fetchto=nullptr});
-	LfPrint_LxNode(i);
+	//LfPrint_LxNode(i);
 	//exit(3);
 	return i;
 	//return LxParseProgram(&(tLxFetcher){.fetchfrom=startpoint,.fetchto=nullptr});

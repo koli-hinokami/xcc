@@ -392,7 +392,7 @@ tGType* mtGType_CreateFunctioncall_Expr(tGType* self, tLxNode* expr){
 	// Returning:
 	temp->complexbasetype = self;
 	// And taking:
-	temp->functionargumets = SppParsefunctionarguments(expr);
+	temp->functionarguments = SppParsefunctionarguments(expr);
 	return temp;
 };
 tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){

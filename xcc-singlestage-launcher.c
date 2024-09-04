@@ -60,10 +60,18 @@ void LnCompile(char* file){
 	fclose(srcfile);
 	// Lexical parsing
 	GLexed = LxParse(GTokenized.first);
+	LfPrint_LxNode(GLexed);
 	// Symbol generation - includes structs
 	GRootnamespace = mtGNamespace_Create();
 	SgParse(GRootnamespace,GLexed);
 	LfPrint_GNamespace(GRootnamespace);
+	// Symbolgen second pass
+	SgUnresolvedtypes = mtList_Create();
+	SgFindunresolvedtypes(GRootnamespace);
+	SgResolveunresolvedtypes();
+	LfPrint_GNamespace(GRootnamespace);
+	// Symbolgen struct registration
+
 	// Semantic parsing - compiles structs
 	/// The question is where `struct`s go
 	// Compile
