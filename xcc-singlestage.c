@@ -156,6 +156,86 @@ void LfPrint_LxNode(tLxNode* self){
 	LfiPrint_LxNode("",self);
 	//exit(4);
 };
+char* mtGType_ToString_Embeddable(tGType* self){
+	char *s1;
+	char *s2;
+	char *s3;
+	if(self->atomicbasetype==eGAtomictype_Unresolved){
+		// Unresolved
+		//sprintf(buffer,"unresolved<%s> ",self->unresolvedsymbol);
+		//return self->unresolvedsymbol;
+		s1 = mtString_Join(self->unresolvedsymbol,">");
+		s2 = mtString_Join("unresolved<",s1);
+		free(s1);
+		return s2;
+	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
+		// Enumeration
+		s1 = mtString_Join(self->unresolvedsymbol,"");
+		s2 = mtString_Join("enum ",s1);
+		free(s1);
+		return s2;
+		//LfiPrint_LxNode("p:",self->precompiledenumeration);
+		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
+		s1 = mtString_Join(self->unresolvedsymbol,"");
+		s2 = mtString_Join("struct ",s1);
+		free(s1);
+		return s2;
+		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
+		return mtString_Join(
+			mtGType_ToString_Embeddable(self->complexbasetype),
+			"* "
+		);
+		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Array){ 
+		return mtString_Join(
+			mtGType_ToString_Embeddable(self->complexbasetype),
+			"[] "
+		);
+		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Function){ 
+		return mtString_Join(
+			mtGType_ToString_Embeddable(self->complexbasetype),
+			"() "
+		);
+		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Void){ 
+		return mtString_Clone("void ");
+		printf("void ",self->unresolvedsymbol);
+		//LfPrint_GNamespace(self->structure);
+	}else{
+		// Resolve atomic type to string
+		s1 = "unknown<";
+		s1 = mtString_Join(s1,mtString_FromInteger(self->atomicbasetype));
+		s2 = mtString_Join(s1,">");
+		free(s1);
+		for(
+			GAtomictypetostring_Entry * ptr = GAtomictypetostring;
+			ptr->str;
+			ptr++
+		){
+			if(ptr->atomictype==self->atomicbasetype){
+				s2 = mtString_Clone(ptr->str);
+			};
+		};
+		return s2;
+	};
+};
+void LfPrint_GSymbol(tGSymbol* self){
+	char buffer[512];
+	sprintf(buffer,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+	LfWriteline(buffer);
+};
+void LfPrint_GNamespace(tGNamespace* self){
+	char buffer[512];
+	sprintf(buffer,"Lf: [M] ¤ Namespace %p\n",self);
+	LfIndent(buffer);
+	// Print stuff
+	mtList_Foreach(&(self->symbols),(void(*)(void*))(&LfPrint_GSymbol));
+	// Finalize
+	LfUnindent("Lf: [M]   \n");
+};
 
 bool mtToken_HasString(tToken* self){
 	if(self->type&0x0100){
@@ -180,6 +260,9 @@ tToken* mtToken_Clone(tToken* self){
 	return memcpy(i,self,mtToken_Sizeof(self));
 };
 
+tGType* mtGType_Create(){
+	return calloc(sizeof(tGType),1);
+}
 tGType* mtGType_Clone(tGType* self){
 	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
 }
@@ -195,305 +278,117 @@ tGType* mtGType_Compose(tGType* t1,tGType* t2){
 	fprintf(stderr,"G:  [F] mtGType_Compose: Unfinished code hit! \n");
 	exit(2);
 };
-// --------------------- Tokenizer ---------------------
-#include "xcc-singlestage-tokenizer.c"
-
-/*
-struct tLxFetcher {
-	tListnode<tToken> fetchto,fetchfrom;
+tGSymbol* mtGSymbol_Create(){
+	return calloc(sizeof(tGSymbol),1);
 };
-	Fetcher is needed because things like {
-		int, short;
-		unsigned, signed char;
-		struct T, enum T;
-		unsigned long long;
-		T<unsigned>
-		tDictionary<unsigned long long,tDictionary<int,char*> >;
-	} exist. Okay last one was a tiniest bit too much, but just in case.
-*/
-// ---------------- Fetcher ----------------
-typedef struct {
-	tListnode* fetchfrom;
-	tListnode* fetchto;
-	// `fetchto` points to point of stopping. Look into self.eof for more details.
-} tLxFetcher;
-tLxFetcher* mtLxFetcher_Create(tListnode* startpoint, tListnode* endpoint){
-	tLxFetcher* ptr = malloc(sizeof(tLxFetcher));
-	ptr->fetchfrom=startpoint;
-	ptr->fetchto=endpoint;
-	return ptr;
+tGNamespace* mtGNamespace_Create(){
+	return calloc(sizeof(tGNamespace),1);
 };
-tLxFetcher* mtLxFetcher_Clone(tLxFetcher* self){
-	return memcpy(malloc(sizeof(tLxFetcher)),self,sizeof(tLxFetcher));
-};
-bool mtLxFetcher_Eof(tLxFetcher* self){
-	if(self->fetchfrom==self->fetchto){
-		return true;
-	}else{
-		return false;
-	}
-};
-tToken* mtLxFetcher_Peek(tLxFetcher* self){
-	return self->fetchfrom->item;
-}
-tToken* mtLxFetcher_Peeklast(tLxFetcher* self){
-	tListnode* i;
-	for(
-		i=self->fetchfrom;
-		i->next!=self->fetchto;
-		i=i->next
-	);
-	return i->item;
-}
-tLxFetcher* mtLxFetcher_Trimfirst(tLxFetcher* self){ // Recreates!
-	return mtLxFetcher_Clone(
-		&(tLxFetcher){
-			.fetchfrom=self->fetchfrom->next,
-			.fetchto=self->fetchto
-		}
-	);
-};
-tLxFetcher* mtLxFetcher_Trimlast(tLxFetcher* self){ // Recreates!
-	tListnode* i;
-	if(self->fetchfrom->next==self->fetchto){
-		return mtLxFetcher_Clone(
-			&(tLxFetcher){
-				.fetchfrom=nullptr,
-				.fetchto=nullptr
-			}
-		);
-	};
-	for(
-		i=self->fetchfrom;
-		i->next!=self->fetchto;
-		i=i->next
-	);
-	return mtLxFetcher_Clone(
-		&(tLxFetcher){
-			.fetchfrom=self->fetchfrom,
-			.fetchto=i
-		}
-	);
-};
-tToken* mtLxFetcher_Fetch(tLxFetcher* self){
-	tToken* i = mtLxFetcher_Peek(self);
-	if(mtLxFetcher_Eof(self)){
-		//eof!
-		return nullptr;
-	}else{
-		self->fetchfrom=self->fetchfrom->next;
-	};
-	return i;
-};
-bool mtLxFetcher_Advance(tLxFetcher* self){
-	if(mtLxFetcher_Eof(self)){
-		return false; // eof
-	}else if(self->fetchfrom==nullptr){
-		fprintf(stderr,"LX: [E] Advancing fetcher not at EOF with fetchfrom being nullptr \n");
-		return false;
-	}else{
-		self->fetchfrom=self->fetchfrom->next;
-		return true;
-	};
-};
-tLxFetcher* mtLxFetcher_Fetchuntil_Variadic(tLxFetcher* fetcher, int tokenidcount,/*variadic tTokentype tokenid[tokenidcount]*/...){
-	bool found = false;
-	tLxFetcher* targetfetcher = malloc(sizeof(tLxFetcher));
-	targetfetcher->fetchfrom=fetcher->fetchfrom;
-	tListnode/*<tToken>*/* tempptr;
-	for(
-		tempptr = targetfetcher->fetchfrom;
-		tempptr!=null;
-		tempptr=tempptr->next
-	){
-		va_list args;
-		va_start(args,tokenidcount);
-		for(int index=0;index<tokenidcount;index++){
-			tTokentype arg = va_arg(args,/*tTokentype*/int);
-			if(arg==((tToken*)tempptr->item)->type){
-				found = true;
-			};
-			if(found)break;
-		};
-		va_end(args);
-		if(found){
-			//found->((tToken*)tempptr->item)->type==va_arg(args,tTokentype)
-			fetcher->fetchfrom=tempptr;
-			targetfetcher->fetchto=tempptr;
-			return targetfetcher;
-		};
-	};
-	printf("DBG:[W] Unimplemented function mtLxFetcher_Fetchuntil_Variadic \n");
-};
-void mtLxFetcher_Print(tLxFetcher* self){
-	printf("DBG:[T] . Fetcher %p print request \n",self);
-	int j=0; 
-	for(tListnode* i=self->fetchfrom;i!=self->fetchto;i=i->next){
-		tToken* t=i->item;
-		if(i->next==self->fetchto){
-			printf("DBG:[T] ' Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		}else{
-			printf("DBG:[T] | Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		};
-		j++;
-	};
-};
-void mtLxFetcher_Print_Limited(tLxFetcher* self){
-	printf("DBG:[T] . Fetcher %p print request \n",self);
-	int j=0; 
-	for(tListnode* i=self->fetchfrom;(i!=self->fetchto)&&(j<10);i=i->next){
-		tToken* t=i->item;
-		if((i->next==self->fetchto)||(j>=10)){
-			printf("DBG:[T] ' Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		}else{
-			printf("DBG:[T] | Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		};
-		j++;
-	};
-};
-tLxFetcher* mtLxFetcher_FetchuntilParenthesized(tLxFetcher* fetcher, tTokentype token){
+tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum mtGSymbol_eType kind){
 #ifdef qvGTrace
-	printf("LX: [T] mtLxFetcher_FetchuntilParenthesized: entered \n");
+	printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");
 #endif
-#ifdef qvGTraceexpressions
-	printf("LX: [T] mtLxFetcher_FetchuntilParenthesized: printing fetcher \n");
-	mtLxFetcher_Print_Limited(fetcher);
-#endif
-	bool found = false;
-	tLxFetcher* targetfetcher = malloc(sizeof(tLxFetcher));
-	targetfetcher->fetchfrom=fetcher->fetchfrom;
-	tListnode /* <tToken> */ * tempptr = nullptr;
-	int parenthesation = 0;
-	for(
-		tempptr = targetfetcher->fetchfrom;
-		tempptr!=null;
-		tempptr=tempptr->next
-	){
-		//printf("123: %i:%s ",((tToken*)tempptr->item)->type,token); 
-		if(parenthesation<=0){
-			if(((tToken*)tempptr->item)->type==token){
-				found = true;
+	// Empty namespace
+	if(self==nullptr)return nullptr;
+	// Search in list
+	for(tListnode* ptr=self->symbols.first;ptr!=nullptr;ptr=ptr->next){
+		tGSymbol* symbol = ptr->item;
+		if(symbol->symbolkind==kind){
+			if(strcmp(symbol->name,name)==0){
+				return symbol;
 			};
 		};
-		switch(((tToken*)tempptr->item)->type){
-			case tToken_Openbrackets:
-			case tToken_Opencurlybraces:
-			case tToken_Openparentheses:
-				parenthesation++;
-				break;
-			case tToken_Closebrackets:
-			case tToken_Closecurlybraces:
-			case tToken_Closeparentheses:
-				parenthesation--;
-				break;
-			default:
-				break;
-		};
-		if(found){
-			//found->((tToken*)tempptr->item)->type==va_arg(args,tTokentype)
-			fetcher->fetchfrom=tempptr;
-			targetfetcher->fetchto=tempptr;
-			return targetfetcher;
-		};
-		if(0)if(parenthesation<0){
-			printf("LX: [W] mtLxFetcher_FetchuntilParenthesized: Broken parenthesation! \n");
-			//break;
+	};
+	// Search in parent namespace
+	return mtGNamespace_Findsymbol_NameKind(self->parentnamespace,name,kind);
+};
+tGSymbol* mtGNamespace_FindsymbolNoparent_NameKind(tGNamespace* self, char* name, enum mtGSymbol_eType kind){
+#ifdef qvGTrace
+	printf("ss: [T] mtGNamespace_FindsymbolNoparent_NameKind: Entered \n");
+#endif
+	// Empty namespace
+	if(self==nullptr)return nullptr;
+	// Search in list
+	if(self->symbols.first==nullptr){
+		// Not going to find anything in an empty list
+	}else{
+		for(tListnode* ptr=self->symbols.first;ptr!=nullptr;ptr=ptr->next){
+			tGSymbol* symbol = ptr->item;
+			if(symbol->symbolkind==kind){
+				if(strcmp(symbol->name,name)==0){
+					return symbol;
+				};
+			};
 		};
 	};
-	printf("LX: [W] mtLxFetcher_FetchuntilParenthesized: Target token not found\n");
+	// Don't search in parent namespace!
 	return nullptr;
 };
-
-#include "xcc-singlestage-lexicalparser.c"
-#include "xcc-singlestage-symbolgen.c"
-// ------------------ Launcher ------------------
-void LnRunprogram(char* program, char** argv){
-	printf("L:  Running: ");	//a test mid-line comment
-	for(int i=0;argv[i]!=0;i++){
-		printf("%s ",argv[i]);
-	};
-	printf("\n");
-	printf("L:   Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
-};
-char* LnTrimextension(char* file){
-	//Gives you ownership of dynamic memory, borrows argument
-	int len=(int)(mtString_FindcharLast(file,'.')-file);
-	char* str=malloc(len+1);
-	memcpy(str,file,len);
-	*(str+len)=0;
-	return str;
-};
-void LnParsefile(char* program, char* filename, char* ext1, char* ext2, char* args){
-	char* argv[5];
-	argv[0]=program;
-	argv[1]=mtString_Join(filename,ext1);
-	argv[2]=mtString_Join(filename,ext2);
-	argv[3]=0;
-	argv[4]=0;
-	LnRunprogram(program,(char**)(&argv));
-	free(argv[1]);
-	free(argv[2]);
-};
-
-void LnCompile(char* file){
-	printf("L:  [M] Compiling \"%s\"\n",file);
-	// preprocess file
-	//char* filename = LnTrimextension(file);
-	//LnParsefile("cpp",filename,".c",".cpr",0);
-	//mtString_Append(&filename,".cpr");
-	// Read file
-	FILE* srcfile = fopen(file,"r");
-	GSourcefile = srcfile;
-	if(srcfile==nullptr){
-		fprintf(stderr,"L:  [E] Skipping file \"%s\", file opening error: %i•\"%s\" \n",
-			file,errno,strerror(errno)
-		);
+void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
+#ifdef qvGTrace
+	printf("ss: [T] mtGNamespace_Add: Entered \n");
+#endif
+	// Check if we are adding correct symbol in the first place
+	if(symbol==nullptr){
+		printf("ss: [E] mtGNamespace_Add: symbol==nullptr \n");
 		return;
 	};
-	// Tokenize
-	TkTokenize(srcfile);
-	/*
-	printf("L:  [D] . Printing tList<tToken> GTokenized :\n");
-	for(tListnode* i=GTokenized.first;i!=nullptr;i=i->next){
-		tToken* j=i->item;
-		if(i->next){
-			if(mtToken_HasString(j))
-			printf("L:  [D] | %p->%p  .- %s \n",i,j,j->string);
-			printf("L:  [D] | %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
-		}else{
-			printf("L:  [D] ' %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
-		};
+	// Check for duplicate symbol
+	if(
+		mtGNamespace_FindsymbolNoparent_NameKind(
+			namespace,symbol->name,symbol->symbolkind
+		)!=nullptr
+	){
+		// TODO: add line number
+		printf(
+			"ss: [W] mGNamespace_Add: Adding duplicate symbol %i∙%s \n",
+			symbol->symbolkind,
+			symbol->name
+		);
 	};
-	*/
-	fclose(srcfile);
-	// Lexical parsing
-	GLexed = LxParse(GTokenized.first);
-	// Symbol generation - includes structs
-	//SgParse(GRootnamespace,GLexed);
-	// Semantic parsing - compiles structs
-	/// The question is where `struct`s go
-	// Compile
-	// Write object file
+	// Add symbol to namespace
+	mtList_Prepend(&(namespace->symbols),symbol);
 };
-int main(int argc,char* argv[]) {
-	setvbuf(stdout,null,_IONBF,0);
-	printf("L:  [M] XCC Retargetable C Compiler\n");
-	printf("L:      Singlestage build - sources to object file\n");
-	printf("L:      Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "0\n");
-	printf("L:      ----------------------------------------------------\n");
-	int aindex=1;
-	//Command-line options
-	printf("L:  [T] Options:\n");
-	for(;aindex<argc;aindex++){
-		if(argv[aindex][0]!='-')break;
-		printf("L:   [T]   %s\n",argv[aindex]);
-	};
-	//Files for compilation
-	printf("L:  [M] Compiling:\n");
-	for(;aindex<argc;aindex++){
-		if(argv[aindex][0]=='-')break;
-		LnCompile(argv[aindex]);
-	};
 
+// --------------------- Tokenizer ---------------------
+#include "xcc-singlestage-tokenizer.c"
+#include "xcc-singlestage-fetcher.c"
+#include "xcc-singlestage-lexicalparser.c"
+#include "xcc-singlestage-semanticpreparser.c"
+tGType* mtGType_CreatePointer(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Pointer;
+	temp->complexbasetype = self;
+	// TODO: Far pointers
+	return temp;
 };
+tGType* mtGType_CreateFunctioncall_Expr(tGType* self, tLxNode* expr){
+	tGType* temp = mtGType_Create();
+	// Function
+	temp->atomicbasetype = eGAtomictype_Function;
+	// Returning:
+	temp->complexbasetype = self;
+	// And taking:
+	temp->functionargumets = SppParsefunctionarguments(expr);
+	return temp;
+};
+tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Array;
+	temp->complexbasetype = self;
+	// TODO: Far pointers
+	return temp;
+};
+tGSymbol* mtGSymbol_CreateDeferred(char* name, tGType* type, tLxNode* expr){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = type;
+	temp->symbolkind = mtGSymbol_eType_Deferredevaulation;
+	temp->deferredexpression = expr;
+	return temp;
+	fprintf(stderr,"ss: [F] mtGSymbol_CreateDeferred: Unfinished code hit! \n");
+	return nullptr;
+};
+#include "xcc-singlestage-symbolgen.c"
+#include "xcc-singlestage-launcher.c"
 // the end

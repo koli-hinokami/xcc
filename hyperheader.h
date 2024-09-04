@@ -3,7 +3,8 @@
 #include <stdint.h>
 #include <stdarg.h>
 #include <unistd.h>
-#include <process.h>
+//#include <process.h>
+#include <sys/wait.h>
 #include <stdbool.h>
 #include <ctype.h>
 #include <errno.h>

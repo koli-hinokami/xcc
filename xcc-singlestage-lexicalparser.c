@@ -324,6 +324,7 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 	type->valuecategory = null;
 	//type->pointerness = nullptr;
 	type->typequalifiers = null;
+	type->unresolvedsymbol = null;
 	type->templatemodifiers = nullptr;
 	tToken* token = nullptr;
 	// Checking for types

@@ -67,7 +67,16 @@ void runprogram(char* program, char** argv){
 		printf("%s ",argv[i]);
 	};
 	printf("\n");
-	printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
+	{
+		int pid;
+		if(!(pid=fork())){
+			//execv(program,(const char * const *)argv);
+			printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
+		}else{
+			waitpid(pid,nullptr,null);
+		};
+	};
+	//printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
 }
 char* trimextension(char* file){
 	//Gives you ownership of dynamic memory, borrows argument

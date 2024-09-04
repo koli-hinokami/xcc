@@ -20,6 +20,7 @@ int mtString_Fulllength(char* str){
 	return mtString_Length(str)+1;
 };
 char* mtString_Clone(char* src){
+	if(src==nullptr)return nullptr;
 	int len=mtString_Fulllength(src);
 	char* dst = malloc(len);
 	memcpy(dst,src,len);
@@ -49,6 +50,10 @@ char* mtString_FindcharFirst_Lambda(char* src, bool(*lambda)(char)){
 char* mtString_Join(char* s1,char* s2){
 	//Gives you ownership of dynamic memory
 	char* str=malloc(mtString_Length(s1)+mtString_Length(s2)+1);
+	// libc way:
+	//strcpy(str,s1);
+	//strcat(str,s2);
+	// My way:
 	memcpy(str,s1,mtString_Length(s1));
 	memcpy(str+mtString_Length(s1),s2,mtString_Fulllength(s2));
 	return str;
@@ -131,4 +136,10 @@ char* mtString_Removecharaters(char* str,char ch){
 		};
 	};
 	return str;
+};
+// --------------- Weird stuff -------------------
+char* mtString_FromInteger(int self){
+	char buffer[512];
+	sprintf(buffer,"%i",self);
+	return mtString_Clone(buffer);
 };

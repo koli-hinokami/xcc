@@ -1185,7 +1185,10 @@ typedef struct {eGAtomictype atomictype; char* str;} GAtomictypetostring_Entry;
 GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Structure                 , "struct" },
 	{ eGAtomictype_Enumeration               , "enum" },
-	{ eGAtomictype_Unresolved                , "unknown" },
+	{ eGAtomictype_Unresolved                , "unresolved" },
+	{ eGAtomictype_Pointer                   , "pointer" },
+	{ eGAtomictype_Array                     , "array" },
+	{ eGAtomictype_Function                  , "function" },
 	{ eGAtomictype_Int8                      ,  "int8_t" },
 	{ eGAtomictype_Uint8                     , "uint8_t" },
 	{ eGAtomictype_Int16                     ,  "int16_t" },
@@ -1274,21 +1277,12 @@ typedef enum eGPointernessmodifier {
 	eGPointernessmodifier_PointerLocalstorage,
 	eGPointernessmodifier_Function,
 } eGPointernessmodifier;
-typedef struct tGFunctionargumentslist {
-#ifndef qvGProhibitForwardreferences // Forwardreference to tGType
-	struct tGType
-#else
-	void
-#endif
-	/* struct tGType */ *argumenttype;
-	struct tGFunctionargumentslist * next;
-} tGFunctionargumentslist;
 typedef struct tGPointernessmodifierslist {
 	eGPointernessmodifier modifier;
 	bool restrictmodifier;
 	bool far; // Far pointer - segment:offset
 	struct tGPointernessmodifierslist * next;
-	tGFunctionargumentslist* functionargs;
+	tListnode /* <tGType */ * functionargs;
 } tGPointernessmodifierslist;
 typedef enum eGTypequalifiers {
 	eGTypequalifiers_Null = 0,
@@ -1305,6 +1299,7 @@ typedef struct tGType {
 	void /* tLxNode */ * precompiledenumeration;
 	eGValuecategory valuecategory;
 	eGTypequalifiers typequalifiers;
+	tListnode /* <tGType> */ * functionargumets;
 	tListnode /* <tGType> */ * templatemodifiers;
 } tGType;
 typedef struct tGNamespace {
@@ -1312,15 +1307,23 @@ typedef struct tGNamespace {
 	tList /* <tGSymbol> */ symbols;
 	char* name;
 } tGNamespace;
+enum mtGSymbol_eType {
+	mtGSymbol_eType_Null = 0,
+	mtGSymbol_eType_Constant,
+	mtGSymbol_eType_Namespace,
+	mtGSymbol_eType_Pointer,
+	mtGSymbol_eType_Deferredevaulation
+};
 typedef struct tGSymbol {
 	char* name;
+	enum mtGSymbol_eType symbolkind;
 	tGType* type;
-	bool isconstant;
-	bool isnamespace;
-	bool ispointer;
-	tGTargetUintmax value;
-	tGNamespace* name_space;
-	tGTargetPointer* allocatedstorage;
+	//union {
+		tGTargetUintmax value;
+		tGNamespace* name_space;
+		tGTargetPointer* allocatedstorage;
+		struct tLxNode* deferredexpression;
+	//};
 } tGSymbol;
 
 typedef struct tLxNode {
@@ -1336,7 +1339,13 @@ typedef struct tLxNode {
 	//tGType* basetype; //for declarations
 	tGNamespace* name_space; // namespace is a keyword
 	tGType* returnedtype;
-} tLxNode, tSpNode;
+} tLxNode;
+
+typedef struct tSpPrenode {
+} tSpPrenode;
+
+typedef struct tSpNode {
+} tSpNode;
 
 //
 //		C Operators

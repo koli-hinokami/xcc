@@ -6,7 +6,7 @@ CFLAGS = -g -O0 -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
 -DqvGDebug -D_qvGTrace -D_qvGTraceexpressions
 #-D__buildlab__=\"$(USER)\"
 TIMESTAMP = `date +%y%m%d-%H%M`
-DEPS = hyperheader.h xcc.h softpipe.h cstrings.h basictypes.h lists.h
+DEPS = hyperheader.h xcc.h softpipe.h cstrings.h basictypes.h lists.h Makefile
 
 #build: xcc xcc-preprocess xcc-tokenizer xcc-lexer
 #run: build
@@ -39,7 +39,10 @@ xcc-all: xcc xcc-singlestage xcc-embedder xcc-preprocess xcc-tokenizer xcc-lexer
 xcc-singlestage: \
 	xcc-singlestage.c \
 	xcc-singlestage-tokenizer.c \
-	xcc-singlestage-lexicalparser.c
+	xcc-singlestage-lexicalparser.c \
+	xcc-singlestage-symbolgen.c \
+	xcc-singlestage-fetcher.c \
+	xcc-singlestage-launcher.c
 
 %: %.c $(DEPS)
 	$(CC) $(CFLAGS) -o $@ $<

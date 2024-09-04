@@ -114,6 +114,38 @@ void mtList_Destroy(ptList self){ // Doesn't destroys items in list!!
 		ptr=j;
 	};
 };
+void* mtList_Find_Lambda(ptList self, bool(*lambda)(void* item)){
+	if(self->last == nullptr){ // List empty
+		return nullptr;
+	}else if(self->first == self->last){ // List contains one item
+		if(lambda(self->first->item)){
+			return self->first->item;
+		}else{
+			return nullptr;
+		};
+	}else { // List normal - two or more items
+		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+			if(lambda(ptr->item))return ptr->item;
+		};
+		return nullptr;
+	};
+};
+//void* mtList_Find_Capturelesslambda(ptList self, struct{bool(*func)(void* args,void* item);void*args;}*lambda){
+//	if(self->last == nullptr){ // List empty
+//		return nullptr;
+//	}else if(self->first == self->last){ // List contains one item
+//		if(lambda->func(lambda->args,self->first->item)){
+//			return self->first->item;
+//		}else{
+//			return nullptr;
+//		};
+//	}else { // List normal - two or more items
+//		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+//			if(lambda->func(lambda->args,ptr->item))return ptr->item;
+//		};
+//		return nullptr;
+//	};
+//};
 //template<T> struct ttListnode {void* item;ttListnode<T> next;};
 //template<T> struct ttList {ttListnode<T> first;ttListnode<T> last;};
 #endif // qvmtList_MfIncluded
