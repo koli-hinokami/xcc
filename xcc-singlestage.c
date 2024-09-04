@@ -314,7 +314,9 @@ tGType* mtGType_Create(){
 	return calloc(sizeof(tGType),1);
 }
 tGType* mtGType_Clone(tGType* self){
+	ErfEnter_String("mtGType_Clone");
 	assert(self);
+	ErfLeave();
 	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
 }
 tGType* mtGType_CreateAtomic(eGAtomictype type){
@@ -413,9 +415,15 @@ tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
 	return temp;
 };
 tGType* mtGType_Deepclone(tGType* self){
-	if(!self)return nullptr;
+	ErfEnter_String("mtGType_Deepclone");
+	if(!self){
+		ErfWarning();
+		return nullptr;
+	};
 	tGType* i = mtGType_Clone(self);
-	i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
+	if(i->complexbasetype)
+		i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
+	ErfLeave();
 	return i;
 }
 void mtGType_Deallocate(tGType* self){
@@ -537,9 +545,13 @@ bool mtGType_Equals(tGType* self,tGType* type){
 };
 eGValuecategory mtGType_GetValuecategory(tGType /* modifies */ * self){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+	printf("ss: [T] mtGType_GetValuecategory: entered \n");
 #endif
-	return mtGType_GetBasetype(self)->valuecategory;
+	assert(mtGType_GetBasetype(self));
+	return 
+			mtGType_GetBasetype(self)
+		?	mtGType_GetBasetype(self)->valuecategory
+		:	0;
 }
 tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
 #ifdef qvGTrace
@@ -672,7 +684,6 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 				)
 			);
 			mtString_Append(&s1," fields */");
-
 			// Inlined List.foreach cuz no capturing lambdas *yet*
 			//for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
 			//	mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
@@ -691,12 +702,12 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			);
 			mtString_Append(&s1," bytes */ ");
 
-			// No display of member locations right now
-			// Member locations
-			for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
-				mtString_Append(&s1,mtGSymbol_ToString((tGSymbol*)i->item));
-				mtString_Append(&s1," ");
-			}
+			//// No display of member locations right now
+			//// Member locations
+			//for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
+			//	mtString_Append(&s1,mtGSymbol_ToString((tGSymbol*)i->item));
+			//	mtString_Append(&s1," ");
+			//}
 			mtString_Append(&s1,"}");
 		};
 		//if(!self->unresolvedsymbol){
@@ -707,8 +718,6 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		//	s2 = mtString_Join("struct ",s1);
 		//};
 		return s1;
-		free(s1);
-		return s2;
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
 		return mtString_Join(

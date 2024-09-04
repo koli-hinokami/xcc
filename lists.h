@@ -24,13 +24,13 @@ typedef struct {
 } tDoublylinkedlist;
 
 tListnode* mtListnode_Cons(void* item,tListnode* next){
-	tListnode* i = malloc(sizeof(mtListnode_Cons));
+	tListnode* i = malloc(sizeof(struct tListnode));
 	i->item=item;
 	i->next=next;
 	return i;
 }
 tList* mtList_Create(){
-	return calloc(1,sizeof(tList));
+	return calloc(1,sizeof(struct tList));
 };
 bool mtList_Isempty(ptList self){
 	if(self->last == nullptr){ // List empty

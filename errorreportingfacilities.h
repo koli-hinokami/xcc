@@ -99,6 +99,11 @@ void ErfLeave(void){
 	mtErfVframe_Destroy(mtList_GetFirst(&ErfVframes));
 	mtList_Removefirst(&ErfVframes);
 };
+void ErfWarning_String(char* str){
+	fprintf(stderr,"erf:[W] Warning thrown: \"%s\"\n",str);
+	ErfDumpstacktrace();
+	fprintf(stderr,"erf:[W] (end errorlog)\n");
+};
 void ErfWarning(){
 	fprintf(stderr,"erf:[W] Warning thrown\n");
 	ErfDumpstacktrace();
