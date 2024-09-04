@@ -63,6 +63,9 @@ void LnCompile(char* file){
 	LfPrint_LxNode(GLexed);
 	// Symbol generation - includes structs
 	GRootnamespace = mtGNamespace_Create();
+	SgUnresolvedtypes = mtList_Create();
+	SgUnresolvedstructures = mtList_Create();
+	GStructuretypes = mtGNamespace_Create();
 	SgParse(GRootnamespace,GLexed);
 	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen second pass
@@ -71,14 +74,14 @@ void LnCompile(char* file){
 	SgResolveunresolvedtypes();
 	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen struct registration
-
+	//  not done separately anymore!
 	// Semantic parsing - compiles structs
 	/// The question is where `struct`s go
 	// Compile
 	// Write object file
 };
 int main(int argc,char* argv[]) {
-	setvbuf(stdout,null,_IONBF,0);
+	//setvbuf(stdout,null,_IONBF,0);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
 	printf("L:      Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "0\n");

@@ -24,6 +24,9 @@ Timestamps:
 	                            Publicrelease 4 was packaged a tiny bit after
 				    the crisis, Interim 1 was packaged right before
 				    I gone to sleep.
+				    Some support for multiple symbols per definition
+	20apr2024 13:30 UTC+5       Packaging Publicrelase5. Proper support for
+	                            multiple symbols per definition.
 
 Stages:
 	¤ Embedder
@@ -77,6 +80,7 @@ Things to be done:
 	    More declarations
 	    Proper statements
 	    Debug some statements parsed as function calls, if that's a thing?
+	     Apparently vanished.
 	¤ Symbol generator:
 	    Create, make double-pass
 	¤ Semantic parser:
@@ -121,7 +125,6 @@ Sorted<ascending>(time) todo list:
 		Doing some weird things, doesn't errors out anymore, just quietly parses... Compiler development is weird.
 +	Weird thingy where xcc-singlestage would segfault with stdout buffers still filled with data. Fixed by killing buffering.
 	You can't get away with just one expression parser. You will need a separate one for type expressions.
-
 
 
 

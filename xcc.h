@@ -48,6 +48,7 @@ enum tTokentype {
 	tToken_Bitwiseorassign		= 45,		//|=
 	tToken_Comma			= 46,		//,
 	tToken_Semicolon		= 47,		//;
+	tToken_Ellipsis			= 48,		//...
 	tToken_Integerconstant		= 96,		//
 	tToken_Whitespace		= 127,		//
 	//tToken_			= 47,		//	Keywords
@@ -1348,6 +1349,12 @@ typedef struct tSpPrenode {
 } tSpPrenode;
 
 typedef struct tSpNode {
+	eTokentype type;
+	struct tSpNode * initializer;
+	struct tSpNode * condition;
+	struct tSpNode * left;
+	struct tSpNode * right;
+	
 } tSpNode;
 
 //

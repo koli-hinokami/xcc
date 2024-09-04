@@ -98,7 +98,9 @@ unsigned mtList_Count(ptList self){
 	};
 };
 void mtList_Foreach(ptList self, void(*lambda)(void*)){
-	if(self->last == nullptr){ // List empty
+	if(!self){
+		printf("ul: [W] lists.h: mtList_Foreach: self==nullptr \n");
+	}else if(self->last == nullptr){ // List empty
 		return;
 	}else if(self->first == self->last){ // List contains one item
 		lambda(self->first->item);
@@ -155,6 +157,13 @@ void* mtList_Find_Lambda(ptList self, bool(*lambda)(void* item)){
 
 void mtListnode_Foreach(tListnode* self, void(*lambda)(void*)){
 	for(tListnode* i=self;i!=nullptr;i=i->next)lambda(i->item);
+};
+tListnode* mtListnode_Findlast(tListnode* self){
+	for(tListnode* i=self;i!=nullptr;i=i->next)if(i->next==nullptr)return i;
+};
+tListnode* mtListnode_Merge(tListnode* self, tListnode* arg){
+	mtListnode_Findlast(self)->next=arg;
+	return self;
 };
 
 //template<T> struct ttListnode {void* item;ttListnode<T> next;};

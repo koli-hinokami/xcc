@@ -14,13 +14,14 @@ void SgRegisterstructure(tGType* type){
 		if(type->precompiledstructure){
 			// Register as definition
 #ifdef qvGTrace
-	printf("SG: [T] SgRegisterstructure: registering structure \"%s\"\n",type->unresolvedsymbol);
+			printf("SG: [T] SgRegisterstructure: registering structure definition \"%s\"\n",mtGType_ToString_Embeddable(type));
 #endif
 			mtGNamespace_Add(GStructuretypes,
 				mtGSymbol_CreateTypedef(type->unresolvedsymbol,type)
 			);
 		}else{
 			// We actually should register is as a structure to be resolved
+			printf("SG: [T] SgRegisterstructure: registering structure usage \"%s\"\n",type->unresolvedsymbol);
 			mtList_Append(SgUnresolvedstructures,type); 
 		};
 	}else{
@@ -38,23 +39,50 @@ void SgRegisterstructureTraverse(tGType* type){
 	}else switch(type->atomicbasetype){
 		case eGAtomictype_Structure:
 			if(type->precompiledstructure){
-				mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgRegisterstructureTraverse);
+				//mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgRegisterstructureTraverse);
 			};
 			SgRegisterstructure(type);
 			break;
 		case eGAtomictype_Unresolved:
+			printf("SG: [W] SgRegisterstructureTraverse(): Unresolved type seen \n");
 			// do nothing
 			break;
 		case eGAtomictype_Function:
-			//mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgCompileandregisterstructs);
+			mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgRegisterstructureTraverse);
 		case eGAtomictype_Pointer:
 		case eGAtomictype_Array:
 			SgRegisterstructureTraverse(type->complexbasetype);
 			break;
 	};
 };
-void SgRegisterstructs(tGNamespace* namespace){
+void SgRegisterstructures(tLxNode* ast){
+	switch(ast->type){
+		case tLexem_Typedefinition:
+			SgRegisterstructureTraverse(ast->returnedtype);
+			break;
+		case tLexem_Variabledeclaration:
+			SgRegisterstructureTraverse(ast->returnedtype);
+			break;
+		default:
+	};
 };
+void SgResolvestructure(tGType* type){
+	printf("SG: [T] SgResolvestructure(%s): entered\n",mtGType_ToString_Embeddable(type));
+	*type = *(
+		mtGNamespace_Findsymbol_NameKind(
+			GStructuretypes,
+			type->unresolvedsymbol,
+			mtGSymbol_eType_Typedef
+		)->type
+	);
+};
+void SgResolvestructures(){
+#ifdef qvGTrace
+	printf("SG: [T] SgResolvestructures: entered \n");
+#endif	
+	mtList_Foreach(SgUnresolvedstructures,(void(*)(void*))SgResolvestructure);
+};
+tListnode /* <tGType> */ * SppParsefunctionargumets(tLxNode* expr);
 tGType* SgGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	tGType* temptype = basetype;
 	if(typeexpr==nullptr){
@@ -71,7 +99,9 @@ tGType* SgGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 #endif
 		switch(i->type){
 			case tLexem_Functioncall:
-				temptype=mtGType_CreateFunctioncall_Expr(temptype,i->right);
+				// Changing `mtGType_CreateFunctioncall_Expr` to `mtGType_CreateFunctioncall` 
+				// so I could remove the silly thing known as Semanticpreparser
+				temptype=mtGType_CreateFunctioncall(temptype,SppParsefunctionargumets(i->right));
 				break;
 			case tLexem_Arrayindex:
 				temptype=mtGType_CreateArray_Expr(temptype,i->right);
@@ -127,7 +157,41 @@ tGType* SgGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	};
 	printf("SG: [E] SgGeneratetype: Internal inconsistency: forloop dropped at nullptr\n");
 	exit(5);
-	
+};
+tListnode /* <tGType> */ * SppParsefunctionargumets(tLxNode* expr){
+	if(!expr){
+		// wat
+		fprintf(stderr,"SG: [E] SppParsefunctionargumets: Null pointer!\n");
+		return nullptr;
+	}else switch(expr->type){
+		case tLexem_Comma:
+			// Iterate
+			return mtListnode_Merge(
+				SppParsefunctionargumets(expr->left),
+				SppParsefunctionargumets(expr->right)
+			);
+			break;
+		default: {
+			// Assumming we got them, tailcall to SpGeneratetype
+			assert(expr);
+			switch(expr->type){
+				default:
+					fprintf(stderr,"SG: [E] SppParsefunctionargumets: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
+					printf("SG: [E] SppParsefunctionargumets: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
+					printf("SG: [E] SppParsefunctionargumets: Full ast:\n");
+					LfPrint_LxNode(expr);
+					break;
+				case tLexem_Typeexpression:
+					return mtListnode_Cons(SgGeneratetype(expr->returnedtype,expr->left,nullptr),nullptr);
+					break;
+				case tLexem_Nullexpression:
+					printf("SG: [W] SppParsefunctionarguments: Thee probably shouldn't use null expression as function arguments \n");				
+					return nullptr;
+					break;
+			};
+		};	break;
+
+	};
 };
 void SgAutoiteratecommas(tLxNode* ast, void(*lambda)(tLxNode* ast)){
 	if(!ast){
@@ -180,12 +244,15 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 			);
 		};	break;
 		case tLexem_Variabledeclaration: {
+#ifdef qvGTrace
+			printf("SG: [T] SgParse: Variable declaration \n");
+#endif
 			// Variable initialized decls, possibly with initializer
 			// Traverse declaration list
+			SgRegisterstructureTraverse(ast->returnedtype);
 			if(!ast->left){
 				printf("SG: [E] SgParse: Variable declaration: Invalid type expression, ignoring \n");
 			}else{
-				SgRegisterstructureTraverse(ast->returnedtype);
 				if(ast->left->type==tLexem_Nulldeclaration){
 					// Ignore lol
 					// Not entirely though, you still got to register structure types
@@ -271,7 +338,11 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 			};
 		};	break;
 		case tLexem_Typedefinition:
+#ifdef qvGTrace
+			printf("SG: [T] SgParse: Type declaration \n");
+#endif
 			// Type definition
+			SgRegisterstructureTraverse(ast->returnedtype);
 			// Traverse declaration list
 			if(!ast->left){
 				printf("SG: [E] SgParse: typedef: Invalid type expression \n");
@@ -279,7 +350,7 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 				// Ignore lol
 			}else if(ast->left->type==tLexem_Comma){
 				// Handle multiple declarations
-				printf("SG: [E] SgParse: typedef: Unable to parse declarations with commas \n");
+				//printf("SG: [E] SgParse: typedef: Unable to parse declarations with commas \n");
 				char* name = nullptr;
 				tLxNode* i=nullptr;
 				for(i=ast->left;i->type==tLexem_Comma;i=i->left){
@@ -325,7 +396,7 @@ void SgRegisterunresolvedtype(tGType* type){
 };
 void SgFindunresolvedtypes_Type(tGType* type){
 #ifdef qvGTrace
-	printf("SG: [T] SgFindunresolvedtypes_Type(%p:%s): entered \n",type,mtGType_ToString_Embeddable(type));
+	//printf("SG: [T] SgFindunresolvedtypes_Type(%p:%s): entered \n",type,mtGType_ToString_Embeddable(type));
 #endif
 	if(type==nullptr){
 		printf("SG: [W] SgFindunresolvedtypes_Type: `type==nullptr` \n");
@@ -334,17 +405,18 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			SgRegisterunresolvedtype(type);
 			break;
 		case eGAtomictype_Function:
-			//mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgFindunresolvedtypes_Type);
+			mtListnode_Foreach(type->functionarguments,(void(*)(void*))SgFindunresolvedtypes_Type);
 		case eGAtomictype_Pointer:
 		case eGAtomictype_Array:
 			SgFindunresolvedtypes_Type(type->complexbasetype);
 			break;
+		default:
 	};
 };
 void SgFindunresolvedtypes(tGNamespace* namespace);
 void SgFindunresolvedtypes_Symbol(tGSymbol* symbol){
 #ifdef qvGTrace
-	printf("SG: [T] SgFindunresolvedtypes_Symbol(%p): entered \n",symbol);
+	//printf("SG: [T] SgFindunresolvedtypes_Symbol(%p): entered \n",symbol);
 #endif	
 	// Traverse type and check for undefined types
 	switch(symbol->symbolkind){
@@ -399,5 +471,10 @@ void SgResolveunresolvedtypes_Resolvetype(tGType* type){
 	}
 };
 void SgResolveunresolvedtypes(){
+#ifdef qvGTrace
+	printf("SG: [T] SgResolveunresolvedtypes: entered \n");
+#endif	
 	mtList_Foreach(SgUnresolvedtypes,(void(*)(void*))SgResolveunresolvedtypes_Resolvetype);
+	// Additionally resolve structs
+	SgResolvestructures();
 };

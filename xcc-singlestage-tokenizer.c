@@ -76,7 +76,16 @@ void TkTokenize(FILE* srcfile){
 				default:	TkUngetc(buffer);
 						TkEmittoken((tToken){.type=tToken_Minus});	break;
 				};break;
-			case '.':	TkEmittoken((tToken){.type=tToken_Dot});	break;
+			case '.':switch(buffer=TkGetc()){
+				case '.':	switch(buffer=TkGetc()){
+					case '.':	TkEmittoken((tToken){.type=tToken_Ellipsis});	break;
+					default:	TkUngetc(buffer);	
+							TkUngetc('.');
+							TkEmittoken((tToken){.type=tToken_Dot});	break;
+						};break;
+				default:	TkUngetc(buffer);
+						TkEmittoken((tToken){.type=tToken_Dot});	break;
+				};break;
 			case '/':switch(buffer=TkGetc()){
 				case '=':	TkEmittoken((tToken){.type=tToken_Divideassign});	break;
 				case '/': {	//Comment

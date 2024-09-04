@@ -318,6 +318,7 @@ tLxNode* LxParseBlockstatement(tLxFetcher* fetcher){
 
 tGType* LxParseBasetype(tLxFetcher* fetcher){
 	tGType* type = malloc(sizeof(tGType));
+	tLxFetcher savedfetcher = *fetcher;
 	// Clear structure
 	type->atomicbasetype = null;
 	type->complexbasetype = nullptr;
@@ -490,6 +491,7 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			break;
 		default:
 			printf("LX: [F] LxParseBasetype: Unexcepted token %i:%s \n",token->type,TokenidtoName[token->type]);
+			*fetcher=savedfetcher;
 			return nullptr;
 	};
 	return type;
@@ -502,6 +504,7 @@ tLxNode* LxParseType(tLxFetcher* fetcher){
 	if(localtype){
 		tLxNode* expr = LxParseExpression(fetcher);
 		if(expr==nullptr)return nullptr;
+		//if(expr->type==tLexem_Nullexpression)return nullptr;
 		return mtLxNode_Clone(
 			&(tLxNode){
 				.type=tLexem_Typeexpression,
@@ -730,6 +733,12 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				)
 			}
 		);
+	};
+	splitpoint=nullptr;
+	// Typeexpressionbypass
+	{
+		tLxNode* typeexpr;
+		//if(typeexpr=LxParseType(fetcher))return typeexpr;
 	};
 	splitpoint=nullptr;
 	// Precedence 15 - Comma 

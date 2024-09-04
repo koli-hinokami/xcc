@@ -126,9 +126,10 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 			sprintf(buffer,"Lf: [M] %2s ∙ ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],self->constant);
 			LfWriteline(buffer);
 			return;
-		};
-		if(self->type==tLexem_Identifier){
-			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],self->identifier);
+		}else if(self->type==tLexem_Identifier){
+			sprintf(buffer,"Lf: [M] %2s ∙ ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],self->identifier);
+			LfWriteline(buffer);
+			return;
 		}else{
 			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
 		};
@@ -186,21 +187,23 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			mtString_Append(&s1,self->unresolvedsymbol);
 		};
 		if(self->precompiledstructure){
-			mtString_Append(&s1," [[precompiled]] { ");
+			//mtString_Append(&s1," { ... }");
+			mtString_Append(&s1," ( ");
 			mtString_Append(&s1,
 				mtString_FromInteger(
 					mtList_Count(self->precompiledstructure)
 				)
 			);
-			mtString_Append(&s1," fields }");
+			mtString_Append(&s1," fields )");
 		};
-		if(!self->unresolvedsymbol){
-			// Occasionally structures are defined only by their fields
-			return mtString_Clone("struct");
-		}else{
-			s1 = mtString_Join(self->unresolvedsymbol,"");
-			s2 = mtString_Join("struct ",s1);
-		};
+		//if(!self->unresolvedsymbol){
+		//	// Occasionally structures are defined only by their fields
+		//	return mtString_Clone("struct");
+		//}else{
+		//	s1 = mtString_Join(self->unresolvedsymbol,"");
+		//	s2 = mtString_Join("struct ",s1);
+		//};
+		return s1;
 		free(s1);
 		return s2;
 		//LfPrint_GNamespace(self->structure);
@@ -360,6 +363,11 @@ void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 #ifdef qvGTrace
 	printf("ss: [T] mtGNamespace_Add: Entered \n");
 #endif
+	// Obviously check if namespace is valid
+	if(namespace==nullptr){
+		printf("ss: [E] mtGNamespace_Add: namespace==nullptr \n");
+		return;
+	};
 	// Check if we are adding correct symbol in the first place
 	if(symbol==nullptr){
 		printf("ss: [E] mtGNamespace_Add: symbol==nullptr \n");
@@ -391,7 +399,7 @@ void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 #include "xcc-singlestage-tokenizer.c"
 #include "xcc-singlestage-fetcher.c"
 #include "xcc-singlestage-lexicalparser.c"
-#include "xcc-singlestage-semanticpreparser.c"
+//#include "xcc-singlestage-semanticpreparser.c"
 tGType* mtGType_CreatePointer(tGType* self){
 	tGType* temp = mtGType_Create();
 	temp->atomicbasetype = eGAtomictype_Pointer;
@@ -399,16 +407,26 @@ tGType* mtGType_CreatePointer(tGType* self){
 	// TODO: Far pointers
 	return temp;
 };
-tGType* mtGType_CreateFunctioncall_Expr(tGType* self, tLxNode* expr){
+tGType* mtGType_CreateFunctioncall(tGType* self, tListnode /* <tGType> */ * args){
 	tGType* temp = mtGType_Create();
 	// Function
 	temp->atomicbasetype = eGAtomictype_Function;
 	// Returning:
 	temp->complexbasetype = self;
 	// And taking:
-	temp->functionarguments = SppParsefunctionarguments(expr);
+	temp->functionarguments = args;
 	return temp;
 };
+//tGType* mtGType_CreateFunctioncall_Expr(tGType* self, tLxNode* expr){
+//	tGType* temp = mtGType_Create();
+//	// Function
+//	temp->atomicbasetype = eGAtomictype_Function;
+//	// Returning:
+//	temp->complexbasetype = self;
+//	// And taking:
+//	temp->functionarguments = SppParsefunctionarguments(expr);
+//	return temp;
+//};
 tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
 	tGType* temp = mtGType_Create();
 	temp->atomicbasetype = eGAtomictype_Array;
