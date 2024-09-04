@@ -27,6 +27,8 @@ package:
 	cp ./xcc-preprocess   ./usr/local/bin
 	cp ./xcc-ircompiler   ./usr/local/bin
 	cp ./xcc-assembler    ./usr/local/bin
+	cp ./xcc-ld           ./usr/local/bin
+	cp ./xcc-objdump      ./usr/local/bin
 	echo "2.0" > debian-binary
 	tar --create -f data.tar usr etc
 	tar --create -f control.tar control
@@ -46,6 +48,8 @@ install:
 	cp ./xcc-preprocess   /usr/local/bin
 	cp ./xcc-ircompiler   /usr/local/bin
 	cp ./xcc-assembler    /usr/local/bin
+	cp ./xcc-ld           /usr/local/bin
+	cp ./xcc-objdump      /usr/local/bin
 debug: build
 	gdb ./xcc-singlestage ./xcc-singlestage.c
 	
@@ -59,7 +63,8 @@ xcc-all: xcc \
 	xcc-tokenizer \
 	xcc-ircompiler \
 	xcc-assembler \
-	xcc-ld
+	xcc-ld \
+	xcc-objdump
 
 xcc-singlestage: \
 	xcc-singlestage.c \
