@@ -40,6 +40,7 @@ xcc-singlestage: \
 	xcc-singlestage.c \
 	xcc-singlestage-tokenizer.c \
 	xcc-singlestage-lexicalparser.c \
+	xcc-singlestage-semanticpreparser.c \
 	xcc-singlestage-symbolgen.c \
 	xcc-singlestage-semanticparser.c \
 	xcc-singlestage-fetcher.c \

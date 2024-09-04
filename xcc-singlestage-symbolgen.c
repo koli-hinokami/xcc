@@ -89,7 +89,7 @@ void SgResolvestructures(){
 #endif	
 	mtList_Foreach(SgUnresolvedstructures,(void(*)(void*))SgResolvestructure);
 };
-tListnode /* <tGType> */ * SppParsefunctionargumets(tLxNode* expr);
+tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr);
 tGType* SgGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	tGType* temptype = basetype;
 	if(typeexpr==nullptr){
@@ -108,7 +108,7 @@ tGType* SgGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 			case tLexem_Functioncall:
 				// Changing `mtGType_CreateFunctioncall_Expr` to `mtGType_CreateFunctioncall` 
 				// so I could remove the silly thing known as Semanticpreparser
-				temptype=mtGType_CreateFunctioncall(temptype,SppParsefunctionargumets(i->right));
+				temptype=mtGType_CreateFunctioncall(temptype,SppParsefunctionarguments(i->right));
 				break;
 			case tLexem_Arrayindex:
 				temptype=mtGType_CreateArray_Expr(temptype,i->right);
@@ -164,41 +164,6 @@ tGType* SgGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	};
 	printf("SG: [E] SgGeneratetype: Internal inconsistency: forloop dropped at nullptr\n");
 	exit(5);
-};
-tListnode /* <tGType> */ * SppParsefunctionargumets(tLxNode* expr){
-	if(!expr){
-		// wat
-		fprintf(stderr,"SG: [E] SppParsefunctionargumets: Null pointer!\n");
-		return nullptr;
-	}else switch(expr->type){
-		case tLexem_Comma:
-			// Iterate
-			return mtListnode_Merge(
-				SppParsefunctionargumets(expr->left),
-				SppParsefunctionargumets(expr->right)
-			);
-			break;
-		default: {
-			// Assumming we got them, tailcall to SpGeneratetype
-			assert(expr);
-			switch(expr->type){
-				default:
-					fprintf(stderr,"SG: [E] SppParsefunctionargumets: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
-					printf("SG: [E] SppParsefunctionargumets: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
-					printf("SG: [E] SppParsefunctionargumets: Full ast:\n");
-					LfPrint_LxNode(expr);
-					break;
-				case tLexem_Typeexpression:
-					return mtListnode_Cons(SgGeneratetype(expr->returnedtype,expr->left,nullptr),nullptr);
-					break;
-				case tLexem_Nullexpression:
-					printf("SG: [W] SppParsefunctionarguments: Thee probably shouldn't use null expression as function arguments \n");				
-					return nullptr;
-					break;
-			};
-		};	break;
-
-	};
 };
 void SgAutoiteratecommas(tLxNode* ast, void(*lambda)(tLxNode* ast)){
 	if(!ast){

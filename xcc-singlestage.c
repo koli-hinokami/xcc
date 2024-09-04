@@ -167,22 +167,25 @@ char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);}
 char* mtGSymbol_ToString(tGSymbol* self){
 	char buffer[4096];
 	if(self==nullptr){
-		return mtString_Clone("`(tGSymbol*)nullptr`");
+		return mtString_Clone("nullptr");
 	}else{
-		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		//snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
 		// Some conversions
 		return mtString_Join(
-			 self->symbolkind==mtGSymbol_eType_Constant?          "const"
-			:self->symbolkind==mtGSymbol_eType_Namespace?         "namespace"
-			:self->symbolkind==mtGSymbol_eType_Pointer?           "declare"
-			:self->symbolkind==mtGSymbol_eType_Deferredevaulation?"declareexpr"
-			:self->symbolkind==mtGSymbol_eType_Typedef?           "typedef"
+			 self->symbolkind==mtGSymbol_eType_Constant?          "const "
+			:self->symbolkind==mtGSymbol_eType_Namespace?         "namespace "
+			:self->symbolkind==mtGSymbol_eType_Pointer?           "declare "
+			:self->symbolkind==mtGSymbol_eType_Deferredevaulation?"declareexpr "
+			:self->symbolkind==mtGSymbol_eType_Typedef?           "typedef "
 			:"unknown",
 			mtString_Join(
 				mtGType_ToString(self->type),
 				mtString_Join(
-					self->name,
-					";"
+					" ",
+					mtString_Join(
+						self->name,
+						";"
+					)
 				)
 				
 			)
@@ -371,6 +374,13 @@ void LfiPrint_SpNode(char* pr,tSpNode* self){
 		//exit(6);
 		LfIndent(buffer);
 		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
+		if(self->symbol){
+			sprintf(buffer,
+				"Lf: [M] ∙ s: ¤ Symbol \"%s\" \n",
+				mtGSymbol_ToString(self->symbol)
+			);
+			LfWriteline(buffer);
+		};
 		if(
 			  (self->type==tLexem_Switchcase)
 			||(self->type==tLexem_Switchdefault)
@@ -546,11 +556,6 @@ void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 	mtList_Prepend(&(namespace->symbols),symbol);
 };
 
-// --------------------- Tokenizer ---------------------
-#include "xcc-singlestage-tokenizer.c"
-#include "xcc-singlestage-fetcher.c"
-#include "xcc-singlestage-lexicalparser.c"
-//#include "xcc-singlestage-semanticpreparser.c"
 tGType* mtGType_CreatePointer(tGType* self){
 	tGType* temp = mtGType_Create();
 	temp->atomicbasetype = eGAtomictype_Pointer;
@@ -608,6 +613,11 @@ tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
 	temp->symbolkind = mtGSymbol_eType_Typedef;
 	return temp;
 };
+// --------------------- Tokenizer ---------------------
+#include "xcc-singlestage-tokenizer.c"
+#include "xcc-singlestage-fetcher.c"
+#include "xcc-singlestage-lexicalparser.c"
+#include "xcc-singlestage-semanticpreparser.c"
 #include "xcc-singlestage-symbolgen.c"
 #include "xcc-singlestage-semanticparser.c"
 #include "xcc-singlestage-launcher.c"

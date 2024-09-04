@@ -74,6 +74,20 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.constant=self->constant
 					}
 				);
+			case tLexem_Typedefinition:
+				// Typedefs are already handled in symbolgen
+				return nullptr;
+				break;
+			case tLexem_Variabledeclaration:
+				return nullptr;
+				//return mtSpNode_Clone(
+				//	&(tSpNode){
+				//		.type=tSplexem_Variabledeclaration,
+				//		.returnedtype=SppGeneratetype(self->returnedtype),
+				//		.constant=self->constant
+				//	}
+				//);
+				break;
 			//case tLexem_Nullexpression:
 			//	return mtSpNode_Clone(
 			//		&(tSpNode){
