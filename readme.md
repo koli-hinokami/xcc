@@ -2,6 +2,29 @@
 - if you can't read it in github just read from vim, made for 78 columns 
   monowidth utf-8 syntax=markdown
 
+# Current state of hiatus
+
+xcc currently is in hiatus due to main and before the hiatus the only 
+contributor of me, Koli Hinokami, getting tired with developing xcc.
+
+One thing for sure is everything is mine and written by me singlehandedly
+without assistance from other people.
+
+I got to admit the compiler was pushed *a lot*. It's working very well just 
+like I wished, and crosscompilation for a variety of platforms is as easy as
+I wanted. Some things like sideeffect infrastructure are lacking though.
+
+As for when xcc will go out of hiatus, I have *no* idea!
+For one, and for other I want to keep developing xcc singlehandedly with
+keeping things done by others away in xcc-contrib side of things.
+
+If you are thinking of taking xcc in you hands (and I'm sure you do as xcc is
+very promising), *pertrain to me* and keep your things as xcc-contrib like I
+want to. Some changes will get integrated into master, others will not.
+
+Taking the opportunity, archaic indev versions of xcc are deep into `stable`
+branch. `main` still starts from 0.9.8b.
+
 # Information
 
 xcc Retargetable C Compiler is what you may desire to call a toy C Compiler,
