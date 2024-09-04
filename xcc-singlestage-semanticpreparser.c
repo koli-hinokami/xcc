@@ -189,6 +189,7 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	//};
 	// Kill multideclarations that are currently returned by semanticparser
 	if(self->type==tLexem_Rawvariabledeclaration){
+		//
 #ifdef qvGTrace
 		printf("SPP:[T] SppPreparse: Rawvariabledeclaration\n");
 #endif
@@ -233,6 +234,45 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 #endif
 			// Confirm being Variabledeclaration
 			node->type=tLexem_Variabledeclaration;
+			//node->returnedtype=self->returnedtype;
+			node->left=self->left;
+			node->right=nullptr;
+			return node;
+		};
+	};
+	if(self->type==tLexem_Rawexternaldeclaration){
+		//
+#ifdef qvGTrace
+		printf("SPP:[T] SppPreparse: Rawexternaldeclaration\n");
+#endif
+		if(self->left->type==tLexem_Comma){
+#ifdef qvGTrace
+		printf("SPP:[T] SppPreparse: Rawexternaldeclaration: Split and recurse\n");
+#endif
+			// Split and recurse
+			tLxNode* node1 = mtLxNode_Create();
+			node1->type=tLexem_Rawexternaldeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
+			node1->returnedtype=node->returnedtype;
+			node1->left=self->left->left;
+			tLxNode* node2 = mtLxNode_Create();
+			node2->type=tLexem_Rawexternaldeclaration;
+			node2->returnedtype=node->returnedtype;
+			node2->left=self->left->right;
+			
+			node->type=tLexem_Declarationlist;
+			node->initializer=SppPreparse(self->initializer,node);
+			node->condition=SppPreparse(self->condition,node);
+			node->left=SppPreparse(node1,node);
+			node->right=SppPreparse(node2,node);
+			free(node1);
+			free(node2);
+			return node;
+		}else{
+#ifdef qvGTrace
+			printf("SPP:[T] SppPreparse: Rawexternaldeclaration: Confirm\n");
+#endif
+			// Confirm being Externaldeclaration
+			node->type=tLexem_Externaldeclaration;
 			//node->returnedtype=self->returnedtype;
 			node->left=self->left;
 			node->right=nullptr;

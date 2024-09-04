@@ -187,6 +187,8 @@ enum tTokentype {
 	tLexem_Ellipsis                 = 582,  //
 	tLexem_Charaterconstant         = 583,  //
 	tLexem_Continuestatement        = 584,  //
+	tLexem_Rawexternaldeclaration   = 585,  //
+	tLexem_Externaldeclaration      = 586,  //
 	//tLexem_                       = 586,  //
 	//tToken_                       = 768,  //      String lexems
 	//tToken_                       = 1024, //      Second AST lexems
@@ -864,10 +866,10 @@ char *TokenidtoName[]={
 	"tLexem_Namespace            ",// 580
 	"tLexem_Using                ",// 581
 	"tLexem_Ellipsis             ",// 582
-	"tLexem_Undefined            ",// 583
-	"tLexem_Undefined            ",// 584
-	"tLexem_Undefined            ",// 585
-	"tLexem_Undefined            ",// 586
+	"tLexem_Charaterconstant     ",// 583
+	"tLexem_Continuestatement    ",// 584
+	"tLexem_Rawexternaldeclarati>",// 585
+	"tLexem_Externaldeclaration  ",// 586
 	"tLexem_Undefined            ",// 587
 	"tLexem_Undefined            ",// 588
 	"tLexem_Undefined            ",// 589

@@ -343,6 +343,46 @@ void SgParse(tLxNode* ast){
 				};
 			};
 		};	break;
+		case tLexem_Externaldeclaration: {
+#ifdef qvGTrace
+			printf("SG: [T] SgParse: Externaldeclaration \n");
+#endif
+			// External declaration.
+			// Known no initializer.
+			SgRegisterstructureTraverse(ast->returnedtype);
+			// Traverse declaration list
+			if(!ast->left){
+				printf("SG: [E] SgParse: Externaldeclaration: Invalid type expression, ignoring \n");
+				ErfError();
+			}else{
+				if(ast->left->type==tLexem_Nulldeclaration){
+					// Ignore lol
+					// Not entirely though, you still got to register structure types
+				}else{
+					// Handle a declaration
+					char* name = nullptr;
+					tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
+					mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
+					tGInstruction* instr = 
+						mtGInstruction_CreateBasic(
+							tInstruction_Cnop,
+							eGAtomictype_Void
+						);
+					instr->label = name;
+					tGTargetPointer* ptr = 
+						mtGTargetPointer_CreateDynamic(
+							instr
+						);
+					tGSymbol* sym = 
+						mtGSymbol_CreatePointer(
+							name,
+							type,
+							ptr
+						);
+					mtGNamespace_Add(ast->name_space,sym);
+				};
+			};
+		};	break;
 		case tLexem_Typedefinition:
 			//
 #ifdef qvGTrace

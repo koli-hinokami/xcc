@@ -156,7 +156,7 @@ void compile(char* file){
 	fflush(stdout);
 	printf("Ln: [M] Compiling \"%s\"\n",file);
 	char* filename = trimextension(file);
-	parsefile("xcc-embedder"   ,filename,".c"  ,".cem",0);
+	parsefile2("xcc-embedder"   ,filename,".c"  ,".cem",0);
 	parsefile("xcc-preprocess" ,filename,".cem",".cpr",0);
 	if(!tLnArgsGetflag("m")){
 		//Use singlestage compiler

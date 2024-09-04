@@ -7,7 +7,7 @@ typedef uint8_t  tGTargetSegment;
 typedef int      tGTargetUintmax;
 //const tGTargetSizet GTargetStackframeArgumentsstart = 4;
 
-// XCC types
+// xcc types
 typedef struct tToken {
 	short type;
 	unsigned linenumber;
@@ -53,6 +53,10 @@ char* meGSegment_ToStringTable[]= {
 	"imm",
 	0
 };
+typedef enum eGCallingconvention {
+	eGCallingconvention_Stdcall = 1,
+	eGCallingconvention_Cdecl   = 2,
+} eGCallingconvention;
 typedef enum eGAtomictype {
 	eGAtomictype_Void             = 0,
 	eGAtomictype_Structure        = 1,
@@ -373,6 +377,7 @@ typedef struct tSpFunctionextinfo {
 	tGTargetSizet localssize;
 	tGTargetSizet argumentssize;
 	bool isfar;
+	eGCallingconvention callingconvention;
 	//tGType* returnedtype;
 } tSpFunctionextinfo;
 

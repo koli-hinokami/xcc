@@ -195,6 +195,10 @@ but in the configuration file like in Telemark Crossassembler.
 *If you want to use it as a macroassembler - don't. There's IR Compiler for a
 reason*.
 
+Also **there's a dirty hack** - iAsmRepeattimes to get `.times` directive
+going.
+
+
 # Linker
 
 Thy usual configurable linker, just like in CC65 suite.
