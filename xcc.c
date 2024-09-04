@@ -16,11 +16,11 @@ tLnFlagdefinition tLfFlags[] = {
 	{true,   false, "",   false,  false, false    }
 };
 
-char* szLnOutputfile = "";
 char* szLnRundirectory = "";
 char* szLnConfigdir;
 char* szLnArchitecture;
 char* szLnOutfile;
+tList /* <char*> */ LnObjectfiles;
 
 intptr_t tLnArgsGetflag(char* flag){
 	//printf("DBG:tLnArgsGetflag(\"%s\")\n",flag);
@@ -156,32 +156,81 @@ void parsefile(char* program, char* filename, char* ext1, char* ext2, char* args
 	fflush(stdout);
 };
 
-void compile(char* file){
+void LnLink(tList /* <char*> */ * objfiles){
+	char* argv[30];
+	memset(argv,0,sizeof(argv));
+	assert(mtList_Count(objfiles)<20);
+	int i = 0;
+	argv[i++]=mtString_Join(szLnRundirectory?:"","xcc-ld");
+	if(szLnConfigdir){
+		argv[i++]="-c";
+		argv[i++]=szLnConfigdir;
+	};
+	argv[i++]="-a";
+	argv[i++]=szLnArchitecture;
+	argv[i++]="-o";
+	argv[i++]=szLnOutfile;
+	for(tListnode /* <char*> */ * j = objfiles->first;j;j=j->next)
+		argv[i++]=mtString_Clone(j->item);
+	runprogram("xcc-ld",argv);
+};
+void compile(char* file){ // Downs whatever was given to it to object file
 	fflush(stdout);
 	printf("Ln: [M] Compiling \"%s\"\n",file);
 	char* filename = trimextension(file);
-	parsefile2("xcc-embedder"   ,filename,".c"  ,".cem",0);
-	parsefile("xcc-preprocess" ,filename,".cem",".cpr",0);
+	char* extension = mtString_FindcharLast(file,'.')+1;
+	assert(extension-1!=file);
+	if(strcmp(extension,"c")==0){
+		parsefile2("xcc-embedder"   ,filename,".c"  ,".cem",0);
+		extension="cem";
+	};
+	if(strcmp(extension,"cem")==0){
+		parsefile("xcc-preprocess" ,filename,".cem",".cpr",0);
+		extension="cpr";
+	};
 	if(!tLnArgsGetflag("m")){
 		//Use singlestage compiler
-		parsefile("xcc-singlestage",filename,".cpr",".obj",0);
+		if(strcmp(extension,"cpr")==0){
+			parsefile("xcc-singlestage",filename,".cpr",".obj",0);
+			extension="ir";
+		};
 	}else{
 		//Use multistage compiler
-		parsefile("xcc-tokenizer"  ,filename,".cpr",".ctk",0);
-		parsefile("xcc-lexer"      ,filename,".ctk",".clx",0);
-		parsefile("xcc-symbolgen"  ,filename,".clx",".sym",0);
-		parsefile("xcc-untypedef"  ,filename,".clx",".cut",0);
-		parsefile("xcc-unstruct"   ,filename,".cut",".blx",0);
-		parsefile("xcc-irmaker"    ,filename,".blx",".ir" ,0);
+		if(strcmp(extension,"cpr")==0){
+			parsefile("xcc-tokenizer"  ,filename,".cpr",".ctk",0);
+			extension="ctk";
+		};
+		if(strcmp(extension,"ctk")==0){
+			parsefile("xcc-lexer"      ,filename,".ctk",".clx",0);
+			extension="clx";
+		};
+		if(strcmp(extension,"clx")==0){
+			parsefile("xcc-symbolgen"  ,filename,".clx",".sym",0);
+			extension="clx";
+		};
+		if(strcmp(extension,"clx")==0){
+			parsefile("xcc-semanticparser"   ,filename,".clx",".blx",0);
+			extension="blx";
+		};
+		if(strcmp(extension,"blx")==0){
+			parsefile("xcc-irmaker"    ,filename,".blx",".ir" ,0);
+			extension="ir";
+		};
 	}
 	// IR Compiler and assembler currently are used by Singlestage compiler
 	// as well
-	parsefile2("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
-	parsefile2("xcc-assembler"  ,filename,".asm",".obj",0);
-	parsefile2("xcc-ld"         ,filename,".obj",".bin",0);
-	
-	free(filename);
-	
+	if(strcmp(extension,"ir")==0){
+		parsefile2("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
+		extension="asm";
+	};
+	if(strcmp(extension,"asm")==0){
+		parsefile2("xcc-assembler"  ,filename,".asm",".obj",0);
+		extension="obj";
+	};
+	file=mtString_Clone(file);
+	if(mtString_FindcharLast(file,'.')!=file)
+		mtString_FindcharLast(file,'.')[0]='\0';
+	mtList_Append(&LnObjectfiles,mtString_Join(file,".obj"));
 }
 
 void LnNullpointerhandler(int signum){
@@ -215,7 +264,7 @@ int main (int argc,char* argv[]) {
 	// ¤ xcc-irmaker     *.blx->*.ir   Compiles into .ir
 	// ¤ xcc-ircompiler  *.ir ->*.asm  Compiles .ir into .asm sources -
 	//                                 pretty much the only target-dependent
-	//                                 part of XCC
+	//                                 part of xcc
 	// ¤ xcc-asm         *.asm->*.obj  Assembles .asm sources into .obj
 	// ¤ xcc-ld          *.obj->*.exe  Links into executable - obviously
 	//                                 might need to be changed for other
@@ -276,7 +325,7 @@ int main (int argc,char* argv[]) {
 					i++;
 					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),false);
 				}else if(argv[aindex][i]=='o'){
-					szLnOutputfile = argv[++aindex];
+					szLnOutfile = argv[++aindex];
 				}else{
 					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),true);
 				}
@@ -290,12 +339,24 @@ int main (int argc,char* argv[]) {
 		printf("Ln: [F] No architecture specified! \n");
 		exit(1);
 	};
+	//Implied output file name
+	if(!szLnOutfile){
+		assert(argv[aindex]);
+		szLnOutfile=mtString_Clone(argv[aindex]);
+		if(mtString_FindcharLast(szLnOutfile,'.')!=szLnOutfile)
+			mtString_FindcharLast(szLnOutfile,'.')[0]='\0';
+		mtString_Append(&szLnOutfile,".bin");
+	};
 	//Files for compilation
 	printf("Ln: [M] Compiling:\n");
 	for(;aindex<argc;aindex++){
 		assert(argv[aindex]);
 		if(argv[aindex][0]=='-')break;
-		compile(argv[aindex]);
+		compile(mtString_Clone(argv[aindex]));
 	};
+	//Link it all
+	printf("Ln: [M] Linking:\n");
+	LnLink(&LnObjectfiles);
+	printf("Ln: [M] Done compiling\n");
 	if(szLnRundirectory)free(szLnRundirectory);
 };
