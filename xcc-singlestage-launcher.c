@@ -63,6 +63,7 @@ void LnCompile(char* file){
 	fprintf(stderr,"L:  [M] Lexicalpreparser \n");
 	//LxTypesdeclared = mtList_Create();
 	LxPreparse(GTokenized.first);
+	LxUsedeclaredtypeslist = true;
 	if(0){
 		printf("L:  [D] . Printing tList<tString> LxTypesdeclared:\n");
 		for(tListnode* i=LxTypesdeclared.first;i!=nullptr;i=i->next){
@@ -88,7 +89,7 @@ void LnCompile(char* file){
 	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser produces 
 	                                      // same type of tree that 
 	                                      // Lexicalparser does
-	if(0){
+	if(1){
 		fprintf(stderr,"L:  [M] Printing Primary AST \n");
 		LfPrint_LxNode(GLexed);
 		fprintf(stderr,"L:  [M] Done printing Primary AST \n");

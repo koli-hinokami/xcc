@@ -131,11 +131,14 @@ void mtLxFetcher_Print(tLxFetcher* self){
 	int j=0; 
 	for(tListnode* i=self->fetchfrom;i!=self->fetchto;i=i->next){
 		tToken* t=i->item;
-		if(i->next==self->fetchto){
-			printf("DBG:[T] ' Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		}else{
-			printf("DBG:[T] | Line %3i Token %2i: %3i:%s\n",t->linenumber,j,t->type,TokenidtoName[t->type]);
-		};
+		printf("DBG:[T] %c Line %3i Token %2i: %3i:%s:%s\n",
+			i->next==self->fetchto?'\'':'|',
+			t->linenumber,
+			j,
+			t->type,
+			TokenidtoName[t->type],
+			t->type==tToken_Identifier?t->string:"(nil)"
+		);
 		j++;
 	};
 };
