@@ -93,6 +93,7 @@ void SgParseTypedefInternal(tLxNode* ast){
 void SgParse(tGNamespace* namespace, tLxNode* ast){
 #ifdef qvGTrace
 	printf("SG: [T] SgParse: Entered with node %i∙%s\n",ast->type,TokenidtoName[ast->type]);
+	LfPrint_LxNode(ast);
 #endif
 	if(ast==nullptr){
 		printf("SG: [T] SgParse: Null AST protection triggered \n");
@@ -112,7 +113,7 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 			if(ast->right)SgParse(namespace,ast->right);
 			break;
 		case tLexem_Functiondeclaration: {
-			char* name;
+			char* name = nullptr;
 			tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
 			mtGNamespace_Add(
 				namespace,
@@ -161,7 +162,28 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 			};
 		};	break;
 		case tLexem_Typedefinition:
-			
+			// Type definition
+			// Traverse declaration list
+			if(!ast->left){
+				printf("SG: [E] SgParse: typedef: Invalid type expression \n");
+			}else if(ast->left->type==tLexem_Nulldeclaration){
+				// Ignore lol
+			}else if(ast->left->type==tLexem_Comma){
+				// Handle multiple declarations
+				printf("SG: [E] SgParse: typedef: Unable to parse declarations with commas \n");
+			}else{
+				// Handle a declaration
+				char* name = nullptr;
+				tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
+				mtGNamespace_Add(
+					namespace,
+					mtGSymbol_CreateTypedef(
+						name,
+						type
+					)
+				);
+			};
+			break;
 		default:
 			fprintf(stderr,"SG: [E] SgParse: Unrecognized node type %i:%s\n",ast->type,TokenidtoName[ast->type]);
 			break;

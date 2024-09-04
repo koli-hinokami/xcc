@@ -41,6 +41,7 @@ char* szLfPrefix = "?:  [?] ";
 void LfWriteline(char* string){
 	printf("%8.8s",string);
 	for(int i=0;i<iLfIndentation;i++)printf("| ");
+		
 	printf("%s",string+8);
 	//printf("%8.8s%.*s%s",
 	//	string, //lvalue char * casted-> rvalue char *
@@ -179,8 +180,13 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		//LfiPrint_LxNode("p:",self->precompiledenumeration);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
-		s1 = mtString_Join(self->unresolvedsymbol,"");
-		s2 = mtString_Join("struct ",s1);
+		if(!self->unresolvedsymbol){
+			// Occasionally structures are defined only by their fields
+			return mtString_Clone("struct");
+		}else{
+			s1 = mtString_Join(self->unresolvedsymbol,"");
+			s2 = mtString_Join("struct ",s1);
+		};
 		free(s1);
 		return s2;
 		//LfPrint_GNamespace(self->structure);
@@ -410,6 +416,13 @@ tGSymbol* mtGSymbol_CreateDeferred(char* name, tGType* type, tLxNode* expr){
 	temp->type = type;
 	temp->symbolkind = mtGSymbol_eType_Deferredevaulation;
 	temp->deferredexpression = expr;
+	return temp;
+};
+tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = type;
+	temp->symbolkind = mtGSymbol_eType_Typedef;
 	return temp;
 };
 #include "xcc-singlestage-symbolgen.c"

@@ -373,6 +373,7 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 					type->atomicbasetype = eGAtomictype_Unsigned;
 					break;
 			};
+			break;
 		case tToken_Keywordint:
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Int;
@@ -1937,11 +1938,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 		return mtLxNode_Clone(
 			&(tLxNode){
 				.type=tLexem_Nullexpression,
-				.returnedtype=mtGType_Clone(
-					&(tGType){
-						.atomicbasetype=eGAtomictype_Void
-					}
-				),
+				.returnedtype=nullptr,
 				.initializer=nullptr,
 				.condition=nullptr,
 				.left=nullptr,
