@@ -38,6 +38,21 @@ char* szLfPrefix = "?:  [?] ";
 		 which is always not suppressed. Should be used if something *way*
 		 worse than fatal error occurs.
 */
+
+
+// ------------------------- Forward declarations -------------------------
+
+char* mtGType_ToString_Embeddable(tGType *);
+char* mtGType_ToString(tGType * self);
+void LfPrint_GNamespace(tGNamespace* self);
+void LfiPrint_LxNode(char* pr,tLxNode* self);
+void LfiPrint_GType(char* pr, tGType* self);
+tGType* mtGType_Clone(tGType* self);
+char* mtGSymbol_ToString(tGSymbol* self);
+void GError();
+
+// -------------------------- Logging facilities --------------------------
+
 void LfWriteline(char* string){
 	printf("%8.8s",string);
 	for(int i=0;i<iLfIndentation;i++)printf("| ");
@@ -71,9 +86,97 @@ void LfUnindent(char* string){
 	//	string+8 // lvalue const char * casted-> rvalue char *
 	//);
 };
-
-char* mtGType_ToString_Embeddable(tGType *);
-void LfiPrint_LxNode(char* pr,tLxNode* self);
+void LfiPrint_SpNode(char* pr,tSpNode* self){
+	char buffer[512];
+	if(self==nullptr){
+		//exit(6);
+		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
+		//LfWriteline(buffer);
+	}else if(self->type==tSplexem_Declarationlist){
+		LfiPrint_SpNode("l:",self->left);
+		LfiPrint_SpNode("r:",self->right);
+	}else{
+		if(self->type==tSplexem_Integerconstant){
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s:%i \n",pr,self->type,TokenidtoName[self->type],mtGType_ToString(self->returnedtype),(int)self->constant);
+			LfWriteline(buffer);
+			return;
+		}else if(self->type==tSplexem_Symbol){
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s:%s \n",pr,self->type,TokenidtoName[self->type],mtGType_ToString(self->returnedtype),mtGSymbol_ToString(self->symbol));
+			LfWriteline(buffer);
+			return;
+		}else{
+			//exit(6);
+			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
+		};
+		//exit(6);
+		LfIndent(buffer);
+		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
+		if(self->symbol){
+			sprintf(buffer,
+				"Lf: [M] ∙ s: ¤ Symbol \"%s\" \n",
+				mtGSymbol_ToString(self->symbol)
+			);
+			LfWriteline(buffer);
+		};
+		if(
+			  (self->type==tLexem_Switchcase)
+			||(self->type==tLexem_Switchdefault)
+		){
+			LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
+		}else if(self->type==tLexem_Breakstatement){
+			LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
+		}else{
+			LfiPrint_SpNode("i:",self->initializer);
+		};
+		LfiPrint_SpNode("c:",self->condition);
+		LfiPrint_SpNode("l:",self->left);
+		LfiPrint_SpNode("r:",self->right);
+		if(
+			self->type==tSplexem_Structuremember
+		){
+			sprintf(buffer,
+				"Lf: [M] ∙ n: ¤ Offset %i \n",
+				self->constant
+			);
+			LfWriteline(buffer);
+		};
+		LfUnindent("Lf: [M]   \n");
+	};
+};
+void LfPrint_SpNode(tSpNode* self){
+	LfiPrint_SpNode("",self);
+	//exit(4);
+};
+void LfPrint_GSymbol(tGSymbol* self){
+	// TODO: Rewrite to use dynamic buffers instead of static 
+	//  cuz I already got one buffer overflow and don't want any more
+	char buffer[4096];
+	if(self==nullptr){
+		snprintf(buffer,4096,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n");
+		LfWriteline(buffer);
+	}else if(self->symbolkind==mtGSymbol_eType_Namespace){
+		snprintf(buffer,4096,"Lf: [M] ¤ Childnamespace %p:%s\n",self,self->name);
+		LfWriteline(buffer);
+		LfPrint_GNamespace(self->name_space);
+		return;
+	}else{
+		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		LfWriteline(buffer);
+	};
+};
+void LfPrint_GNamespace(tGNamespace* self){
+	char buffer[512];
+	if(self){
+		sprintf(buffer,"Lf: [M] ¤ Namespace %p:%s\n",self,self->name);
+		LfIndent(buffer);
+		// Print stuff
+		mtList_Foreach(&(self->symbols),(void(*)(void*))(&LfPrint_GSymbol));
+		// Finalize
+		LfUnindent("Lf: [M]   \n");
+	}else{
+		LfWriteline("Lf: [M] • ¤ Nullnamespace \n");
+	}
+};
 void LfiPrint_GType(char* pr, tGType* self){
 	LfWriteline(mtString_Join("Lf: [M] • t: ¤ type \"",mtString_Join(mtGType_ToString_Embeddable(self),"\"\n")));
 	return;
@@ -193,101 +296,272 @@ void LfPrint_LxNode(tLxNode* self){
 	LfiPrint_LxNode("",self);
 	//exit(4);
 };
-char* mtGType_ToString_Embeddable(tGType *);
-char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
-char* mtGSymbol_ToString(tGSymbol* self){
-	char buffer[4096];
-	if(self==nullptr){
-		return mtString_Clone("nullptr");
+
+// ------------------------------- class tGType -------------------------------
+//   Constructors
+tGType* mtGType_Create(){
+	return calloc(sizeof(tGType),1);
+}
+tGType* mtGType_Clone(tGType* self){
+	assert(self);
+	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
+}
+tGType* mtGType_CreateAtomic(eGAtomictype type){
+	tGType* i = mtGType_Create();
+	i->atomicbasetype = type;
+	return i;
+}
+tGType* mtGType_Create_String(char* str){
+	return mtGType_Clone(
+		&(tGType){
+			.atomicbasetype=eGAtomictype_Unresolved,
+			.unresolvedsymbol=str
+		}
+	);
+}
+tGType* mtGType_CreatePointer(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Pointer;
+	temp->complexbasetype = mtGType_Clone(self);
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_CreateNearpointer(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Nearpointer;
+	temp->complexbasetype = mtGType_Clone(self);
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_CreateFarpointer(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Farpointer;
+	temp->complexbasetype = mtGType_Clone(self);
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_CreateFunctioncall(tGType* self, tListnode /* <tGType> */ * args){
+	tGType* temp = mtGType_Create();
+	// Function
+	temp->atomicbasetype = eGAtomictype_Function;
+	// Returning:
+	temp->complexbasetype = self;
+	// And taking:
+	temp->functionarguments = args;
+	return temp;
+};
+//tGType* mtGType_CreateFunctioncall_Expr(tGType* self, tLxNode* expr){
+//	tGType* temp = mtGType_Create();
+//	// Function
+//	temp->atomicbasetype = eGAtomictype_Function;
+//	// Returning:
+//	temp->complexbasetype = self;
+//	// And taking:
+//	temp->functionarguments = SppParsefunctionarguments(expr);
+//	return temp;
+//};
+tGType* mtGType_CreateArray(tGType* self){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Array;
+	temp->complexbasetype = self;
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
+	tGType* temp = mtGType_Create();
+	temp->atomicbasetype = eGAtomictype_Array;
+	temp->complexbasetype = self;
+	// Parse declarations
+	tLxNode* i = expr;
+	for(bool cont = true;cont;){
+		switch(i->type){
+			// Array modifiers
+			//case tLexem_Farmodifier:
+			//case tLexem_Nearmodifier:
+			//case tLexem_Boundcheckmodifier:
+
+			default:
+				cont=false;
+		};
+	};
+	if(i->type==tLexem_Nullexpression){
+		temp->arraysizepresent = false;
+	}else if(i->type==tLexem_Integerconstant){
+		temp->arraysizepresent = true;
+		temp->arraysize = i->constant;
+	//}else if(i->type==tLexem_){
 	}else{
-		//snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
-		// Some conversions
-		return mtString_Join(
-			 self->symbolkind==mtGSymbol_eType_Constant?          "const "
-			:self->symbolkind==mtGSymbol_eType_Namespace?         "namespace "
-			:self->symbolkind==mtGSymbol_eType_Pointer?           "declare "
-			:self->symbolkind==mtGSymbol_eType_Deferredevaulation?"declareexpr "
-			:self->symbolkind==mtGSymbol_eType_Typedef?           "typedef "
-			:"unknown",
-			mtString_Join(
-				mtGType_ToString(self->type),
-				mtString_Join(
-					" ",
-					mtString_Join(
-						self->name,
-						";"
-					)
-				)
-				
-			)
+		printf("ss: [E] mtGType_CreateArray_Expr: Unrecognized array size node %i•%s\n",
+			i->type,
+			TokenidtoName[i->type]
+		);
+		GError();
+	};
+	//temp->arraysize = SppEvalconstexpr(expr);
+	// TODO: Far pointers
+	return temp;
+};
+tGType* mtGType_Deepclone(tGType* self){
+	if(!self)return nullptr;
+	tGType* i = mtGType_Clone(self);
+	i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
+	return i;
+}
+void mtGType_Deallocate(tGType* self){
+	free(self);
+};
+void mtGType_Destroy(tGType* self){
+	if(self->complexbasetype){
+		mtGType_Destroy(self->complexbasetype);
+	};
+	mtGType_Deallocate(self);
+};
+bool mtGType_IsPointer(tGType* self){
+	if(
+		  (self->atomicbasetype == eGAtomictype_Pointer)
+		||(self->atomicbasetype == eGAtomictype_Nearpointer)
+		||(self->atomicbasetype == eGAtomictype_Farpointer)
+	)return true;
+	return false;
+};
+bool mtGType_IsArray(tGType* self){
+	if(
+		  (self->atomicbasetype == eGAtomictype_Array)
+		//||(self->atomicbasetype == eGAtomictype_Neararray)
+		//||(self->atomicbasetype == eGAtomictype_Fararray)
+	)return true;
+	return false;
+};
+tGType* mtGType_Compose(tGType* t1,tGType* t2){
+	fprintf(stderr,"G:  [F] mtGType_Compose: Unfinished code hit! \n");
+	exit(2);
+};
+tGType* mtGType_GetBasetype(tGType* self){
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_GetBasetype: entered \n");
+#endif
+	assert(self);
+	if(
+		  (self->atomicbasetype==eGAtomictype_Pointer)
+		||(self->atomicbasetype==eGAtomictype_Array)
+		||(self->atomicbasetype==eGAtomictype_Function)
+	){
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_GetBasetype: got it \n");
+#endif
+		return mtGType_GetBasetype(self->complexbasetype);
+	}else{
+		return self;
+	};
+	exit(2);
+};
+bool mtGType_IsCastableto(tGType* self,tGType* type){
+	if(
+		  (self->atomicbasetype==eGAtomictype_Pointer)
+		&&(
+			  (self->atomicbasetype!=eGAtomictype_Pointer)
+			&&(self->atomicbasetype!=eGAtomictype_Array)
+		)
+	)return false;
+	if(
+		(
+			  (self->atomicbasetype==eGAtomictype_Structure)
+			||(self->atomicbasetype==eGAtomictype_Union)
+		)&&(
+			  (type->atomicbasetype!=eGAtomictype_Structure)
+			&&(type->atomicbasetype!=eGAtomictype_Union)
+		)
+	)return false;
+	if(
+		(
+			  (type->atomicbasetype==eGAtomictype_Structure)
+			||(type->atomicbasetype==eGAtomictype_Union)
+		)&&(
+			  (self->atomicbasetype!=eGAtomictype_Structure)
+			&&(self->atomicbasetype!=eGAtomictype_Union)
+		)
+	)return false;
+	return true;
+};
+bool mtGType_Equals(tGType* self,tGType* type){
+	if(
+		  (self->atomicbasetype==eGAtomictype_Function)
+		&&(type->atomicbasetype==eGAtomictype_Function)
+	){
+		for(
+			tListnode *i=self->functionarguments, *j=type->functionarguments;
+			(i!=nullptr)&&(j!=nullptr);
+			i=i->next,j=j->next
+		)
+			if(!mtGType_Equals(i->item,i->item))return false;
+	};
+	if(
+		(
+			  (self->atomicbasetype==eGAtomictype_Pointer)
+			&&(type->atomicbasetype==eGAtomictype_Pointer)
+		)||(
+			  (self->atomicbasetype==eGAtomictype_Array)
+			&&(type->atomicbasetype==eGAtomictype_Array)
+		)||(
+			  (self->atomicbasetype==eGAtomictype_Function)
+			&&(type->atomicbasetype==eGAtomictype_Function)
+		)
+	){
+		return mtGType_Equals(self->complexbasetype,type->complexbasetype);
+	};
+	if(self->valuecategory!=type->valuecategory)return false;
+	return self->atomicbasetype==type->atomicbasetype;
+};
+tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
+	printf("ss: [T] mtGType_SetValuecategory: entered \n");
+	mtGType_GetBasetype(self)->valuecategory=val;
+	return self;
+}
+tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from C-side types to IR-side types
+#ifdef qvGTrace
+	printf("ss: [T] mtGType_Transform: entered \n");
+#endif
+	if(!self)printf("ss: [E] mtGType_Transform: nullptr \n");
+	if(self->complexbasetype)mtGType_Transform(self->complexbasetype);
+	if(
+		  (self->atomicbasetype==eGAtomictype_Function)
+		||(self->atomicbasetype==eGAtomictype_Nearfunction)
+		||(self->atomicbasetype==eGAtomictype_Farfunction)
+	){
+		mtListnode_Foreach(
+			self->functionarguments,
+			(void(*)(void*))mtGType_Transform
 		);
 	};
-	LfWriteline(buffer);
+	switch(self->atomicbasetype){
+		case eGAtomictype_Char            :self->atomicbasetype=eGAtomictype_Uint8       ;break;
+		case eGAtomictype_Signedchar      :self->atomicbasetype=eGAtomictype_Int8        ;break;
+		case eGAtomictype_Unsignedchar    :self->atomicbasetype=eGAtomictype_Uint8       ;break;
+		case eGAtomictype_Short           :self->atomicbasetype=eGAtomictype_Int16       ;break;
+		case eGAtomictype_Unsignedshort   :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Int             :self->atomicbasetype=eGAtomictype_Int16       ;break;
+		case eGAtomictype_Unsigned        :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Long            :self->atomicbasetype=eGAtomictype_Int32       ;break;
+		case eGAtomictype_Unsignedlong    :self->atomicbasetype=eGAtomictype_Uint32      ;break;
+		case eGAtomictype_Longlong        :self->atomicbasetype=eGAtomictype_Int64       ;break;
+		case eGAtomictype_Unsignedlonglong:self->atomicbasetype=eGAtomictype_Uint64      ;break;
+		case eGAtomictype_Boolean         :self->atomicbasetype=eGAtomictype_Uint8       ;break;
+		case eGAtomictype_Float           :self->atomicbasetype=eGAtomictype_Float32     ;break;
+		case eGAtomictype_Double          :self->atomicbasetype=eGAtomictype_Float64     ;break;
+		case eGAtomictype_Longdouble      :self->atomicbasetype=eGAtomictype_Float80     ;break;
 
-};
-char* mtLxNode_ToString(tLxNode* self){
-	char buffer[512];
-	char* bufptr=buffer;
-	if(self==nullptr){
-		//exit(5);
-		//sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
-		return mtString_Clone("nullptr");
-		//LfWriteline(buffer);
-	}else switch(self->type){
-		case tLexem_Declarationlist:
-			return mtString_Join(
-				mtLxNode_ToString(self->left),
-				mtLxNode_ToString(self->right)
-			);
-			break;
-		case tLexem_Integerconstant:
-			sprintf(buffer,"intconstant(%i)",self->constant);
-			return mtString_Clone(buffer);
-		case tLexem_Identifier:
-			sprintf(buffer,"identifier\"%s\"",self->identifier);
-			return mtString_Clone(buffer);
-		default:
-			sprintf(buffer,"lexem %i:%s",self->type,TokenidtoName[self->type]);
-			//exit(6);
-			bufptr=mtString_Clone(buffer);
-			if(self->returnedtype)mtString_Append(&bufptr,mtGType_ToString_Embeddable(self->returnedtype));
-			if(
-				  (self->type==tLexem_Switchcase)
-				||(self->type==tLexem_Switchdefault)
-			){
-				//LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
-				mtString_Append(&bufptr," (i:boundswitch)");
-			}else if(self->type==tLexem_Breakstatement){
-				//LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
-				mtString_Append(&bufptr," (i:breaktarget)");
-			}else if(self->initializer){
-				//LfiPrint_LxNode("i:",self->initializer);
-				mtString_Append(&bufptr," (i:");
-				mtString_Append(&bufptr,mtLxNode_ToString(self->initializer));
-				mtString_Append(&bufptr,")");
-			};
-			//LfiPrint_LxNode("c:",self->condition);
-			//LfiPrint_LxNode("l:",self->left);
-			//LfiPrint_LxNode("r:",self->right);
-			if(self->condition){
-				mtString_Append(&bufptr," (c:");
-				mtString_Append(&bufptr,mtLxNode_ToString(self->condition));
-				mtString_Append(&bufptr,")");
-			};
-			if(self->left){
-				mtString_Append(&bufptr," (l:");
-				mtString_Append(&bufptr,mtLxNode_ToString(self->left));
-				mtString_Append(&bufptr,")");
-			};
-			if(self->right){
-				mtString_Append(&bufptr," (r:");
-				mtString_Append(&bufptr,mtLxNode_ToString(self->right));
-				mtString_Append(&bufptr,")");
-			};
-			return bufptr;
-			break;
+		case eGAtomictype_Pointer         :self->atomicbasetype=eGAtomictype_Nearpointer ;break;
+		//case eGAtomictype_Array           :self->atomicbasetype=eGAtomictype_Neararray   ;break;
+		case eGAtomictype_Function        :self->atomicbasetype=eGAtomictype_Nearfunction;break;
+		case eGAtomictype_Sizet           :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Intptr          :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Intnearptr      :self->atomicbasetype=eGAtomictype_Uint16      ;break;
+		case eGAtomictype_Intfarptr       :self->atomicbasetype=eGAtomictype_Uint32      ;break;
+		default: break;
 	};
+	return self;
 };
+char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
 	char *s2;
@@ -372,7 +646,15 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	}else if(self->atomicbasetype==eGAtomictype_Array){ 
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
-			"[]"
+			mtString_Join(
+				"[",
+				mtString_Join(
+					mtString_FromInteger(
+						self->arraysize
+					),
+					"]"
+				)
+			)
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Function){ 
@@ -381,7 +663,6 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
 			mtString_Append(&s1,",");
 		}
-
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
 			mtString_Join(
@@ -396,8 +677,10 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	}else if(self->atomicbasetype==eGAtomictype_Void){ 
 		return mtString_Join(
 			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
 			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:"novalue ",
+			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+			:"unkvalue ",
 			"void"
 		);
 		//printf("void ",self->unresolvedsymbol);
@@ -419,105 +702,158 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		};
 		return mtString_Join(
 			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
 			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
-			:"novalue ",
+			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+			:"unkvalue ",
 			s2
 		);
 	};
 };
-void LfiPrint_SpNode(char* pr,tSpNode* self){
-	char buffer[512];
-	if(self==nullptr){
-		//exit(6);
-		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
-		//LfWriteline(buffer);
-	}else if(self->type==tSplexem_Declarationlist){
-		LfiPrint_SpNode("l:",self->left);
-		LfiPrint_SpNode("r:",self->right);
-	}else{
-		if(self->type==tSplexem_Integerconstant){
-			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s:%i \n",pr,self->type,TokenidtoName[self->type],mtGType_ToString(self->returnedtype),(int)self->constant);
-			LfWriteline(buffer);
-			return;
-		}else if(self->type==tSplexem_Symbol){
-			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s:%s \n",pr,self->type,TokenidtoName[self->type],mtGType_ToString(self->returnedtype),mtGSymbol_ToString(self->symbol));
-			LfWriteline(buffer);
-			return;
-		}else{
-			//exit(6);
-			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
-		};
-		//exit(6);
-		LfIndent(buffer);
-		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
-		if(self->symbol){
-			sprintf(buffer,
-				"Lf: [M] ∙ s: ¤ Symbol \"%s\" \n",
-				mtGSymbol_ToString(self->symbol)
-			);
-			LfWriteline(buffer);
-		};
-		if(
-			  (self->type==tLexem_Switchcase)
-			||(self->type==tLexem_Switchdefault)
-		){
-			LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
-		}else if(self->type==tLexem_Breakstatement){
-			LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
-		}else{
-			LfiPrint_SpNode("i:",self->initializer);
-		};
-		LfiPrint_SpNode("c:",self->condition);
-		LfiPrint_SpNode("l:",self->left);
-		LfiPrint_SpNode("r:",self->right);
-		if(
-			self->type==tSplexem_Structuremember
-		){
-			sprintf(buffer,
-				"Lf: [M] ∙ n: ¤ Offset %i \n",
-				self->constant
-			);
-			LfWriteline(buffer);
-		};
-		LfUnindent("Lf: [M]   \n");
-	};
+
+// ------------------------------ class tGSymbol ------------------------------
+
+tGSymbol* mtGSymbol_Create(){
+	return calloc(sizeof(tGSymbol),1);
 };
-void LfPrint_SpNode(tSpNode* self){
-	LfiPrint_SpNode("",self);
-	//exit(4);
+tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = nullptr;
+	temp->symbolkind = mtGSymbol_eType_Namespace;
+	temp->name_space = name_space;
+	return temp;
 };
-void LfPrint_GNamespace(tGNamespace* self);
-void LfPrint_GSymbol(tGSymbol* self){
-	// TODO: Rewrite to use dynamic buffers instead of static 
-	//  cuz I already got one buffer overflow and don't want any more
+tGSymbol* mtGSymbol_CreatePointer(char* name, tGType* type, tGTargetPointer* ptr){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = type;
+	temp->symbolkind = mtGSymbol_eType_Pointer;
+	temp->allocatedstorage = ptr;
+	return temp;
+};
+tGSymbol* mtGSymbol_CreateDeferred(char* name, tGType* type, tLxNode* expr){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = type;
+	temp->symbolkind = mtGSymbol_eType_Deferredevaulation;
+	temp->deferredexpression = expr;
+	return temp;
+};
+tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = type;
+	temp->symbolkind = mtGSymbol_eType_Typedef;
+	return temp;
+};
+char* mtGSymbol_ToString(tGSymbol* self){
 	char buffer[4096];
 	if(self==nullptr){
-		snprintf(buffer,4096,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n");
-		LfWriteline(buffer);
-	}else if(self->symbolkind==mtGSymbol_eType_Namespace){
-		snprintf(buffer,4096,"Lf: [M] ¤ Childnamespace %p:%s\n",self,self->name);
-		LfWriteline(buffer);
-		LfPrint_GNamespace(self->name_space);
-		return;
+		return mtString_Clone("nullptr");
 	}else{
-		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
-		LfWriteline(buffer);
+		//snprintf(buffer,4096,
+		//	"Lf: [M] ¤ Symbol %p:%s %i•%s\n",
+		//	self,
+		//	mtGType_ToString_Embeddable(self->type),
+		//	self->symbolkind,
+		//	self->name
+		//);
+		// Some conversions
+		return mtString_Join(
+			 self->symbolkind==mtGSymbol_eType_Constant?          "const "
+			:self->symbolkind==mtGSymbol_eType_Namespace?         "namespace "
+			:self->symbolkind==mtGSymbol_eType_Pointer?           "declare "
+			:self->symbolkind==mtGSymbol_eType_Deferredevaulation?"declareexpr "
+			:self->symbolkind==mtGSymbol_eType_Typedef?           "typedef "
+			:"unknown",
+			mtString_Join(
+				mtGType_ToString(self->type),
+				mtString_Join(
+					" ",
+					mtString_Join(
+						self->name,
+						";"
+					)
+				)
+				
+			)
+		);
 	};
-};
-void LfPrint_GNamespace(tGNamespace* self){
-	char buffer[512];
-	if(self){
-		sprintf(buffer,"Lf: [M] ¤ Namespace %p:%s\n",self,self->name);
-		LfIndent(buffer);
-		// Print stuff
-		mtList_Foreach(&(self->symbols),(void(*)(void*))(&LfPrint_GSymbol));
-		// Finalize
-		LfUnindent("Lf: [M]   \n");
-	}else{
-		LfWriteline("Lf: [M] • ¤ Nullnamespace \n");
-	}
+	LfWriteline(buffer);
 };
 
+// ------------------------------ class tLxNode ------------------------------
+tLxNode* mtLxNode_Create(void){
+	return calloc(sizeof(tLxNode),1);
+};
+tLxNode* mtLxNode_Clone(tLxNode* self){
+	return memcpy(malloc(sizeof(tLxNode)),self,sizeof(tLxNode));
+};
+char* mtLxNode_ToString(tLxNode* self){
+	char buffer[512];
+	char* bufptr=buffer;
+	if(self==nullptr){
+		//exit(5);
+		//sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
+		return mtString_Clone("nullptr");
+		//LfWriteline(buffer);
+	}else switch(self->type){
+		case tLexem_Declarationlist:
+			return mtString_Join(
+				mtLxNode_ToString(self->left),
+				mtLxNode_ToString(self->right)
+			);
+			break;
+		case tLexem_Integerconstant:
+			sprintf(buffer,"intconstant(%i)",self->constant);
+			return mtString_Clone(buffer);
+		case tLexem_Identifier:
+			sprintf(buffer,"identifier\"%s\"",self->identifier);
+			return mtString_Clone(buffer);
+		default:
+			sprintf(buffer,"lexem %i:%s",self->type,TokenidtoName[self->type]);
+			//exit(6);
+			bufptr=mtString_Clone(buffer);
+			if(self->returnedtype)mtString_Append(&bufptr,mtGType_ToString_Embeddable(self->returnedtype));
+			if(
+				  (self->type==tLexem_Switchcase)
+				||(self->type==tLexem_Switchdefault)
+			){
+				//LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
+				mtString_Append(&bufptr," (i:boundswitch)");
+			}else if(self->type==tLexem_Breakstatement){
+				//LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
+				mtString_Append(&bufptr," (i:breaktarget)");
+			}else if(self->initializer){
+				//LfiPrint_LxNode("i:",self->initializer);
+				mtString_Append(&bufptr," (i:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->initializer));
+				mtString_Append(&bufptr,")");
+			};
+			//LfiPrint_LxNode("c:",self->condition);
+			//LfiPrint_LxNode("l:",self->left);
+			//LfiPrint_LxNode("r:",self->right);
+			if(self->condition){
+				mtString_Append(&bufptr," (c:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->condition));
+				mtString_Append(&bufptr,")");
+			};
+			if(self->left){
+				mtString_Append(&bufptr," (l:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->left));
+				mtString_Append(&bufptr,")");
+			};
+			if(self->right){
+				mtString_Append(&bufptr," (r:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->right));
+				mtString_Append(&bufptr,")");
+			};
+			return bufptr;
+			break;
+	};
+};
+// ------------------------------ class tToken ------------------------------
 bool mtToken_HasString(tToken* self){
 	if(self->type&0x0100){
 		return true;
@@ -534,180 +870,12 @@ size_t mtToken_Sizeof(tToken* self){
 		return sizeof(tToken);
 	};
 #endif
-
 };
 tToken* mtToken_Clone(tToken* self){
 	tToken* i = malloc(mtToken_Sizeof(self));
 	return memcpy(i,self,mtToken_Sizeof(self));
 };
-
-tGType* mtGType_Create(){
-	return calloc(sizeof(tGType),1);
-}
-tGType* mtGType_CreateAtomic(eGAtomictype type){
-	tGType* i = mtGType_Create();
-	i->atomicbasetype = type;
-	return i;
-}
-tGType* mtGType_Clone(tGType* self){
-	return memcpy(malloc(sizeof(tGType)),self,sizeof(tGType));
-}
-tGType* mtGType_Deepclone(tGType* self){
-	if(!self)return nullptr;
-	tGType* i = mtGType_Clone(self);
-	i->complexbasetype=mtGType_Deepclone(i->complexbasetype);
-	return i;
-}
-void mtGType_Deallocate(tGType* self){
-	free(self);
-};
-void mtGType_Destroy(tGType* self){
-	if(self->complexbasetype){
-		mtGType_Destroy(self->complexbasetype);
-	};
-	mtGType_Deallocate(self);
-
-};
-tGType* mtGType_Create_String(char* str){
-	return mtGType_Clone(
-		&(tGType){
-			.atomicbasetype=eGAtomictype_Unresolved,
-			.unresolvedsymbol=str
-		}
-	);
-}
-tGType* mtGType_Compose(tGType* t1,tGType* t2){
-	fprintf(stderr,"G:  [F] mtGType_Compose: Unfinished code hit! \n");
-	exit(2);
-};
-tGType* mtGType_GetBasetype(tGType* self){
-#ifdef qvGTrace
-	printf("ss: [T] mtGType_GetBasetype: entered \n");
-#endif
-	assert(self);
-	if(
-		  (self->atomicbasetype==eGAtomictype_Pointer)
-		||(self->atomicbasetype==eGAtomictype_Array)
-		||(self->atomicbasetype==eGAtomictype_Function)
-	){
-#ifdef qvGTrace
-	printf("ss: [T] mtGType_GetBasetype: got it \n");
-#endif
-		return mtGType_GetBasetype(self->complexbasetype);
-	}else{
-		return self;
-	};
-	exit(2);
-};
-bool mtGType_IsCastableto(tGType* self,tGType* type){
-	if(
-		  (self->atomicbasetype==eGAtomictype_Pointer)
-		&&(
-			  (self->atomicbasetype!=eGAtomictype_Pointer)
-			&&(self->atomicbasetype!=eGAtomictype_Array)
-		)
-	)return false;
-	if(
-		(
-			  (self->atomicbasetype==eGAtomictype_Structure)
-			||(self->atomicbasetype==eGAtomictype_Union)
-		)&&(
-			  (type->atomicbasetype!=eGAtomictype_Structure)
-			&&(type->atomicbasetype!=eGAtomictype_Union)
-		)
-	)return false;
-	if(
-		(
-			  (type->atomicbasetype==eGAtomictype_Structure)
-			||(type->atomicbasetype==eGAtomictype_Union)
-		)&&(
-			  (self->atomicbasetype!=eGAtomictype_Structure)
-			&&(self->atomicbasetype!=eGAtomictype_Union)
-		)
-	)return false;
-	return true;
-};
-bool mtGType_Equals(tGType* self,tGType* type){
-
-	if(
-		  (self->atomicbasetype==eGAtomictype_Function)
-		&&(type->atomicbasetype==eGAtomictype_Function)
-	){
-		for(
-			tListnode *i=self->functionarguments, *j=type->functionarguments;
-			(i!=nullptr)&&(j!=nullptr);
-			i=i->next,j=j->next
-		)
-			if(!mtGType_Equals(i->item,i->item))return false;
-	};
-	if(
-		(
-			  (self->atomicbasetype==eGAtomictype_Pointer)
-			&&(type->atomicbasetype==eGAtomictype_Pointer)
-		)||(
-			  (self->atomicbasetype==eGAtomictype_Array)
-			&&(type->atomicbasetype==eGAtomictype_Array)
-		)||(
-			  (self->atomicbasetype==eGAtomictype_Function)
-			&&(type->atomicbasetype==eGAtomictype_Function)
-		)
-	){
-		return mtGType_Equals(self->complexbasetype,type->complexbasetype);
-	};
-	if(self->valuecategory!=type->valuecategory)return false;
-	return self->atomicbasetype==type->atomicbasetype;
-};
-tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory val){
-	mtGType_GetBasetype(self)->valuecategory=val;
-	return self;
-}
-tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from C-side types to IR-side types
-#ifdef qvGTrace
-	printf("ss: [T] mtGType_Transform: entered \n");
-#endif
-	if(!self)printf("ss: [E] mtGType_Transform: nullptr \n");
-	if(self->complexbasetype)mtGType_Transform(self->complexbasetype);
-	if(
-		  (self->atomicbasetype==eGAtomictype_Function)
-		||(self->atomicbasetype==eGAtomictype_Nearfunction)
-		||(self->atomicbasetype==eGAtomictype_Farfunction)
-	){
-		mtListnode_Foreach(
-			self->functionarguments,
-			(void(*)(void*))mtGType_Transform
-		);
-	};
-	switch(self->atomicbasetype){
-		case eGAtomictype_Char            :self->atomicbasetype=eGAtomictype_Uint8       ;break;
-		case eGAtomictype_Signedchar      :self->atomicbasetype=eGAtomictype_Int8        ;break;
-		case eGAtomictype_Unsignedchar    :self->atomicbasetype=eGAtomictype_Uint8       ;break;
-		case eGAtomictype_Short           :self->atomicbasetype=eGAtomictype_Int16       ;break;
-		case eGAtomictype_Unsignedshort   :self->atomicbasetype=eGAtomictype_Uint16      ;break;
-		case eGAtomictype_Int             :self->atomicbasetype=eGAtomictype_Int16       ;break;
-		case eGAtomictype_Unsigned        :self->atomicbasetype=eGAtomictype_Uint16      ;break;
-		case eGAtomictype_Long            :self->atomicbasetype=eGAtomictype_Int32       ;break;
-		case eGAtomictype_Unsignedlong    :self->atomicbasetype=eGAtomictype_Uint32      ;break;
-		case eGAtomictype_Longlong        :self->atomicbasetype=eGAtomictype_Int64       ;break;
-		case eGAtomictype_Unsignedlonglong:self->atomicbasetype=eGAtomictype_Uint64      ;break;
-		case eGAtomictype_Boolean         :self->atomicbasetype=eGAtomictype_Uint8       ;break;
-		case eGAtomictype_Float           :self->atomicbasetype=eGAtomictype_Float32     ;break;
-		case eGAtomictype_Double          :self->atomicbasetype=eGAtomictype_Float64     ;break;
-		case eGAtomictype_Longdouble      :self->atomicbasetype=eGAtomictype_Float80     ;break;
-
-		case eGAtomictype_Pointer         :self->atomicbasetype=eGAtomictype_Nearpointer ;break;
-		case eGAtomictype_Array           :self->atomicbasetype=eGAtomictype_Neararray   ;break;
-		case eGAtomictype_Function        :self->atomicbasetype=eGAtomictype_Nearfunction;break;
-		case eGAtomictype_Sizet           :self->atomicbasetype=eGAtomictype_Uint16      ;break;
-		case eGAtomictype_Intptr          :self->atomicbasetype=eGAtomictype_Uint16      ;break;
-		case eGAtomictype_Intnearptr      :self->atomicbasetype=eGAtomictype_Uint16      ;break;
-		case eGAtomictype_Intfarptr       :self->atomicbasetype=eGAtomictype_Uint32      ;break;
-		default: break;
-	};
-	return self;
-};
-tGSymbol* mtGSymbol_Create(){
-	return calloc(sizeof(tGSymbol),1);
-};
+// ---------------------------- class tGNamespace ----------------------------
 tGNamespace* mtGNamespace_Create(){
 	return calloc(sizeof(tGNamespace),1);
 };
@@ -804,93 +972,7 @@ void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 	// Add symbol to namespace
 	mtList_Prepend(&(namespace->symbols),symbol);
 };
-
-tGType* mtGType_CreatePointer(tGType* self){
-	tGType* temp = mtGType_Create();
-	temp->atomicbasetype = eGAtomictype_Pointer;
-	temp->complexbasetype = mtGType_Clone(self);
-	// TODO: Far pointers
-	return temp;
-};
-tGType* mtGType_CreateNearpointer(tGType* self){
-	tGType* temp = mtGType_Create();
-	temp->atomicbasetype = eGAtomictype_Nearpointer;
-	temp->complexbasetype = mtGType_Clone(self);
-	// TODO: Far pointers
-	return temp;
-};
-tGType* mtGType_CreateFarpointer(tGType* self){
-	tGType* temp = mtGType_Create();
-	temp->atomicbasetype = eGAtomictype_Farpointer;
-	temp->complexbasetype = mtGType_Clone(self);
-	// TODO: Far pointers
-	return temp;
-};
-tGType* mtGType_CreateFunctioncall(tGType* self, tListnode /* <tGType> */ * args){
-	tGType* temp = mtGType_Create();
-	// Function
-	temp->atomicbasetype = eGAtomictype_Function;
-	// Returning:
-	temp->complexbasetype = self;
-	// And taking:
-	temp->functionarguments = args;
-	return temp;
-};
-//tGType* mtGType_CreateFunctioncall_Expr(tGType* self, tLxNode* expr){
-//	tGType* temp = mtGType_Create();
-//	// Function
-//	temp->atomicbasetype = eGAtomictype_Function;
-//	// Returning:
-//	temp->complexbasetype = self;
-//	// And taking:
-//	temp->functionarguments = SppParsefunctionarguments(expr);
-//	return temp;
-//};
-tGType* mtGType_CreateArray(tGType* self){
-	tGType* temp = mtGType_Create();
-	temp->atomicbasetype = eGAtomictype_Array;
-	temp->complexbasetype = self;
-	// TODO: Far pointers
-	return temp;
-};
-tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
-	tGType* temp = mtGType_Create();
-	temp->atomicbasetype = eGAtomictype_Array;
-	temp->complexbasetype = self;
-	// TODO: Far pointers
-	return temp;
-};
-tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){
-	tGSymbol* temp = mtGSymbol_Create();
-	temp->name = name;
-	temp->type = nullptr;
-	temp->symbolkind = mtGSymbol_eType_Namespace;
-	temp->name_space = name_space;
-	return temp;
-};
-tGSymbol* mtGSymbol_CreatePointer(char* name, tGType* type, tGTargetPointer* ptr){
-	tGSymbol* temp = mtGSymbol_Create();
-	temp->name = name;
-	temp->type = type;
-	temp->symbolkind = mtGSymbol_eType_Pointer;
-	temp->allocatedstorage = ptr;
-	return temp;
-};
-tGSymbol* mtGSymbol_CreateDeferred(char* name, tGType* type, tLxNode* expr){
-	tGSymbol* temp = mtGSymbol_Create();
-	temp->name = name;
-	temp->type = type;
-	temp->symbolkind = mtGSymbol_eType_Deferredevaulation;
-	temp->deferredexpression = expr;
-	return temp;
-};
-tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
-	tGSymbol* temp = mtGSymbol_Create();
-	temp->name = name;
-	temp->type = type;
-	temp->symbolkind = mtGSymbol_eType_Typedef;
-	return temp;
-};
+// -------------------------- class tGTargetPointer --------------------------
 tGTargetPointer* mtGTargetPointer_Create(){
 	return calloc(sizeof(tGTargetPointer),1);
 };
@@ -910,6 +992,7 @@ tGTargetPointer* mtGTargetPointer_CreateStatic(eGSegment segment, tGTargetNearpo
 	i->offset=offset;
 	return i;
 };
+// --------------------------- class tGInstruction ---------------------------
 tGInstruction* mtGInstruction_Create(void){
 	return calloc(sizeof(tGInstruction),1);
 };
@@ -1016,26 +1099,26 @@ void LfPrint_GInstruction(tGInstruction* self){
 	};
 	LfUnindent("Lf: [M]   \n");
 };
+// --------------------------------- Global ---------------------------------
 tGInstruction* GAddinstructiontosegment(eGSegment segment, tGInstruction* instr){
 	return mtGInstruction_GetLast(GCompiled[segment])->next=instr;
 };
-
-// --------------------- Tokenizer ---------------------
 void GInitializePerfile(){
 	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 };
 void GError(){
-	ErfError();
 	fprintf(stderr,"SS: [E] Error occured, terminating \n");
+	ErfError();
 	exit(1);
 };
 void GFatal(){
 	ErfFatal();
-	fprintf(stderr,"SS: [F] Fatal error occured, terminating \n");
 	exit(1);
 };
 void GFinalize(){
 };
+// -------------------------------- Unsorted --------------------------------
+// ------------------------------- Submodules -------------------------------
 #include "xcc-singlestage-tokenizer.c"
 #include "xcc-singlestage-fetcher.c"
 #include "xcc-singlestage-lexicalparser.c"

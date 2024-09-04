@@ -58,7 +58,8 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 };
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
-	tGType* temptype = mtGType_Clone(basetype);
+	printf("spp:[T] SppGeneratetype: entered \n");
+	tGType* temptype = mtGType_Deepclone(basetype);
 	if(typeexpr==nullptr){
 		printf("SPP:[E] SppGeneratetype: typeexpr==nullptr\n");
 		return nullptr;
@@ -308,6 +309,7 @@ tSppNode* SppParse(tLxNode /* From SppPreparse! */ * self, tSppNode* parent){ //
 
 tGTargetSizet mtGType_Sizeof(tGType* self){
 	assert(self);
+	printf("ss: [T] mtGType_Sizeof(): entered\n"); //mtGType_ToString(self));
 	if(mtGType_GetBasetype(self)->valuecategory==eGValuecategory_Leftvalue){
 		return 2;
 	};
@@ -335,9 +337,10 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			return 2;
 		case eGAtomictype_Farpointer:
 			return 4;
-		case eGAtomictype_Neararray:
-		case eGAtomictype_Fararray:
-			return mtGType_Sizeof(self->complexbasetype);
+		case eGAtomictype_Array:
+			assert(self->arraysizepresent);
+			assert(self->dynamicarraysize==nullptr);
+			return mtGType_Sizeof(self->complexbasetype)*self->arraysize;
 		case eGAtomictype_Function:
 			assert(false);
 		// IR-side types (and optionally C-side)

@@ -5,6 +5,7 @@
 #include <stdarg.h>
 #include <unistd.h>
 //#include <process.h>
+#include <signal.h>
 #include <sys/wait.h>
 #include <stdbool.h>
 #include <ctype.h>

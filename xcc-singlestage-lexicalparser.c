@@ -4,12 +4,6 @@ tLxNode* /* <nullptr||.type=statement> */ LxCurrentbreak; // Also serves as LxCu
 tList /* <char*> */ LxTypesdeclared;
 bool LxUsedeclaredtypeslist;
 // ------------------ Lexical parsing ------------------
-tLxNode* mtLxNode_Create(void){
-	return calloc(sizeof(tLxNode),1);
-};
-tLxNode* mtLxNode_Clone(tLxNode* self){
-	return memcpy(malloc(sizeof(tLxNode)),self,sizeof(tLxNode));
-};
 // --------------------- The Lexer ---------------------
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher);
 tLxNode* LxParseDeclaration(tLxFetcher* fetcher);
@@ -1842,17 +1836,37 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				}
 			);
 		case tToken_Keywordsizeof: // sizeof ( T )
-			return mtLxNode_Clone(
-				&(tLxNode){
-					.type=tLexem_Sizeof,
-					.left=LxParseExpression(
-						&(tLxFetcher){
-							.fetchfrom=fetcher->fetchfrom->next,
-							.fetchto=fetcher->fetchto
-						}
-					)
-				}
-			);
+			mtLxFetcher_Advance(fetcher);
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Openparentheses){
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type=tLexem_Sizeof,
+						.left=LxParseTypeexpression(
+							fetcher
+						)
+					}
+				);
+			}else{
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type=tLexem_Sizeof,
+						.left=LxParseExpression(
+							fetcher
+						)
+					}
+				);
+			};
+			//return mtLxNode_Clone(
+			//	&(tLxNode){
+			//		.type=tLexem_Sizeof,
+			//		.left=LxParseExpression(
+			//			&(tLxFetcher){
+			//				.fetchfrom=fetcher->fetchfrom->next,
+			//				.fetchto=fetcher->fetchto
+			//			}
+			//		)
+			//	}
+			//);
 			break;
 		case tToken_Openparentheses: {
 			//Evaulate parenthesation

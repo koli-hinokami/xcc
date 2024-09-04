@@ -27,6 +27,10 @@ char* LnTrimextension(char* file){
 //	free(argv[2]);
 //};
 
+void LnNullpointerhandler(int signum){
+	fprintf(stderr,"Ln: [F] Segfault catched! \n");
+	ErfFatal();
+};
 void LnCompile(char* file){
 	printf("L:  [M] Compiling \"%s\"\n",file);
 	GInitializePerfile();
@@ -153,9 +157,10 @@ void LnCompile(char* file){
 };
 int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
+	signal(SIGSEGV,LnNullpointerhandler);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
-	printf("L:      Version 0.9.9.0.universal.jam1-ir\n");
+	printf("L:      Version 0.9.11.0.universal.jam1-ir\n");
 	printf("L:      ----------------------------------------------------\n");
 	int aindex=1; //Command-line options
 	printf("L:  [T] Options:\n");
