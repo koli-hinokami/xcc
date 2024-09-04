@@ -10,6 +10,7 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher);
 tGType* LxParseBasetype(tLxFetcher* fetcher);
 tLxNode* LxParseExpression(tLxFetcher*);
 tLxNode* LxParseBlockstatement(tLxFetcher* fetcher);
+tLxNode* LxParseTypeexpression2(tLxFetcher* fetcher);
 
 tLxNode* LxParseExpressionstatement(tLxFetcher* fetcher){
 //#ifdef qvGDebug
@@ -2126,11 +2127,15 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				return mtLxNode_Clone(
 					&(tLxNode){
 						.type=tLexem_Compoundliteral,
-						.left=LxParseTypeexpression(
-							&(tLxFetcher){
-								.fetchfrom=fetcher->fetchfrom,
-								.fetchto=splitpoint
-							}
+						.left=LxParseTypeexpression2(
+							//mtLxFetcher_Trimfirst(
+								//mtLxFetcher_Trimlast(
+									&(tLxFetcher){
+										.fetchfrom=fetcher->fetchfrom,
+										.fetchto=splitpoint
+									}
+								//)
+							//)
 						),
 						.right=LxParseExpression(
 							mtLxFetcher_Trimlast(

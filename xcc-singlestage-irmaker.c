@@ -6,6 +6,7 @@ tSpNode* IgCurrentfunction;
 tList /* <tInstruction*> */ IgPendingsideeffects;
 // -- Forward declarations --
 tGInstruction* IgCompileExpression(tSpNode* self);
+tGInstruction* IgCompileConditionaljump(tSpNode* self, tGInstruction* jumptarget);
 // -- Functions --
 tGInstruction* IgCompileFunctionarguments(tSpNode* self){
 	assert(self);
@@ -125,7 +126,6 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 					eGAtomictype_Nearpointer,
 					self->symbol->allocatedstorage->dynamicpointer
 				);
-				
 			}else{
 				assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
 				if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
@@ -309,6 +309,19 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			);
 			return i;
 		};	break;
+		case tSplexem_Structuremember: {
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateImmediate(
+					tInstruction_Index,
+							self->left->returnedtype->valuecategory
+						==	eGValuecategory_Leftvalue
+					?	eGAtomictype_Nearpointer
+					:	self->left->returnedtype->atomicbasetype,
+					self->constant
+				)
+			);
+		};	break;
 		default:
 			printf("IG: [E] IgCompileExpression: Unrecognized "
 			       "node %i•%s \n",
@@ -336,6 +349,79 @@ tGInstruction* IgCompileInvertedconditionaljump(
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
 	switch(self->type){
+		case tSplexem_Logicalnot: {
+			return IgCompileConditionaljump(self->left,jumptarget);
+		};	break;
+		case tSplexem_Equality: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								tInstruction_Comparejumpnotequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Nonequality: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								tInstruction_Comparejumpequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
 		case tSplexem_Greaterequal: {
 			assert(self->right);
 			assert(
@@ -490,9 +576,13 @@ tGInstruction* IgCompileInvertedconditionaljump(
 		};	break;
 		case tSplexem_Casttoboolean: {
 			expr = IgCompileExpression(self->left);
+			assert(self->left->returnedtype->valuecategory==eGValuecategory_Rightvalue);
 			mtGInstruction_GetLast(expr)->next = 
 				mtGInstruction_CreateCodepointer(
-					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+					tInstruction_Jumpfalse,
+					self->left->returnedtype->atomicbasetype,
+					jumptarget
+				);
 		};	break;
 		default:
 			assert(false);
@@ -507,13 +597,85 @@ tGInstruction* IgCompileConditionaljump(
 ){ // compiles some exprs to compare-jump-condition
 	assert(self);
 	assert(self->left);
-	assert(self->right);
 	assert(self->returnedtype);
 	assert(self->returnedtype->atomicbasetype==eGAtomictype_Boolean);
 	tGInstruction* expr = nullptr;
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
 	switch(self->type){
+		case tSplexem_Logicalnot: {
+			return IgCompileInvertedconditionaljump(self->left,jumptarget);
+		};	break;
+		case tSplexem_Equality: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								tInstruction_Comparejumpequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Nonequality: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								tInstruction_Comparejumpnotequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
 		case tSplexem_Greaterequal: {
 			assert(
 				  self->left->returnedtype->atomicbasetype
@@ -664,12 +826,20 @@ tGInstruction* IgCompileConditionaljump(
 		};	break;
 		case tSplexem_Casttoboolean: {
 			expr = IgCompileExpression(self->left);
+			assert(self->left->returnedtype->valuecategory==eGValuecategory_Rightvalue);
 			mtGInstruction_GetLast(expr)->next = 
 				mtGInstruction_CreateCodepointer(
-					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+					tInstruction_Jumptrue,
+					self->left->returnedtype->atomicbasetype,
+					jumptarget
+				);
 		};	break;
 		default:
-			assert(false);
+			printf("IG: [E] IgCompileConditionaljump: Unrecognized node %s",
+				TokenidtoName[self->type]
+			);
+			ErfError();
+			return nullptr;
 	};
 	return expr;
 }
@@ -857,6 +1027,35 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				ErfLeave();
 			ErfLeave();
 			return init;
+		};
+		case tSplexem_Whilestatement: {
+			//	while_l: jmp   _cond
+			//	_loop:   body
+			//	_cond:   cj##cond  _loop
+			tGInstruction* retval = nullptr;
+			ErfEnter_String("IgCompileStatement: Whileloop");
+				ErfUpdate_String("IgCompileStatement: Whileloop: Body");
+				tGInstruction* body = IgCompileStatement(self->left);
+				ErfUpdate_String("IgCompileStatement: Whileloop: Condition");
+				tGInstruction* cond = 
+					 self->condition->type==tSplexem_Nullexpression
+					?mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						body
+					)
+					:IgCompileConditionaljump(self->condition,body)
+					;
+				ErfUpdate_String("IgCompileStatement: Whileloop: Binding together");
+				retval = mtGInstruction_CreateCodepointer(
+					tInstruction_Jump,
+					eGAtomictype_Void,
+					cond
+				);
+				mtGInstruction_GetLast(retval)->next = body;
+				mtGInstruction_GetLast(retval)->next = cond;
+			ErfLeave();
+			return retval;
 		};
 		case tSplexem_Ifstatement: {
 			//		ifstatement

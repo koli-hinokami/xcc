@@ -50,6 +50,7 @@ void LfiPrint_GType(char* pr, tGType* self);
 tGType* mtGType_Clone(tGType* self);
 char* mtGSymbol_ToString(tGSymbol* self);
 void GError();
+tGType* mtGType_Transform(tGType /* modifies */ * self);
 
 // -------------------------- Logging facilities --------------------------
 
@@ -560,11 +561,19 @@ tGType* mtGType_SetValuecategory(tGType /* modifies */ * self, eGValuecategory v
 	mtGType_GetBasetype(self)->valuecategory=val;
 	return self;
 }
+tGType* mtGType_Transform_Ignorenullptr(tGType /* modifies */ * self){
+	if(self==nullptr)return self;
+	return mtGType_Transform(self);
+};
 tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from C-side types to IR-side types
 #ifdef qvGTrace
 	printf("ss: [T] mtGType_Transform: entered \n");
 #endif
-	if(!self)printf("ss: [E] mtGType_Transform: nullptr \n");
+	if(!self){
+		printf("ss: [E] mtGType_Transform: nullptr \n");
+		ErfError();
+		return nullptr;
+	};
 	if(self->complexbasetype)mtGType_Transform(self->complexbasetype);
 	if(
 		  (self->atomicbasetype==eGAtomictype_Function)
@@ -573,7 +582,7 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 	){
 		mtListnode_Foreach(
 			self->functionarguments,
-			(void(*)(void*))mtGType_Transform
+			(void(*)(void*))mtGType_Transform_Ignorenullptr
 		);
 	};
 	switch(self->atomicbasetype){

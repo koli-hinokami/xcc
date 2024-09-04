@@ -242,14 +242,15 @@ enum tTokentype {
 	tSplexem_Greaterthan            = 1070, //
 	tSplexem_Greaterequal           = 1071, //
 	tSplexem_Lessequal              = 1072, //
+	tSplexem_Logicalnot             = 1073, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
 	//tToken_                       = 1536, //      IR instructions
 	tInstruction_Cnop               = 1536, //Clash nop - used internally
 	tInstruction_Nop                = 1537, //No operation
-	tInstruction_Jumptrue           = 1538, //Jump if true
-	tInstruction_Jumpfalse          = 1539, //Jump if false
+	tInstruction_Jumptrue           = 1538, //Jump if value zero         -.- Why the name is misleading?
+	tInstruction_Jumpfalse          = 1539, //Jump if value non-zero     -'  Those instrs originally were for condition laying in zeroflag (carryflag?) but are repurposed to be test-jump-(zero/nonzero)
 	tInstruction_Debugbreak         = 1540, //Break into debugger
 	tInstruction_Allocatestorage    = 1541, //To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
 	tInstruction_Systemcall         = 1542, //System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
@@ -292,6 +293,7 @@ enum tTokentype {
 	tInstruction_Multiply           = 1579, //Doesn't produce top half of result
 	tInstruction_Bitwiseand         = 1580, //
 	tInstruction_Negation           = 1581, //
+	tInstruction_Index              = 1582, //Intended for structures
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1372,7 +1374,7 @@ char *TokenidtoName[]={
 	"tSplexem_Greaterthan        ",// 1070
 	"tSplexem_Greaterequal       ",// 1071
 	"tSplexem_Lessequal          ",// 1072
-	"tSplexem_Undefined          ",// 1073
+	"tSplexem_Logicalnot         ",// 1073
 	"tSplexem_Undefined          ",// 1074
 	"tSplexem_Undefined          ",// 1075
 	"tSplexem_Undefined          ",// 1076
@@ -3427,8 +3429,8 @@ char *TokenidtoName_Compact[]={
 	"?",// 1535
 	"compilernop"                 ,// 1536
 	"nop"                         ,// 1537
-	"jcond"                       ,// 1538
-	"jncond"                      ,// 1539
+	"tjnz"                        ,// 1538
+	"tjz"                         ,// 1539
 	"int3"                        ,// 1540
 	"r"                           ,// 1541
 	"syscall"                     ,// 1542
@@ -3471,12 +3473,92 @@ char *TokenidtoName_Compact[]={
 	"mul"                         ,// 1579
 	"bitwiseand"                  ,// 1580
 	"negate"                      ,// 1581
-	"?"                           ,// 1582
+	"index"                       ,// 1582
 	"?"                           ,// 1583
 	"?"                           ,// 1584
 	"?"                           ,// 1585
 	"?"                           ,// 1586
 	"?"                           ,// 1587
+	"?"                           ,// 1588
+	"?"                           ,// 1589
+	"?"                           ,// 1590
+	"?"                           ,// 1591
+	"?"                           ,// 1592
+	"?"                           ,// 1593
+	"?"                           ,// 1594
+	"?"                           ,// 1595
+	"?"                           ,// 1596
+	"?"                           ,// 1597
+	"?"                           ,// 1598
+	"?"                           ,// 1599
+	"?"                           ,// 1600
+	"?"                           ,// 1601
+	"?"                           ,// 1602
+	"?"                           ,// 1603
+	"?"                           ,// 1604
+	"?"                           ,// 1605
+	"?"                           ,// 1606
+	"?"                           ,// 1607
+	"?"                           ,// 1608
+	"?"                           ,// 1609
+	"?"                           ,// 1610
+	"?"                           ,// 1611
+	"?"                           ,// 1612
+	"?"                           ,// 1613
+	"?"                           ,// 1614
+	"?"                           ,// 1615
+	"?"                           ,// 1616
+	"?"                           ,// 1617
+	"?"                           ,// 1618
+	"?"                           ,// 1619
+	"?"                           ,// 1620
+	"?"                           ,// 1621
+	"?"                           ,// 1622
+	"?"                           ,// 1623
+	"?"                           ,// 1624
+	"?"                           ,// 1625
+	"?"                           ,// 1626
+	"?"                           ,// 1627
+	"?"                           ,// 1628
+	"?"                           ,// 1629
+	"?"                           ,// 1630
+	"?"                           ,// 1631
+	"?"                           ,// 1632
+	"?"                           ,// 1633
+	"?"                           ,// 1634
+	"?"                           ,// 1635
+	"?"                           ,// 1636
+	"?"                           ,// 1637
+	"?"                           ,// 1638
+	"?"                           ,// 1639
+	"?"                           ,// 1640
+	"?"                           ,// 1641
+	"?"                           ,// 1642
+	"?"                           ,// 1643
+	"?"                           ,// 1644
+	"?"                           ,// 1645
+	"?"                           ,// 1646
+	"?"                           ,// 1647
+	"?"                           ,// 1648
+	"?"                           ,// 1649
+	"?"                           ,// 1650
+	"?"                           ,// 1651
+	"?"                           ,// 1652
+	"?"                           ,// 1653
+	"?"                           ,// 1654
+	"?"                           ,// 1655
+	"?"                           ,// 1656
+	"?"                           ,// 1657
+	"?"                           ,// 1658
+	"?"                           ,// 1659
+	"?"                           ,// 1660
+	"?"                           ,// 1661
+	"?"                           ,// 1662
+	"?"                           ,// 1663
+	"?"                           ,// 1664
+	"?"                           ,// 1665
+	"?"                           ,// 1666
+	"?"                           ,// 1667
 };
 struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"alignas"      ,tToken_Keywordalignas          },

@@ -17,6 +17,8 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 #ifdef qvGTrace
 	printf("SPP:[T] SppParsefunctionarguments: entered\n");
 #endif
+	ErfEnter_String("SppParsefunctionarguments");
+	tListnode* retval = nullptr;
 	//return nullptr;
 	if(!expr){
 		// wat
@@ -24,13 +26,25 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 		return nullptr;
 	}else switch(expr->type){
 		case tLexem_Comma:
+			ErfUpdate_String("SppParsefunctionarguments: Comma");
 			// Iterate
-			return mtListnode_Merge(
+			retval = mtListnode_Merge(
 				SppParsefunctionarguments(expr->left),
 				SppParsefunctionarguments(expr->right)
 			);
 			break;
 		case tLexem_Typeexpression: {
+			ErfUpdate_String("SppParsefunctionarguments: Typeexpression");
+			if(
+				  expr
+				&&expr->returnedtype
+				&&expr->returnedtype->atomicbasetype==eGAtomictype_Void
+				&&(
+					  expr->left==nullptr
+					||expr->left->type==tLexem_Nullexpression
+				)
+			)
+				return nullptr;
 			tGType* type = SppGeneratetype(
 				expr->returnedtype,
 				expr->left,
@@ -38,13 +52,19 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 			);
 			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
 			if(!SgNosearchfortypes)SgFindunresolvedtypes_Type(type);
-			return mtListnode_Cons(type,nullptr);
+			retval = mtListnode_Cons(type,nullptr);
 		};	break;
 		case tLexem_Nullexpression:
+			ErfUpdate_String("SppParsefunctionarguments: Nullexpression");
 			printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");
-			return nullptr;
+			retval = nullptr;
+			break;
+		case tLexem_Ellipsis:
+			ErfUpdate_String("SppParsefunctionarguments: Ellipsis");
+			retval = mtListnode_Cons(nullptr,nullptr);
 			break;
 		default:
+			ErfUpdate_String("SppParsefunctionarguments: unknown node");
 			fprintf(stderr,"SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
 			printf("SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
 			printf("SPP:[E] SppParsefunctionarguments: Full ast:\n");
@@ -56,9 +76,9 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 		//	switch(expr->type){
 		//	};
 		//};	break;
-
 	};
-	return 0;
+	ErfLeave();
+	return retval;
 };
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
@@ -83,14 +103,17 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 #endif
 		switch(i->type){
 			case tLexem_Functioncall:
+				ErfUpdate_String("SppGeneratetype: Function");
 				// Changing `mtGType_CreateFunctioncall_Expr` to `mtGType_CreateFunctioncall` 
 				// so I could remove the silly thing known as Semanticpreparser
 				temptype=mtGType_CreateFunctioncall(temptype,SppParsefunctionarguments(i->right));
 				break;
 			case tLexem_Arrayindex:
+				ErfUpdate_String("SppGeneratetype: Array");
 				temptype=mtGType_CreateArray_Expr(temptype,i->right);
 				break;
 			case tLexem_Dereference:
+				ErfUpdate_String("SppGeneratetype: Dereference");
 				temptype=mtGType_CreatePointer(temptype);
 				break;
 			// v For dereference specifically:
@@ -125,11 +148,13 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 			//	};
 			//	break;
 			case tLexem_Identifier:
+				ErfUpdate_String("SppGeneratetype: Identifier");
 				if(name)*name=i->identifier;
 				mtGType_Transform(temptype);
 				ErfLeave();
 				return temptype;
 			case tLexem_Nullexpression:
+				ErfUpdate_String("SppGeneratetype: Nullexpr");
 				if(name)*name=nullptr;
 				mtGType_Transform(temptype);
 				ErfLeave();
@@ -145,6 +170,7 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	};
 	printf("SPP:[E] SppGeneratetype: Internal inconsistency: forloop dropped at nullptr\n");
 	ErfFatal();
+	ErfLeave();
 	return nullptr;
 };
 char* SppGeneratetype_GetName(tLxNode* typeexpression){
@@ -192,6 +218,13 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	){
 		// New namespace
 		node->name_space=mtGNamespace_CreateInherit(parentnode?parentnode->name_space:GRootnamespace);
+		mtGNamespace_Add(
+			parentnode?parentnode->name_space:GRootnamespace,
+			mtGSymbol_CreateNamespace(
+				"(anonymous)",
+				node->name_space
+			)
+		);
 	}else{
 		// Same namespace
 		node->name_space=parentnode?parentnode->name_space:GRootnamespace;

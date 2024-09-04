@@ -1,4 +1,5 @@
 
+extern void printf(char* formatstring, ...);
 extern void puts(char* str);
 extern void putchar(char ch);
 extern void memset(void* area, uint8_t byte, size_t size);
