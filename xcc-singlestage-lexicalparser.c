@@ -2537,8 +2537,9 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 				printf("LX: [T] LxParseDeclaration: Type fetched successfully, trying variable declaration\n");
 				//mtLxFetcher_Print(fetcher);
 				tLxNode* initializer = nullptr;
+				// Previously breaked at assignment token
 				tLxFetcher* typeexprfetcher = mtLxFetcher_Fetchuntil_Variadic(fetcher, 
-					3,tToken_Assign,tToken_Opencurlybraces,tToken_Semicolon
+					2,tToken_Opencurlybraces,tToken_Semicolon
 				);
 #ifdef qvGDebug
 				printf("LX: [D] LxParseDeclaration: typeexprfetcher.print \n");
@@ -2582,20 +2583,20 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 						//mtLxFetcher_Advance(fetcher);
 						//initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Closecurlybraces));
 					};	break;
-					case tToken_Assign: {
-						printf("LX: [T] LxParseDeclaration: Expression initializer \n");
-						mtLxFetcher_Advance(fetcher);
-						initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon));
-						mtLxFetcher_Advance(fetcher); // skip `;`
-						return mtLxNode_Clone(
-							&(tLxNode){
-								.type=tLexem_Variabledeclaration,
-								.returnedtype=basetype,
-								.left=expr,
-								.right=initializer
-							}
-						);
-					};	break;
+					//case tToken_Assign: { // Now initialized decls are a subtype of uninitialized decls.
+					//	printf("LX: [T] LxParseDeclaration: Expression initializer \n");
+					//	mtLxFetcher_Advance(fetcher);
+					//	initializer = LxParseExpression(mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon));
+					//	mtLxFetcher_Advance(fetcher); // skip `;`
+					//	return mtLxNode_Clone(
+					//		&(tLxNode){
+					//			.type=tLexem_Variabledeclaration,
+					//			.returnedtype=basetype,
+					//			.left=expr,
+					//			.right=initializer
+					//		}
+					//	);
+					//};	break;
 					default: {
 						printf("LX: [F] LxParseDeclaration: Unrecognized initializer or forgotten semicolon\n");
 						mtLxFetcher_Print_Limited(fetcher);
