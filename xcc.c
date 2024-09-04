@@ -16,6 +16,9 @@ tLnFlagdefinition tLfFlags[] = {
 	{true,   false, "",   false,  false, false    }
 };
 
+char* szLnOutputfile = "";
+char* szLnRundirectiory = "";
+
 intptr_t tLnArgsGetflag(char* flag){
 	//printf("DBG:tLnArgsGetflag(\"%s\")\n",flag);
 	for(int i=0;!tLfFlags[i].last;i++){
@@ -68,12 +71,32 @@ void runprogram(char* program, char** argv){
 	};
 	printf("\n");
 	{
-		int pid;
+		int pid,err;
 		if(!(pid=fork())){
-			//execv(program,(const char * const *)argv);
-			printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
+			execv(program,(char * const *)argv);
+			//printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
+			exit(1);
 		}else{
-			waitpid(pid,nullptr,null);
+			waitpid(pid,&err,null);
+			if(err){
+				fprintf(stderr,"Ln: [M] Exitcode [%i: %s∙%i %s] on program \"%s\"\n",err,err>=256?"user":"posix",err>=256?err/256:err,
+					 err==  139?"segfault"
+					:err==  134?"failed assertion"
+					:err==1*256?"generic user error"
+					:err==4*256?"internal debug"
+					:err==5*256?"internal debug"
+					:"",
+					program
+				);
+			};
+			printf("Ln: [M] Exitcode: %i: %s∙%i %s\n",err,err>=256?"user":"posix",err>=256?err/256:err,
+				  err==  139?"segfault"
+				 :err==  134?"failed assertion"
+				 :err==1*256?"generic user error"
+				 :err==4*256?"internal debug"
+				 :err==5*256?"internal debug"
+				 :""
+			);
 		};
 	};
 	//printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
@@ -90,12 +113,12 @@ void parsefile(char* program, char* filename, char* ext1, char* ext2, char* args
 	char* argv[5];
 	fflush(stdout);
 	
-	argv[0]=program;
+	argv[0]=mtString_Join(szLnRundirectiory,program);
 	argv[1]=mtString_Join(filename,ext1);
 	argv[2]=mtString_Join(filename,ext2);
 	argv[3]=0;
 	argv[4]=0;
-	runprogram(program,(char**)(&argv));
+	runprogram(mtString_Join(szLnRundirectiory,program),(char**)(&argv));
 	free(argv[1]);
 	free(argv[2]);
 	fflush(stdout);
@@ -161,6 +184,13 @@ int main (int argc,char* argv[]) {
 	//                                 targets
 	int aindex=1;
 	//Command-line options
+	printf("Ln: [T] Program name is: %s\n", argv[0]);
+	szLnRundirectiory = mtString_Clone(argv[0]);
+	if(mtString_FindcharLast(szLnRundirectiory,'/')){
+		mtString_FindcharLast(szLnRundirectiory,'/')[1]=0;
+	}else{
+		szLnRundirectiory="";
+	};
 	printf("Ln: [T] Options:\n");
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
@@ -171,9 +201,12 @@ int main (int argc,char* argv[]) {
 				if(argv[aindex][i]=='!'){ // Force flag negation
 					i++;
 					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),false);
+				}else if(argv[aindex][i]=='o'){
+					szLnOutputfile = argv[++aindex];
 				}else{
 					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),true);
 				}
+				
 			};
 		}else{
 			//Multicharater flag

@@ -17,12 +17,50 @@ tGType* LxParseBasetype(tLxFetcher* fetcher);
 tLxNode* LxParseExpression(tLxFetcher*);
 tLxNode* LxParseBlockstatement(tLxFetcher* fetcher);
 
+tLxNode* LxParseExpressionstatement(tLxFetcher* fetcher){
+//#ifdef qvGDebug
+//	printf("LX: [T] LxParseStatement: Expression statement \n");
+//#endif
+	tLxFetcher localfetcher = *mtLxFetcher_FetchuntilParenthesized(
+		fetcher,tToken_Semicolon
+	);
+	mtLxFetcher_Advance(fetcher); // skip semicolon
+	return mtLxNode_Clone(
+		&(tLxNode){
+			.type=tLexem_Expressionstatement,
+			.left=LxParseExpression(&localfetcher)
+		}
+	);
+};
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher){
 	tLxNode* temp;
 	tLxFetcher localfetcher = *fetcher;
-	if(temp=LxParseExpression(fetcher)){
-		return temp;
+	// Bypass for `type(*localvariable)();` - `auto` or `static` keyword
+	if(
+		  (mtLxFetcher_Peek(fetcher)->type==tToken_Keywordauto)
+		||(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordstatic)
+	){
+		return LxParseDeclaration(fetcher);
 	};
+	// . If we have a type that's not an identifier cuz that's confusable
+	// | with something like calling a function, parse as declaration, 
+	// | elseways expression.
+	// | If you wonder how to declare local variable with type `printf`, 
+	// | that's what the bypass is for - trigger by manually specifying 
+	// | storage duration - `auto` for stackframe locals, `static` for 
+	// ' static locals.
+	{
+		tGType* basetype = LxParseBasetype(&localfetcher);
+		tLxFetcher localfetcher = *fetcher;
+		if(
+			  basetype 
+			&&basetype->atomicbasetype!=eGAtomictype_Unresolved
+		){
+			return LxParseDeclaration(fetcher);
+		}else{
+			return LxParseExpressionstatement(fetcher);
+		};
+	}
 };
 tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 #ifdef qvGTrace
@@ -141,12 +179,15 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 				mtLxFetcher_Advance(fetcher);
 				//mtLxFetcher_Print(fetcher);
 				if(mtLxFetcher_Fetch(fetcher)->type==tToken_Openparentheses){
+					printf("LX: [T] LxParseStatement: Forloop: forloopblock \n");
 					tLxFetcher* forblock = mtLxFetcher_FetchuntilParenthesized(
 						fetcher,
 						tToken_Closeparentheses
 					);
 					mtLxFetcher_Advance(fetcher); // skip `)`
+					printf("LX: [T] LxParseStatement: Forloop: initializer \n");
 					tLxNode* initializer = LxParseStatement(forblock);
+					printf("LX: [T] LxParseStatement: Forloop: rest of forloop \n");
 					mtLxFetcher_Print(forblock);
 					//exit(5);
 					//mtLxFetcher_Advance(forblock); // skip `;`
@@ -247,25 +288,10 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 				);
 			};	break;
 			default:
-				//if(declaration=LxParseDeclaration(fetcher)){
-				//	return declaration;
-				//}else
-				{
 #ifdef qvGDebug
-					printf("LX: [T] LxParseStatement: Expression statement \n");
+				printf("LX: [T] LxParseStatement: Tailcalling to LxParseDeclarationorstatement \n");
 #endif
-					// Expression statement
-					localfetcher = *mtLxFetcher_FetchuntilParenthesized(
-						fetcher,tToken_Semicolon
-					);
-					mtLxFetcher_Advance(fetcher); // skip semicolon
-					return mtLxNode_Clone(
-						&(tLxNode){
-							.type=tLexem_Expressionstatement,
-							.left=LxParseExpression(&localfetcher)
-						}
-					);
-				};
+				return LxParseDeclarationorstatement(fetcher);
 				break;
 		}
 	};
@@ -317,7 +343,7 @@ tLxNode* LxParseBlockstatement(tLxFetcher* fetcher){
 };
 
 tGType* LxParseBasetype(tLxFetcher* fetcher){
-	tGType* type = malloc(sizeof(tGType));
+	tGType* type = mtGType_Create();
 	tLxFetcher savedfetcher = *fetcher;
 	// Clear structure
 	type->atomicbasetype = null;
@@ -368,7 +394,6 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 							type->atomicbasetype = eGAtomictype_Unsignedlong;
 							break;
 					};
-					type->atomicbasetype = eGAtomictype_Unsignedshort;
 					break;
 				default:
 					type->atomicbasetype = eGAtomictype_Unsigned;
@@ -387,8 +412,49 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Char;
 			break;
+		case tToken_Keywordlong:
 			mtLxFetcher_Advance(fetcher);
-			type->atomicbasetype = eGAtomictype_Long;
+			switch(mtLxFetcher_Peek(fetcher)->type){
+				case tToken_Keywordlong:
+					mtLxFetcher_Advance(fetcher);
+					type->atomicbasetype = eGAtomictype_Longlong;
+					break;
+				default:
+					type->atomicbasetype = eGAtomictype_Long;
+					break;
+			};
+			break;
+		case tToken_Keywordint8t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int8;
+			break;
+		case tToken_Keywordint16t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int16;
+			break;
+		case tToken_Keywordint32t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int32;
+			break;
+		case tToken_Keywordint64t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int64;
+			break;
+		case tToken_Keyworduint8t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint8;
+			break;
+		case tToken_Keyworduint16t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint16;
+			break;
+		case tToken_Keyworduint32t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint32;
+			break;
+		case tToken_Keyworduint64t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint64;
 			break;
 		case tToken_Keywordbool:
 			mtLxFetcher_Advance(fetcher);
@@ -1915,6 +1981,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 						.identifier = mtLxFetcher_Peek(fetcher)->string
 					}
 				);
+				break;
 			case tToken_String:
 				return mtLxNode_Clone(
 					&(tLxNode){
@@ -2250,6 +2317,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 	// Precedence 14 - Assignments 
 	// Parsed with right-associativity unit
 	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
+		//printf("dbg:[t] Debug: %i:%s \n",(((tToken*)i->item)->type),TokenidtoName[(((tToken*)i->item)->type)]);
 		switch(((tToken*)i->item)->type){
 			case tToken_Openparentheses: 
 			case tToken_Openbrackets: 
@@ -2271,11 +2339,11 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 						case tToken_Assign:
 							// leftassociative -> full break out of forloop
 #ifdef qvGTraceexpressions
-	printf("LX: [T] LxParseTypeexpression: Precedence 14 - Assignments \n");
+							printf("LX: [T] LxParseTypeexpression: Precedence 14 - Assignments \n");
 #endif
 							return mtLxNode_Clone(
 								&(tLxNode){
-									.type=tLexem_Comma,
+									.type=tLexem_Assign,
 									.left=LxParseTypeexpression(
 										&(tLxFetcher){
 											.fetchfrom=fetcher->fetchfrom,
@@ -2672,6 +2740,12 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 						.type = tLexem_Booleanfalse
 					}
 				);
+			case tToken_Ellipsis:
+				return mtLxNode_Clone(
+					&(tLxNode){
+						.type = tLexem_Ellipsis
+					}
+				);
 			default: {
 				printf("LX: [T] LxParseTypeexpression: Unrecognized constant - passing through to LxParseType\n");
 				tLxNode* typeexpr;
@@ -2736,6 +2810,7 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher);
 			tGType* basetype=LxParseBasetype(fetcher);
 			tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
+			mtLxFetcher_Advance(fetcher); // skip semicolon
 			mtLxFetcher_Print(typeexprfetcher);
 			tLxNode* expr = LxParseTypeexpression(typeexprfetcher);
 			return mtLxNode_Clone(
@@ -2748,6 +2823,16 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 			);
 			break;
 		default: {
+			bool isauto = false;
+			bool isstatic = false;
+			if(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordauto){
+				mtLxFetcher_Advance(fetcher);
+				isauto=true;
+			}else if(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordstatic){
+				mtLxFetcher_Advance(fetcher);
+				isstatic=true;
+				printf("LX: [W] LxParseDeclaration: `static` specifier ignored\n");
+			};
 			tGType* basetype;
 			if(basetype=LxParseBasetype(fetcher)){
 				printf("LX: [T] LxParseDeclaration: Type fetched successfully, trying variable declaration\n");
@@ -2783,11 +2868,14 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 					case tToken_Assign:
 						// *Probably* initialized declaration
 						// Either way, all three have been merged into 'multideclaration', so parse identically
+						printf("LX: [T] LxParseDeclaration: Rawvariabledeclaration\n");
 						*fetcher = localfetcher;
 						typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
+						mtLxFetcher_Advance(fetcher); // Skip semicolon
+						//mtLxFetcher_Print(typeexprfetcher);
 						return mtLxNode_Clone(
 							&(tLxNode){
-								.type=tLexem_Variabledeclaration,
+								.type=tLexem_Rawvariabledeclaration,
 								.returnedtype=basetype,
 								.left=LxParseTypeexpression(typeexprfetcher),
 								.right=nullptr

@@ -97,6 +97,14 @@ enum tTokentype {
 	tToken_Keywordvoid		= 170,		//void
 	tToken_Keywordvolatile		= 171,		//volatile
 	tToken_Keywordwhile		= 172,		//while
+	tToken_Keywordint8t		= 173,		//int8_t
+        tToken_Keywordint16t		= 174,		//int16_t
+        tToken_Keywordint32t		= 175,		//int32_t
+        tToken_Keywordint64t		= 176,		//int64_t
+	tToken_Keyworduint8t		= 177,		//uint8_t
+        tToken_Keyworduint16t		= 178,		//uint16_t
+        tToken_Keyworduint32t		= 179,		//uint32_t
+        tToken_Keyworduint64t		= 180,		//uint64_t
 	//tToken_			= 256,		//	String tokens
 	tToken_Identifier		= 256,		//Generic identifier
 	tToken_String			= 257,		//String
@@ -169,19 +177,63 @@ enum tTokentype {
 	tLexem_Restrictmodifier	        = 576,
 	tLexem_Numericconstant	        = 577,
 	tLexem_Stringconstant	        = 578,
-	//tLexem_	        = 579,
-	//tLexem_	        = 580,
+	tLexem_Rawvariabledeclaration	= 579,
+	tLexem_Namespace		= 580,
+	tLexem_Using			= 581,
+	tLexem_Ellipsis			= 582,
+	//tLexem_	        = 582,
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
 	tSplexem_Declarationlist	= 1024,		// Same as tLexem_Declaration
+	tSplexem_Integerconstant	= 1025,		// 
+	tSplexem_Symbol			= 1026,		//
+	tSplexem_Nulldeclaration	= 1027,		//
+	tSplexem_Blockstatement		= 1028,		//
+	tSplexem_Functiondeclaration	= 1029,		//
+	tSplexem_Returnstatement	= 1030,		//
+	tSplexem_Variabledeclaration	= 1031,		//
+	tSplexem_Nullexpression		= 1032,		//
+	tSplexem_Arraytopointer		= 1033,		//
+	tSplexem_Addition		= 1034,		//
+	tSplexem_Substraction		= 1035,		//
+	tSplexem_Dereference		= 1036,		//
+	tSplexem_Structuremember	= 1037,		//
+	tSplexem_Identifier		= 1038,		//
+	tSplexem_Cast			= 1039,		//Only casts types by size
+	tSplexem_Expressionstatement	= 1040,		//Only casts types by size
+	tSplexem_Stringconstant		= 1041,		//
+	tSplexem_Comma			= 1042,		//
+	tSplexem_Functioncall		= 1043,		//
+	tSplexem_Multiplication		= 1044,		//
+	tSplexem_Division		= 1045,		//
+	tSplexem_Modulo			= 1046,		//
+	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
+	//						//    Actually are deprecated
 	//tToken_	        	= 1536,		//	IR instructions
-	tInstruction_Nop		= 1536+1,	//No operation
-	tInstruction_Jumptrue		= 1536+2,	//Jump if true
-	tInstruction_Jumpfalse		= 1536+3,	//Jump if false
-	tInstruction_Debugbreak		= 1536+4,	//Break into debugger
-	tInstruction_Allocatestorage	= 1536+5,	//To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
-	tInstruction_Systemcall		= 1536+6,	//System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
+	tInstruction_Cnop		= 1536,	//Clash nop - used internally
+	tInstruction_Nop		= 1537,	//No operation
+	tInstruction_Jumptrue		= 1538,	//Jump if true
+	tInstruction_Jumpfalse		= 1539,	//Jump if false
+	tInstruction_Debugbreak		= 1540,	//Break into debugger
+	tInstruction_Allocatestorage	= 1541,	//To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
+	tInstruction_Systemcall		= 1542,	//System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
+	tInstruction_Definevalue	= 1543,	//Just for strings. Use as `definevalue.char 'a'`
+	tInstruction_Enterframe		= 1544,	//Enter stack frame
+	tInstruction_Constant		= 1545,	//Push an immediate to calculation stack
+	tInstruction_Return		= 1546,	//Return from function. Issue after `leave`.
+	tInstruction_Leaveframe		= 1547,	//Leave stack frame
+	tInstruction_Prereturn		= 1548,	//Return value from function. Issue before `leave`.
+	tInstruction_Loadindirect	= 1549,	//Load value by pointer provided on calculation stack.
+	tInstruction_Loadaddress	= 1550,	//Load effective address of an instruction.
+	tInstruction_Indexfp		= 1551,	//Indexes current pointer by frame pointer.
+	tInstruction_Pushleft		= 1552,	// -.- Those two are used to assist codegen for platforms that can't use two stacks like IR excepts to be able to and use machine stack as both stacks.
+	tInstruction_Popright		= 1553,	// -'
+	tInstruction_Add		= 1554,	// -.- Exactly what you would except.
+	tInstruction_Substract		= 1555,	// -' 
+	tInstruction_Drop		= 1556,	//For expression statements. Ignore produced value.
+	tInstruction_Pushargument	= 1557,	//Throw function argument just evaluated to stack.
+	tInstruction_Call		= 1558,	//Call function.
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_			= 1792,		//	To be not used
@@ -768,10 +820,10 @@ char *TokenidtoName[]={
 	"tLexem_Restrictmodifier     ",// 576
 	"tLexem_Numericconstant      ",// 577
 	"tLexem_Stringconstant       ",// 578
-	"tLexem_Undefined            ",// 579
-	"tLexem_Undefined            ",// 580
-	"tLexem_Undefined            ",// 581
-	"tLexem_Undefined            ",// 582
+	"tLexem_Rawvariabledeclarati>",// 579
+	"tLexem_Namespace            ",// 580
+	"tLexem_Using                ",// 581
+	"tLexem_Ellipsis             ",// 582
 	"tLexem_Undefined            ",// 583
 	"tLexem_Undefined            ",// 584
 	"tLexem_Undefined            ",// 585
@@ -1054,7 +1106,2319 @@ char *TokenidtoName[]={
 	"tCharlexem_Undefined        ",// 862
 	"tCharlexem_Undefined        ",// 863
 	"tCharlexem_Undefined        ",// 864
-	//"//tToken_                      ",// 384
+	"tCharlexem_Undefined        ",// 865
+	"tCharlexem_Undefined        ",// 866
+	"tCharlexem_Undefined        ",// 867
+	"tCharlexem_Undefined        ",// 868
+	"tCharlexem_Undefined        ",// 869
+	"tCharlexem_Undefined        ",// 870
+	"tCharlexem_Undefined        ",// 871
+	"tCharlexem_Undefined        ",// 872
+	"tCharlexem_Undefined        ",// 873
+	"tCharlexem_Undefined        ",// 874
+	"tCharlexem_Undefined        ",// 875
+	"tCharlexem_Undefined        ",// 876
+	"tCharlexem_Undefined        ",// 877
+	"tCharlexem_Undefined        ",// 878
+	"tCharlexem_Undefined        ",// 879
+	"tCharlexem_Undefined        ",// 880
+	"tCharlexem_Undefined        ",// 881
+	"tCharlexem_Undefined        ",// 882
+	"tCharlexem_Undefined        ",// 883
+	"tCharlexem_Undefined        ",// 884
+	"tCharlexem_Undefined        ",// 885
+	"tCharlexem_Undefined        ",// 886
+	"tCharlexem_Undefined        ",// 887
+	"tCharlexem_Undefined        ",// 888
+	"tCharlexem_Undefined        ",// 889
+	"tCharlexem_Undefined        ",// 890
+	"tCharlexem_Undefined        ",// 891
+	"tCharlexem_Undefined        ",// 892
+	"tCharlexem_Undefined        ",// 893
+	"tCharlexem_Undefined        ",// 894
+	"tCharlexem_Undefined        ",// 895
+	"tCharlexem_Undefined        ",// 896
+	"tCharlexem_Undefined        ",// 897
+	"tCharlexem_Undefined        ",// 898
+	"tCharlexem_Undefined        ",// 899
+	"tCharlexem_Undefined        ",// 900
+	"tCharlexem_Undefined        ",// 901
+	"tCharlexem_Undefined        ",// 902
+	"tCharlexem_Undefined        ",// 903
+	"tCharlexem_Undefined        ",// 904
+	"tCharlexem_Undefined        ",// 905
+	"tCharlexem_Undefined        ",// 906
+	"tCharlexem_Undefined        ",// 907
+	"tCharlexem_Undefined        ",// 908
+	"tCharlexem_Undefined        ",// 909
+	"tCharlexem_Undefined        ",// 910
+	"tCharlexem_Undefined        ",// 911
+	"tCharlexem_Undefined        ",// 912
+	"tCharlexem_Undefined        ",// 913
+	"tCharlexem_Undefined        ",// 914
+	"tCharlexem_Undefined        ",// 915
+	"tCharlexem_Undefined        ",// 916
+	"tCharlexem_Undefined        ",// 917
+	"tCharlexem_Undefined        ",// 918
+	"tCharlexem_Undefined        ",// 919
+	"tCharlexem_Undefined        ",// 920
+	"tCharlexem_Undefined        ",// 921
+	"tCharlexem_Undefined        ",// 922
+	"tCharlexem_Undefined        ",// 923
+	"tCharlexem_Undefined        ",// 924
+	"tCharlexem_Undefined        ",// 925
+	"tCharlexem_Undefined        ",// 926
+	"tCharlexem_Undefined        ",// 927
+	"tCharlexem_Undefined        ",// 928
+	"tCharlexem_Undefined        ",// 929
+	"tCharlexem_Undefined        ",// 930
+	"tCharlexem_Undefined        ",// 931
+	"tCharlexem_Undefined        ",// 932
+	"tCharlexem_Undefined        ",// 933
+	"tCharlexem_Undefined        ",// 934
+	"tCharlexem_Undefined        ",// 935
+	"tCharlexem_Undefined        ",// 936
+	"tCharlexem_Undefined        ",// 937
+	"tCharlexem_Undefined        ",// 938
+	"tCharlexem_Undefined        ",// 939
+	"tCharlexem_Undefined        ",// 940
+	"tCharlexem_Undefined        ",// 941
+	"tCharlexem_Undefined        ",// 942
+	"tCharlexem_Undefined        ",// 943
+	"tCharlexem_Undefined        ",// 944
+	"tCharlexem_Undefined        ",// 945
+	"tCharlexem_Undefined        ",// 946
+	"tCharlexem_Undefined        ",// 947
+	"tCharlexem_Undefined        ",// 948
+	"tCharlexem_Undefined        ",// 949
+	"tCharlexem_Undefined        ",// 950
+	"tCharlexem_Undefined        ",// 951
+	"tCharlexem_Undefined        ",// 952
+	"tCharlexem_Undefined        ",// 953
+	"tCharlexem_Undefined        ",// 954
+	"tCharlexem_Undefined        ",// 955
+	"tCharlexem_Undefined        ",// 956
+	"tCharlexem_Undefined        ",// 957
+	"tCharlexem_Undefined        ",// 958
+	"tCharlexem_Undefined        ",// 959
+	"tCharlexem_Undefined        ",// 960
+	"tCharlexem_Undefined        ",// 961
+	"tCharlexem_Undefined        ",// 962
+	"tCharlexem_Undefined        ",// 963
+	"tCharlexem_Undefined        ",// 964
+	"tCharlexem_Undefined        ",// 965
+	"tCharlexem_Undefined        ",// 966
+	"tCharlexem_Undefined        ",// 967
+	"tCharlexem_Undefined        ",// 968
+	"tCharlexem_Undefined        ",// 969
+	"tCharlexem_Undefined        ",// 970
+	"tCharlexem_Undefined        ",// 971
+	"tCharlexem_Undefined        ",// 972
+	"tCharlexem_Undefined        ",// 973
+	"tCharlexem_Undefined        ",// 974
+	"tCharlexem_Undefined        ",// 975
+	"tCharlexem_Undefined        ",// 976
+	"tCharlexem_Undefined        ",// 977
+	"tCharlexem_Undefined        ",// 978
+	"tCharlexem_Undefined        ",// 979
+	"tCharlexem_Undefined        ",// 980
+	"tCharlexem_Undefined        ",// 981
+	"tCharlexem_Undefined        ",// 982
+	"tCharlexem_Undefined        ",// 983
+	"tCharlexem_Undefined        ",// 984
+	"tCharlexem_Undefined        ",// 985
+	"tCharlexem_Undefined        ",// 986
+	"tCharlexem_Undefined        ",// 987
+	"tCharlexem_Undefined        ",// 988
+	"tCharlexem_Undefined        ",// 989
+	"tCharlexem_Undefined        ",// 990
+	"tCharlexem_Undefined        ",// 991
+	"tCharlexem_Undefined        ",// 992
+	"tCharlexem_Undefined        ",// 993
+	"tCharlexem_Undefined        ",// 994
+	"tCharlexem_Undefined        ",// 995
+	"tCharlexem_Undefined        ",// 996
+	"tCharlexem_Undefined        ",// 997
+	"tCharlexem_Undefined        ",// 998
+	"tCharlexem_Undefined        ",// 999
+	"tCharlexem_Undefined        ",// 1000
+	"tCharlexem_Undefined        ",// 1001
+	"tCharlexem_Undefined        ",// 1002
+	"tCharlexem_Undefined        ",// 1003
+	"tCharlexem_Undefined        ",// 1004
+	"tCharlexem_Undefined        ",// 1005
+	"tCharlexem_Undefined        ",// 1006
+	"tCharlexem_Undefined        ",// 1007
+	"tCharlexem_Undefined        ",// 1008
+	"tCharlexem_Undefined        ",// 1009
+	"tCharlexem_Undefined        ",// 1010
+	"tCharlexem_Undefined        ",// 1011
+	"tCharlexem_Undefined        ",// 1012
+	"tCharlexem_Undefined        ",// 1013
+	"tCharlexem_Undefined        ",// 1014
+	"tCharlexem_Undefined        ",// 1015
+	"tCharlexem_Undefined        ",// 1016
+	"tCharlexem_Undefined        ",// 1017
+	"tCharlexem_Undefined        ",// 1018
+	"tCharlexem_Undefined        ",// 1019
+	"tCharlexem_Undefined        ",// 1020
+	"tCharlexem_Undefined        ",// 1021
+	"tCharlexem_Undefined        ",// 1022
+	"tCharlexem_Undefined        ",// 1023
+	"tSplexem_Declarationlist    ",// 1024
+	"tSplexem_Integerconstant    ",// 1025
+	"tSplexem_Symbol             ",// 1026
+	"tSplexem_Nulldeclaration    ",// 1027
+	"tSplexem_Blockstatement     ",// 1028
+	"tSplexem_Functiondeclaration",// 1029
+	"tSplexem_Returnstatement    ",// 1030
+	"tSplexem_Variabledeclaration",// 1031
+	"tSplexem_Nullexpression     ",// 1032
+	"tSplexem_Typecast           ",// 1033
+	"tSplexem_Addition           ",// 1034
+	"tSplexem_Substraction       ",// 1035
+	"tSplexem_Dereference        ",// 1036
+	"tSplexem_Structuremember    ",// 1037
+	"tSplexem_Identifier         ",// 1038
+	"tSplexem_Cast               ",// 1039
+	"tSplexem_Expressionstatement",// 1040
+	"tSplexem_Stringconstant     ",// 1041
+	"tSplexem_Comma              ",// 1042
+	"tSplexem_Functioncall       ",// 1043
+	"tSplexem_Multiplication     ",// 1044
+	"tSplexem_Division           ",// 1045
+	"tSplexem_Modulo             ",// 1046
+	"tSplexem_Undefined          ",// 1047
+	"tSplexem_Undefined          ",// 1048
+	"tSplexem_Undefined          ",// 1049
+	"tSplexem_Undefined          ",// 1050
+	"tSplexem_Undefined          ",// 1051
+	"tSplexem_Undefined          ",// 1052
+	"tSplexem_Undefined          ",// 1053
+	"tSplexem_Undefined          ",// 1054
+	"tSplexem_Undefined          ",// 1055
+	"tSplexem_Undefined          ",// 1056
+	"tSplexem_Undefined          ",// 1057
+	"tSplexem_Undefined          ",// 1058
+	"tSplexem_Undefined          ",// 1059
+	"tSplexem_Undefined          ",// 1060
+	"tSplexem_Undefined          ",// 1061
+	"tSplexem_Undefined          ",// 1062
+	"tSplexem_Undefined          ",// 1063
+	"tSplexem_Undefined          ",// 1064
+	"tSplexem_Undefined          ",// 1065
+	"tSplexem_Undefined          ",// 1066
+	"tSplexem_Undefined          ",// 1067
+	"tSplexem_Undefined          ",// 1068
+	"tSplexem_Undefined          ",// 1069
+	"tSplexem_Undefined          ",// 1070
+	"tSplexem_Undefined          ",// 1071
+	"tSplexem_Undefined          ",// 1072
+	"tSplexem_Undefined          ",// 1073
+	"tSplexem_Undefined          ",// 1074
+	"tSplexem_Undefined          ",// 1075
+	"tSplexem_Undefined          ",// 1076
+	"tSplexem_Undefined          ",// 1077
+	"tSplexem_Undefined          ",// 1078
+	"tSplexem_Undefined          ",// 1079
+	"tSplexem_Undefined          ",// 1080
+	"tSplexem_Undefined          ",// 1081
+	"tSplexem_Undefined          ",// 1082
+	"tSplexem_Undefined          ",// 1083
+	"tSplexem_Undefined          ",// 1084
+	"tSplexem_Undefined          ",// 1085
+	"tSplexem_Undefined          ",// 1086
+	"tSplexem_Undefined          ",// 1087
+	"tSplexem_Undefined          ",// 1088
+	"tSplexem_Undefined          ",// 1089
+	"tSplexem_Undefined          ",// 1090
+	"tSplexem_Undefined          ",// 1091
+	"tSplexem_Undefined          ",// 1092
+	"tSplexem_Undefined          ",// 1093
+	"tSplexem_Undefined          ",// 1094
+	"tSplexem_Undefined          ",// 1095
+	"tSplexem_Undefined          ",// 1096
+	"tSplexem_Undefined          ",// 1097
+	"tSplexem_Undefined          ",// 1098
+	"tSplexem_Undefined          ",// 1099
+	"tSplexem_Undefined          ",// 1100
+	"tSplexem_Undefined          ",// 1101
+	"tSplexem_Undefined          ",// 1102
+	"tSplexem_Undefined          ",// 1103
+	"tSplexem_Undefined          ",// 1104
+	"tSplexem_Undefined          ",// 1105
+	"tSplexem_Undefined          ",// 1106
+	"tSplexem_Undefined          ",// 1107
+	"tSplexem_Undefined          ",// 1108
+	"tSplexem_Undefined          ",// 1109
+	"tSplexem_Undefined          ",// 1110
+	"tSplexem_Undefined          ",// 1111
+	"tSplexem_Undefined          ",// 1112
+	"tSplexem_Undefined          ",// 1113
+	"tSplexem_Undefined          ",// 1114
+	"tSplexem_Undefined          ",// 1115
+	"tSplexem_Undefined          ",// 1116
+	"tSplexem_Undefined          ",// 1117
+	"tSplexem_Undefined          ",// 1118
+	"tSplexem_Undefined          ",// 1119
+	"tSplexem_Undefined          ",// 1120
+	"tSplexem_Undefined          ",// 1121
+	"tSplexem_Undefined          ",// 1122
+	"tSplexem_Undefined          ",// 1123
+	"tSplexem_Undefined          ",// 1124
+	"tSplexem_Undefined          ",// 1125
+	"tSplexem_Undefined          ",// 1126
+	"tSplexem_Undefined          ",// 1127
+	"tSplexem_Undefined          ",// 1128
+	"tSplexem_Undefined          ",// 1129
+	"tSplexem_Undefined          ",// 1130
+	"tSplexem_Undefined          ",// 1131
+	"tSplexem_Undefined          ",// 1132
+	"tSplexem_Undefined          ",// 1133
+	"tSplexem_Undefined          ",// 1134
+	"tSplexem_Undefined          ",// 1135
+	"tSplexem_Undefined          ",// 1136
+	"tSplexem_Undefined          ",// 1137
+	"tSplexem_Undefined          ",// 1138
+	"tSplexem_Undefined          ",// 1139
+	"tSplexem_Undefined          ",// 1140
+	"tSplexem_Undefined          ",// 1141
+	"tSplexem_Undefined          ",// 1142
+	"tSplexem_Undefined          ",// 1143
+	"tSplexem_Undefined          ",// 1144
+	"tSplexem_Undefined          ",// 1145
+	"tSplexem_Undefined          ",// 1146
+	"tSplexem_Undefined          ",// 1147
+	"tSplexem_Undefined          ",// 1148
+	"tSplexem_Undefined          ",// 1149
+	"tSplexem_Undefined          ",// 1150
+	"tSplexem_Undefined          ",// 1151
+	"tSplexem_Undefined          ",// 1152
+	"tSplexem_Undefined          ",// 1153
+	"tSplexem_Undefined          ",// 1154
+	"tSplexem_Undefined          ",// 1155
+	"tSplexem_Undefined          ",// 1156
+	"tSplexem_Undefined          ",// 1157
+	"tSplexem_Undefined          ",// 1158
+	"tSplexem_Undefined          ",// 1159
+	"tSplexem_Undefined          ",// 1160
+	"tSplexem_Undefined          ",// 1161
+	"tSplexem_Undefined          ",// 1162
+	"tSplexem_Undefined          ",// 1163
+	"tSplexem_Undefined          ",// 1164
+	"tSplexem_Undefined          ",// 1165
+	"tSplexem_Undefined          ",// 1166
+	"tSplexem_Undefined          ",// 1167
+	"tSplexem_Undefined          ",// 1168
+	"tSplexem_Undefined          ",// 1169
+	"tSplexem_Undefined          ",// 1170
+	"tSplexem_Undefined          ",// 1171
+	"tSplexem_Undefined          ",// 1172
+	"tSplexem_Undefined          ",// 1173
+	"tSplexem_Undefined          ",// 1174
+	"tSplexem_Undefined          ",// 1175
+	"tSplexem_Undefined          ",// 1176
+	"tSplexem_Undefined          ",// 1177
+	"tSplexem_Undefined          ",// 1178
+	"tSplexem_Undefined          ",// 1179
+	"tSplexem_Undefined          ",// 1180
+	"tSplexem_Undefined          ",// 1181
+	"tSplexem_Undefined          ",// 1182
+	"tSplexem_Undefined          ",// 1183
+	"tSplexem_Undefined          ",// 1184
+	"tSplexem_Undefined          ",// 1185
+	"tSplexem_Undefined          ",// 1186
+	"tSplexem_Undefined          ",// 1187
+	"tSplexem_Undefined          ",// 1188
+	"tSplexem_Undefined          ",// 1189
+	"tSplexem_Undefined          ",// 1190
+	"tSplexem_Undefined          ",// 1191
+	"tSplexem_Undefined          ",// 1192
+	"tSplexem_Undefined          ",// 1193
+	"tSplexem_Undefined          ",// 1194
+	"tSplexem_Undefined          ",// 1195
+	"tSplexem_Undefined          ",// 1196
+	"tSplexem_Undefined          ",// 1197
+	"tSplexem_Undefined          ",// 1198
+	"tSplexem_Undefined          ",// 1199
+	"tSplexem_Undefined          ",// 1200
+	"tSplexem_Undefined          ",// 1201
+	"tSplexem_Undefined          ",// 1202
+	"tSplexem_Undefined          ",// 1203
+	"tSplexem_Undefined          ",// 1204
+	"tSplexem_Undefined          ",// 1205
+	"tSplexem_Undefined          ",// 1206
+	"tSplexem_Undefined          ",// 1207
+	"tSplexem_Undefined          ",// 1208
+	"tSplexem_Undefined          ",// 1209
+	"tSplexem_Undefined          ",// 1210
+	"tSplexem_Undefined          ",// 1211
+	"tSplexem_Undefined          ",// 1212
+	"tSplexem_Undefined          ",// 1213
+	"tSplexem_Undefined          ",// 1214
+	"tSplexem_Undefined          ",// 1215
+	"tSplexem_Undefined          ",// 1216
+	"tSplexem_Undefined          ",// 1217
+	"tSplexem_Undefined          ",// 1218
+	"tSplexem_Undefined          ",// 1219
+	"tSplexem_Undefined          ",// 1220
+	"tSplexem_Undefined          ",// 1221
+	"tSplexem_Undefined          ",// 1222
+	"tSplexem_Undefined          ",// 1223
+	"tSplexem_Undefined          ",// 1224
+	"tSplexem_Undefined          ",// 1225
+	"tSplexem_Undefined          ",// 1226
+	"tSplexem_Undefined          ",// 1227
+	"tSplexem_Undefined          ",// 1228
+	"tSplexem_Undefined          ",// 1229
+	"tSplexem_Undefined          ",// 1230
+	"tSplexem_Undefined          ",// 1231
+	"tSplexem_Undefined          ",// 1232
+	"tSplexem_Undefined          ",// 1233
+	"tSplexem_Undefined          ",// 1234
+	"tSplexem_Undefined          ",// 1235
+	"tSplexem_Undefined          ",// 1236
+	"tSplexem_Undefined          ",// 1237
+	"tSplexem_Undefined          ",// 1238
+	"tSplexem_Undefined          ",// 1239
+	"tSplexem_Undefined          ",// 1240
+	"tSplexem_Undefined          ",// 1241
+	"tSplexem_Undefined          ",// 1242
+	"tSplexem_Undefined          ",// 1243
+	"tSplexem_Undefined          ",// 1244
+	"tSplexem_Undefined          ",// 1245
+	"tSplexem_Undefined          ",// 1246
+	"tSplexem_Undefined          ",// 1247
+	"tSplexem_Undefined          ",// 1248
+	"tSplexem_Undefined          ",// 1249
+	"tSplexem_Undefined          ",// 1250
+	"tSplexem_Undefined          ",// 1251
+	"tSplexem_Undefined          ",// 1252
+	"tSplexem_Undefined          ",// 1253
+	"tSplexem_Undefined          ",// 1254
+	"tSplexem_Undefined          ",// 1255
+	"tSplexem_Undefined          ",// 1256
+	"tSplexem_Undefined          ",// 1257
+	"tSplexem_Undefined          ",// 1258
+	"tSplexem_Undefined          ",// 1259
+	"tSplexem_Undefined          ",// 1260
+	"tSplexem_Undefined          ",// 1261
+	"tSplexem_Undefined          ",// 1262
+	"tSplexem_Undefined          ",// 1263
+	"tSplexem_Undefined          ",// 1264
+	"tSplexem_Undefined          ",// 1265
+	"tSplexem_Undefined          ",// 1266
+	"tSplexem_Undefined          ",// 1267
+	"tSplexem_Undefined          ",// 1268
+	"tSplexem_Undefined          ",// 1269
+	"tSplexem_Undefined          ",// 1270
+	"tSplexem_Undefined          ",// 1271
+	"tSplexem_Undefined          ",// 1272
+	"tSplexem_Undefined          ",// 1273
+	"tSplexem_Undefined          ",// 1274
+	"tSplexem_Undefined          ",// 1275
+	"tSplexem_Undefined          ",// 1276
+	"tSplexem_Undefined          ",// 1277
+	"tSplexem_Undefined          ",// 1278
+	"tSplexem_Undefined          ",// 1279
+	"tSplexem_Undefined          ",// 1280
+	"tSplexem_Undefined          ",// 1281
+	"tSplexem_Undefined          ",// 1282
+	"tSplexem_Undefined          ",// 1283
+	"tSplexem_Undefined          ",// 1284
+	"tSplexem_Undefined          ",// 1285
+	"tSplexem_Undefined          ",// 1286
+	"tSplexem_Undefined          ",// 1287
+	"tSplexem_Undefined          ",// 1288
+	"tSplexem_Undefined          ",// 1289
+	"tSplexem_Undefined          ",// 1290
+	"tSplexem_Undefined          ",// 1291
+	"tSplexem_Undefined          ",// 1292
+	"tSplexem_Undefined          ",// 1293
+	"tSplexem_Undefined          ",// 1294
+	"tSplexem_Undefined          ",// 1295
+	"tSplexem_Undefined          ",// 1296
+	"tSplexem_Undefined          ",// 1297
+	"tSplexem_Undefined          ",// 1298
+	"tSplexem_Undefined          ",// 1299
+	"tSplexem_Undefined          ",// 1300
+	"tSplexem_Undefined          ",// 1301
+	"tSplexem_Undefined          ",// 1302
+	"tSplexem_Undefined          ",// 1303
+	"tSplexem_Undefined          ",// 1304
+	"tSplexem_Undefined          ",// 1305
+	"tSplexem_Undefined          ",// 1306
+	"tSplexem_Undefined          ",// 1307
+	"tSplexem_Undefined          ",// 1308
+	"tSplexem_Undefined          ",// 1309
+	"tSplexem_Undefined          ",// 1310
+	"tSplexem_Undefined          ",// 1311
+	"tSplexem_Undefined          ",// 1312
+	"tSplexem_Undefined          ",// 1313
+	"tSplexem_Undefined          ",// 1314
+	"tSplexem_Undefined          ",// 1315
+	"tSplexem_Undefined          ",// 1316
+	"tSplexem_Undefined          ",// 1317
+	"tSplexem_Undefined          ",// 1318
+	"tSplexem_Undefined          ",// 1319
+	"tSplexem_Undefined          ",// 1320
+	"tSplexem_Undefined          ",// 1321
+	"tSplexem_Undefined          ",// 1322
+	"tSplexem_Undefined          ",// 1323
+	"tSplexem_Undefined          ",// 1324
+	"tSplexem_Undefined          ",// 1325
+	"tSplexem_Undefined          ",// 1326
+	"tSplexem_Undefined          ",// 1327
+	"tSplexem_Undefined          ",// 1328
+	"tSplexem_Undefined          ",// 1329
+	"tSplexem_Undefined          ",// 1330
+	"tSplexem_Undefined          ",// 1331
+	"tSplexem_Undefined          ",// 1332
+	"tSplexem_Undefined          ",// 1333
+	"tSplexem_Undefined          ",// 1334
+	"tSplexem_Undefined          ",// 1335
+	"tSplexem_Undefined          ",// 1336
+	"tSplexem_Undefined          ",// 1337
+	"tSplexem_Undefined          ",// 1338
+	"tSplexem_Undefined          ",// 1339
+	"tSplexem_Undefined          ",// 1340
+	"tSplexem_Undefined          ",// 1341
+	"tSplexem_Undefined          ",// 1342
+	"tSplexem_Undefined          ",// 1343
+	"tSplexem_Undefined          ",// 1344
+	"tSplexem_Undefined          ",// 1345
+	"tSplexem_Undefined          ",// 1346
+	"tSplexem_Undefined          ",// 1347
+	"tSplexem_Undefined          ",// 1348
+	"tSplexem_Undefined          ",// 1349
+	"tSplexem_Undefined          ",// 1350
+	"tSplexem_Undefined          ",// 1351
+	"tSplexem_Undefined          ",// 1352
+	"tSplexem_Undefined          ",// 1353
+	"tSplexem_Undefined          ",// 1354
+	"tSplexem_Undefined          ",// 1355
+	"tSplexem_Undefined          ",// 1356
+	"tSplexem_Undefined          ",// 1357
+	"tSplexem_Undefined          ",// 1358
+	"tSplexem_Undefined          ",// 1359
+	"tSplexem_Undefined          ",// 1360
+	"tSplexem_Undefined          ",// 1361
+	"tSplexem_Undefined          ",// 1362
+	"tSplexem_Undefined          ",// 1363
+	"tSplexem_Undefined          ",// 1364
+	"tSplexem_Undefined          ",// 1365
+	"tSplexem_Undefined          ",// 1366
+	"tSplexem_Undefined          ",// 1367
+	"tSplexem_Undefined          ",// 1368
+	"tSplexem_Undefined          ",// 1369
+	"tSplexem_Undefined          ",// 1370
+	"tSplexem_Undefined          ",// 1371
+	"tSplexem_Undefined          ",// 1372
+	"tSplexem_Undefined          ",// 1373
+	"tSplexem_Undefined          ",// 1374
+	"tSplexem_Undefined          ",// 1375
+	"tSplexem_Undefined          ",// 1376
+	"tSplexem_Undefined          ",// 1377
+	"tSplexem_Undefined          ",// 1378
+	"tSplexem_Undefined          ",// 1379
+	"tSplexem_Undefined          ",// 1380
+	"tSplexem_Undefined          ",// 1381
+	"tSplexem_Undefined          ",// 1382
+	"tSplexem_Undefined          ",// 1383
+	"tSplexem_Undefined          ",// 1384
+	"tSplexem_Undefined          ",// 1385
+	"tSplexem_Undefined          ",// 1386
+	"tSplexem_Undefined          ",// 1387
+	"tSplexem_Undefined          ",// 1388
+	"tSplexem_Undefined          ",// 1389
+	"tSplexem_Undefined          ",// 1390
+	"tSplexem_Undefined          ",// 1391
+	"tSplexem_Undefined          ",// 1392
+	"tSplexem_Undefined          ",// 1393
+	"tSplexem_Undefined          ",// 1394
+	"tSplexem_Undefined          ",// 1395
+	"tSplexem_Undefined          ",// 1396
+	"tSplexem_Undefined          ",// 1397
+	"tSplexem_Undefined          ",// 1398
+	"tSplexem_Undefined          ",// 1399
+	"tSplexem_Undefined          ",// 1400
+	"tSplexem_Undefined          ",// 1401
+	"tSplexem_Undefined          ",// 1402
+	"tSplexem_Undefined          ",// 1403
+	"tSplexem_Undefined          ",// 1404
+	"tSplexem_Undefined          ",// 1405
+	"tSplexem_Undefined          ",// 1406
+	"tSplexem_Undefined          ",// 1407
+	"tSplexem_Undefined          ",// 1408
+	"tSplexem_Undefined          ",// 1409
+	"tSplexem_Undefined          ",// 1410
+	"tSplexem_Undefined          ",// 1411
+	"tSplexem_Undefined          ",// 1412
+	"tSplexem_Undefined          ",// 1413
+	"tSplexem_Undefined          ",// 1414
+	"tSplexem_Undefined          ",// 1415
+	"tSplexem_Undefined          ",// 1416
+	"tSplexem_Undefined          ",// 1417
+	"tSplexem_Undefined          ",// 1418
+	"tSplexem_Undefined          ",// 1419
+	"tSplexem_Undefined          ",// 1420
+	"tSplexem_Undefined          ",// 1421
+	"tSplexem_Undefined          ",// 1422
+	"tSplexem_Undefined          ",// 1423
+	"tSplexem_Undefined          ",// 1424
+	"tSplexem_Undefined          ",// 1425
+	"tSplexem_Undefined          ",// 1426
+	"tSplexem_Undefined          ",// 1427
+	"tSplexem_Undefined          ",// 1428
+	"tSplexem_Undefined          ",// 1429
+	"tSplexem_Undefined          ",// 1430
+	"tSplexem_Undefined          ",// 1431
+	"tSplexem_Undefined          ",// 1432
+	"tSplexem_Undefined          ",// 1433
+	"tSplexem_Undefined          ",// 1434
+	"tSplexem_Undefined          ",// 1435
+	"tSplexem_Undefined          ",// 1436
+	"tSplexem_Undefined          ",// 1437
+	"tSplexem_Undefined          ",// 1438
+	"tSplexem_Undefined          ",// 1439
+	"tSplexem_Undefined          ",// 1440
+	"tSplexem_Undefined          ",// 1441
+	"tSplexem_Undefined          ",// 1442
+	"tSplexem_Undefined          ",// 1443
+	"tSplexem_Undefined          ",// 1444
+	"tSplexem_Undefined          ",// 1445
+	"tSplexem_Undefined          ",// 1446
+	"tSplexem_Undefined          ",// 1447
+	"tSplexem_Undefined          ",// 1448
+	"tSplexem_Undefined          ",// 1449
+	"tSplexem_Undefined          ",// 1450
+	"tSplexem_Undefined          ",// 1451
+	"tSplexem_Undefined          ",// 1452
+	"tSplexem_Undefined          ",// 1453
+	"tSplexem_Undefined          ",// 1454
+	"tSplexem_Undefined          ",// 1455
+	"tSplexem_Undefined          ",// 1456
+	"tSplexem_Undefined          ",// 1457
+	"tSplexem_Undefined          ",// 1458
+	"tSplexem_Undefined          ",// 1459
+	"tSplexem_Undefined          ",// 1460
+	"tSplexem_Undefined          ",// 1461
+	"tSplexem_Undefined          ",// 1462
+	"tSplexem_Undefined          ",// 1463
+	"tSplexem_Undefined          ",// 1464
+	"tSplexem_Undefined          ",// 1465
+	"tSplexem_Undefined          ",// 1466
+	"tSplexem_Undefined          ",// 1467
+	"tSplexem_Undefined          ",// 1468
+	"tSplexem_Undefined          ",// 1469
+	"tSplexem_Undefined          ",// 1470
+	"tSplexem_Undefined          ",// 1471
+	"tSplexem_Undefined          ",// 1472
+	"tSplexem_Undefined          ",// 1473
+	"tSplexem_Undefined          ",// 1474
+	"tSplexem_Undefined          ",// 1475
+	"tSplexem_Undefined          ",// 1476
+	"tSplexem_Undefined          ",// 1477
+	"tSplexem_Undefined          ",// 1478
+	"tSplexem_Undefined          ",// 1479
+	"tSplexem_Undefined          ",// 1480
+	"tSplexem_Undefined          ",// 1481
+	"tSplexem_Undefined          ",// 1482
+	"tSplexem_Undefined          ",// 1483
+	"tSplexem_Undefined          ",// 1484
+	"tSplexem_Undefined          ",// 1485
+	"tSplexem_Undefined          ",// 1486
+	"tSplexem_Undefined          ",// 1487
+	"tSplexem_Undefined          ",// 1488
+	"tSplexem_Undefined          ",// 1489
+	"tSplexem_Undefined          ",// 1490
+	"tSplexem_Undefined          ",// 1491
+	"tSplexem_Undefined          ",// 1492
+	"tSplexem_Undefined          ",// 1493
+	"tSplexem_Undefined          ",// 1494
+	"tSplexem_Undefined          ",// 1495
+	"tSplexem_Undefined          ",// 1496
+	"tSplexem_Undefined          ",// 1497
+	"tSplexem_Undefined          ",// 1498
+	"tSplexem_Undefined          ",// 1499
+	"tSplexem_Undefined          ",// 1500
+	"tSplexem_Undefined          ",// 1501
+	"tSplexem_Undefined          ",// 1502
+	"tSplexem_Undefined          ",// 1503
+	"tSplexem_Undefined          ",// 1504
+	"tSplexem_Undefined          ",// 1505
+	"tSplexem_Undefined          ",// 1506
+	"tSplexem_Undefined          ",// 1507
+	"tSplexem_Undefined          ",// 1508
+	"tSplexem_Undefined          ",// 1509
+	"tSplexem_Undefined          ",// 1510
+	"tSplexem_Undefined          ",// 1511
+	"tSplexem_Undefined          ",// 1512
+	"tSplexem_Undefined          ",// 1513
+	"tSplexem_Undefined          ",// 1514
+	"tSplexem_Undefined          ",// 1515
+	"tSplexem_Undefined          ",// 1516
+	"tSplexem_Undefined          ",// 1517
+	"tSplexem_Undefined          ",// 1518
+	"tSplexem_Undefined          ",// 1519
+	"tSplexem_Undefined          ",// 1520
+	"tSplexem_Undefined          ",// 1521
+	"tSplexem_Undefined          ",// 1522
+	"tSplexem_Undefined          ",// 1523
+	"tSplexem_Undefined          ",// 1524
+	"tSplexem_Undefined          ",// 1525
+	"tSplexem_Undefined          ",// 1526
+	"tSplexem_Undefined          ",// 1527
+	"tSplexem_Undefined          ",// 1528
+	"tSplexem_Undefined          ",// 1529
+	"tSplexem_Undefined          ",// 1530
+	"tSplexem_Undefined          ",// 1531
+	"tSplexem_Undefined          ",// 1532
+	"tSplexem_Undefined          ",// 1533
+	"tSplexem_Undefined          ",// 1534
+	"tSplexem_Undefined          ",// 1535
+	"v.compilernop"               ,// 1536
+	"v.nop"                       ,// 1537
+	"v.jcond"                     ,// 1538
+	"v.jncond"                    ,// 1539
+	"v.int3"                      ,// 1540
+	"v.r"                         ,// 1541
+	"v.syscall"                   ,// 1542
+	"v.d"                         ,// 1543
+	"v.enter"                     ,// 1544
+	"v.const"                     ,// 1545
+	"v.return"                    ,// 1546
+	"v.leave"                     ,// 1547
+	"v.prereturn"                 ,// 1548
+	"v.ld"                        ,// 1549
+	"v.lea"                       ,// 1550
+	"v.indexfp"                   ,// 1551
+	"v.pha"                       ,// 1552
+	"v.plb"                       ,// 1553
+	"v.add"                       ,// 1554
+	"v.substract"                 ,// 1555
+	"?"                           ,// 1556
+	"?"                           ,// 1557
+	"?"                           ,// 1558
+	"?"                           ,// 1559
+	"?"                           ,// 1560
+	"?"                           ,// 1561
+	"?"                           ,// 1562
+	"?"                           ,// 1563
+	"?"                           ,// 1564
+	"?"                           ,// 1565
+	"?"                           ,// 1566
+	"?"                           ,// 1567
+	"?"                           ,// 1568
+	"?"                           ,// 1569
+	"?"                           ,// 1570
+	"?"                           ,// 1571
+	"?"                           ,// 1572
+	"?"                           ,// 1573
+	"?"                           ,// 1574
+	"?"                           ,// 1575
+	"?"                           ,// 1576
+	"?"                           ,// 1577
+	"?"                           ,// 1578
+	"?"                           ,// 1579
+	"?"                           ,// 1580
+	"?"                           ,// 1581
+	"?"                           ,// 1582
+	"?"                           ,// 1583
+	"?"                           ,// 1584
+	"?"                           ,// 1585
+	"?"                           ,// 1586
+	"?"                           ,// 1587
+};
+char *TokenidtoName_Compact[]={
+	"?",// 0 ,
+	"?",// 1 ,
+	"?",// 2 ,
+	"?",// 3 ,
+	"?",// 4 ,
+	"?",// 5 ,
+	"?",// 6 ,
+	"?",// 7 ,
+	"?",// 8 ,
+	"?",// 9 ,
+	"?",// 10,
+	"?",// 11,
+	"?",// 12,
+	"?",// 13,
+	"?",// 14,
+	"?",// 15,
+	"?",// 16,
+	"?",// 17,
+	"?",// 18,
+	"?",// 19,
+	"?",// 20,
+	"?",// 21,
+	"?",// 22,
+	"?",// 23,
+	"?",// 24,
+	"?",// 25,
+	"?",// 26,
+	"?",// 27,
+	"?",// 28,
+	"?",// 29,
+	"?",// 30,
+	"?",// 31,
+	"?",// 32,
+	"?",// 33,
+	"?",// 34,
+	"?",// 35,
+	"?",// 36,
+	"?",// 37,
+	"?",// 38,
+	"?",// 39,
+	"?",// 40,
+	"?",// 41,
+	"?",// 42,
+	"?",// 43,
+	"?",// 44,
+	"?",// 45,
+	"?",// 46,
+	"?",// 47,
+	"?",// 48 
+	"?",// 49 
+	"?",// 50 
+	"?",// 51 
+	"?",// 52 
+	"?",// 53 
+	"?",// 54 
+	"?",// 55 
+	"?",// 56 
+	"?",// 57 
+	"?",// 58 
+	"?",// 59 
+	"?",// 60 
+	"?",// 61 
+	"?",// 62 
+	"?",// 63 
+	"?",// 64 
+	"?",// 65 
+	"?",// 66 
+	"?",// 67 
+	"?",// 68 
+	"?",// 69 
+	"?",// 70 
+	"?",// 71 
+	"?",// 72 
+	"?",// 73 
+	"?",// 74 
+	"?",// 75 
+	"?",// 76 
+	"?",// 77 
+	"?",// 78 
+	"?",// 79 
+	"?",// 80 
+	"?",// 81 
+	"?",// 82 
+	"?",// 83 
+	"?",// 84 
+	"?",// 85 
+	"?",// 86 
+	"?",// 87 
+	"?",// 88 
+	"?",// 89 
+	"?",// 90 
+	"?",// 91 
+	"?",// 92 
+	"?",// 93 
+	"?",// 94 
+	"?",// 95 
+	"?",// 96 
+	"?",// 97 
+	"?",// 98 
+	"?",// 99 
+	"?",// 100
+	"?",// 101
+	"?",// 102
+	"?",// 103
+	"?",// 104
+	"?",// 105
+	"?",// 106
+	"?",// 107
+	"?",// 108
+	"?",// 109
+	"?",// 110
+	"?",// 111
+	"?",// 112
+	"?",// 113
+	"?",// 114
+	"?",// 115
+	"?",// 116
+	"?",// 117
+	"?",// 118
+	"?",// 119
+	"?",// 120
+	"?",// 121
+	"?",// 122
+	"?",// 123
+	"?",// 124
+	"?",// 125
+	"?",// 126
+	"?",// 127
+	"?",// 128
+	"?",// 129
+	"?",// 130
+	"?",// 131
+	"?",// 132
+	"?",// 133
+	"?",// 134
+	"?",// 135
+	"?",// 136
+	"?",// 137
+	"?",// 138
+	"?",// 139
+	"?",// 140
+	"?",// 141
+	"?",// 142
+	"?",// 143
+	"?",// 144
+	"?",// 145
+	"?",// 146
+	"?",// 147
+	"?",// 148
+	"?",// 149
+	"?",// 150
+	"?",// 151
+	"?",// 152
+	"?",// 153
+	"?",// 154
+	"?",// 155
+	"?",// 156
+	"?",// 157
+	"?",// 158
+	"?",// 159
+	"?",// 160
+	"?",// 161
+	"?",// 162
+	"?",// 163
+	"?",// 164
+	"?",// 165
+	"?",// 166
+	"?",// 167
+	"?",// 168
+	"?",// 169
+	"?",// 170
+	"?",// 171
+	"?",// 172
+	"?",// 173
+	"?",// 174
+	"?",// 175
+	"?",// 176
+	"?",// 177
+	"?",// 178
+	"?",// 179
+	"?",// 180
+	"?",// 181
+	"?",// 182
+	"?",// 183
+	"?",// 184
+	"?",// 185
+	"?",// 186
+	"?",// 187
+	"?",// 188
+	"?",// 189
+	"?",// 190
+	"?",// 191
+	"?",// 192
+	"?",// 193
+	"?",// 194
+	"?",// 195
+	"?",// 196
+	"?",// 197
+	"?",// 198
+	"?",// 199
+	"?",// 200
+	"?",// 201
+	"?",// 202
+	"?",// 203
+	"?",// 204
+	"?",// 205
+	"?",// 206
+	"?",// 207
+	"?",// 208
+	"?",// 209
+	"?",// 210
+	"?",// 211
+	"?",// 212
+	"?",// 213
+	"?",// 214
+	"?",// 215
+	"?",// 216
+	"?",// 217
+	"?",// 218
+	"?",// 219
+	"?",// 220
+	"?",// 221
+	"?",// 222
+	"?",// 223
+	"?",// 224
+	"?",// 225
+	"?",// 226
+	"?",// 227
+	"?",// 228
+	"?",// 229
+	"?",// 230
+	"?",// 231
+	"?",// 232
+	"?",// 233
+	"?",// 234
+	"?",// 235
+	"?",// 236
+	"?",// 237
+	"?",// 238
+	"?",// 239
+	"?",// 240
+	"?",// 241
+	"?",// 242
+	"?",// 243
+	"?",// 244
+	"?",// 245
+	"?",// 246
+	"?",// 247
+	"?",// 248
+	"?",// 249
+	"?",// 250
+	"?",// 251
+	"?",// 252
+	"?",// 253
+	"?",// 254
+	"?",// 255
+	"?",// 256
+	"?",// 257
+	"?",// 258
+	"?",// 259
+	"?",// 260
+	"?",// 261
+	"?",// 262
+	"?",// 263
+	"?",// 264
+	"?",// 265
+	"?",// 266
+	"?",// 267
+	"?",// 268
+	"?",// 269
+	"?",// 270
+	"?",// 271
+	"?",// 272
+	"?",// 273
+	"?",// 274
+	"?",// 275
+	"?",// 276
+	"?",// 277
+	"?",// 278
+	"?",// 279
+	"?",// 280
+	"?",// 281
+	"?",// 282
+	"?",// 283
+	"?",// 284
+	"?",// 285
+	"?",// 286
+	"?",// 287
+	"?",// 288
+	"?",// 289
+	"?",// 290
+	"?",// 291
+	"?",// 292
+	"?",// 293
+	"?",// 294
+	"?",// 295
+	"?",// 296
+	"?",// 297
+	"?",// 298
+	"?",// 299
+	"?",// 300
+	"?",// 301
+	"?",// 302
+	"?",// 303
+	"?",// 304
+	"?",// 305
+	"?",// 306
+	"?",// 307
+	"?",// 308
+	"?",// 309
+	"?",// 310
+	"?",// 311
+	"?",// 312
+	"?",// 313
+	"?",// 314
+	"?",// 315
+	"?",// 316
+	"?",// 317
+	"?",// 318
+	"?",// 319
+	"?",// 320
+	"?",// 321
+	"?",// 322
+	"?",// 323
+	"?",// 324
+	"?",// 325
+	"?",// 326
+	"?",// 327
+	"?",// 328
+	"?",// 329
+	"?",// 330
+	"?",// 331
+	"?",// 332
+	"?",// 333
+	"?",// 334
+	"?",// 335
+	"?",// 336
+	"?",// 337
+	"?",// 338
+	"?",// 339
+	"?",// 340
+	"?",// 341
+	"?",// 342
+	"?",// 343
+	"?",// 344
+	"?",// 345
+	"?",// 346
+	"?",// 347
+	"?",// 348
+	"?",// 349
+	"?",// 350
+	"?",// 351
+	"?",// 352
+	"?",// 353
+	"?",// 354
+	"?",// 355
+	"?",// 356
+	"?",// 357
+	"?",// 358
+	"?",// 359
+	"?",// 360
+	"?",// 361
+	"?",// 362
+	"?",// 363
+	"?",// 364
+	"?",// 365
+	"?",// 366
+	"?",// 367
+	"?",// 368
+	"?",// 369
+	"?",// 370
+	"?",// 371
+	"?",// 372
+	"?",// 373
+	"?",// 374
+	"?",// 375
+	"?",// 376
+	"?",// 377
+	"?",// 378
+	"?",// 379
+	"?",// 380
+	"?",// 381
+	"?",// 382
+	"?",// 383
+	"?",// 384
+	"?",// 385
+	"?",// 386
+	"?",// 387
+	"?",// 388
+	"?",// 389
+	"?",// 390
+	"?",// 391
+	"?",// 392
+	"?",// 393
+	"?",// 394
+	"?",// 395
+	"?",// 396
+	"?",// 397
+	"?",// 398
+	"?",// 399
+	"?",// 400
+	"?",// 401
+	"?",// 402
+	"?",// 403
+	"?",// 404
+	"?",// 405
+	"?",// 406
+	"?",// 407
+	"?",// 408
+	"?",// 409
+	"?",// 410
+	"?",// 411
+	"?",// 412
+	"?",// 413
+	"?",// 414
+	"?",// 415
+	"?",// 416
+	"?",// 417
+	"?",// 418
+	"?",// 419
+	"?",// 420
+	"?",// 421
+	"?",// 422
+	"?",// 423
+	"?",// 424
+	"?",// 425
+	"?",// 426
+	"?",// 427
+	"?",// 428
+	"?",// 429
+	"?",// 430
+	"?",// 431
+	"?",// 432
+	"?",// 433
+	"?",// 434
+	"?",// 435
+	"?",// 436
+	"?",// 437
+	"?",// 438
+	"?",// 439
+	"?",// 440
+	"?",// 441
+	"?",// 442
+	"?",// 443
+	"?",// 444
+	"?",// 445
+	"?",// 446
+	"?",// 447
+	"?",// 448
+	"?",// 449
+	"?",// 450
+	"?",// 451
+	"?",// 452
+	"?",// 453
+	"?",// 454
+	"?",// 455
+	"?",// 456
+	"?",// 457
+	"?",// 458
+	"?",// 459
+	"?",// 460
+	"?",// 461
+	"?",// 462
+	"?",// 463
+	"?",// 464
+	"?",// 465
+	"?",// 466
+	"?",// 467
+	"?",// 468
+	"?",// 469
+	"?",// 470
+	"?",// 471
+	"?",// 472
+	"?",// 473
+	"?",// 474
+	"?",// 475
+	"?",// 476
+	"?",// 477
+	"?",// 478
+	"?",// 479
+	"?",// 480
+	"?",// 481
+	"?",// 482
+	"?",// 483
+	"?",// 484
+	"?",// 485
+	"?",// 486
+	"?",// 487
+	"?",// 488
+	"?",// 489
+	"?",// 490
+	"?",// 491
+	"?",// 492
+	"?",// 493
+	"?",// 494
+	"?",// 495
+	"?",// 496
+	"?",// 497
+	"?",// 498
+	"?",// 499
+	"?",// 500
+	"?",// 501
+	"?",// 502
+	"?",// 503
+	"?",// 504
+	"?",// 505
+	"?",// 506
+	"?",// 507
+	"?",// 508
+	"?",// 509
+	"?",// 510
+	"?",// 511
+	"?",// 512
+	"?",// 513
+	"?",// 514
+	"?",// 515
+	"?",// 516
+	"?",// 517
+	"?",// 518
+	"?",// 519
+	"?",// 520
+	"?",// 521
+	"?",// 522
+	"?",// 523
+	"?",// 524
+	"?",// 525
+	"?",// 526
+	"?",// 527
+	"?",// 528
+	"?",// 529
+	"?",// 530
+	"?",// 531
+	"?",// 532
+	"?",// 533
+	"?",// 534
+	"?",// 535
+	"?",// 536
+	"?",// 537
+	"?",// 538
+	"?",// 539
+	"?",// 540
+	"?",// 541
+	"?",// 542
+	"?",// 543
+	"?",// 544
+	"?",// 545
+	"?",// 546
+	"?",// 547
+	"?",// 548
+	"?",// 549
+	"?",// 550
+	"?",// 551
+	"?",// 552
+	"?",// 553
+	"?",// 554
+	"?",// 555
+	"?",// 556
+	"?",// 557
+	"?",// 558
+	"?",// 559
+	"?",// 560
+	"?",// 561
+	"?",// 562
+	"?",// 563
+	"?",// 564
+	"?",// 565
+	"?",// 566
+	"?",// 567
+	"?",// 568
+	"?",// 569
+	"?",// 570
+	"?",// 571
+	"?",// 572
+	"?",// 573
+	"?",// 574
+	"?",// 575
+	"?",// 576
+	"?",// 577
+	"?",// 578
+	"?",// 579
+	"?",// 580
+	"?",// 581
+	"?",// 582
+	"?",// 583
+	"?",// 584
+	"?",// 585
+	"?",// 586
+	"?",// 587
+	"?",// 588
+	"?",// 589
+	"?",// 590
+	"?",// 591
+	"?",// 592
+	"?",// 593
+	"?",// 594
+	"?",// 595
+	"?",// 596
+	"?",// 597
+	"?",// 598
+	"?",// 599
+	"?",// 600
+	"?",// 601
+	"?",// 602
+	"?",// 603
+	"?",// 604
+	"?",// 605
+	"?",// 606
+	"?",// 607
+	"?",// 608
+	"?",// 609
+	"?",// 610
+	"?",// 611
+	"?",// 612
+	"?",// 613
+	"?",// 614
+	"?",// 615
+	"?",// 616
+	"?",// 617
+	"?",// 618
+	"?",// 619
+	"?",// 620
+	"?",// 621
+	"?",// 622
+	"?",// 623
+	"?",// 624
+	"?",// 625
+	"?",// 626
+	"?",// 627
+	"?",// 628
+	"?",// 629
+	"?",// 630
+	"?",// 631
+	"?",// 632
+	"?",// 633
+	"?",// 634
+	"?",// 635
+	"?",// 636
+	"?",// 637
+	"?",// 638
+	"?",// 639
+	"?",// 640
+	"?",// 641
+	"?",// 642
+	"?",// 643
+	"?",// 644
+	"?",// 645
+	"?",// 646
+	"?",// 647
+	"?",// 648
+	"?",// 649
+	"?",// 650
+	"?",// 651
+	"?",// 652
+	"?",// 653
+	"?",// 654
+	"?",// 655
+	"?",// 656
+	"?",// 657
+	"?",// 658
+	"?",// 659
+	"?",// 660
+	"?",// 661
+	"?",// 662
+	"?",// 663
+	"?",// 664
+	"?",// 665
+	"?",// 666
+	"?",// 667
+	"?",// 668
+	"?",// 669
+	"?",// 670
+	"?",// 671
+	"?",// 672
+	"?",// 673
+	"?",// 674
+	"?",// 675
+	"?",// 676
+	"?",// 677
+	"?",// 678
+	"?",// 679
+	"?",// 680
+	"?",// 681
+	"?",// 682
+	"?",// 683
+	"?",// 684
+	"?",// 685
+	"?",// 686
+	"?",// 687
+	"?",// 688
+	"?",// 689
+	"?",// 690
+	"?",// 691
+	"?",// 692
+	"?",// 693
+	"?",// 694
+	"?",// 695
+	"?",// 696
+	"?",// 697
+	"?",// 698
+	"?",// 699
+	"?",// 700
+	"?",// 701
+	"?",// 702
+	"?",// 703
+	"?",// 704
+	"?",// 705
+	"?",// 706
+	"?",// 707
+	"?",// 708
+	"?",// 709
+	"?",// 710
+	"?",// 711
+	"?",// 712
+	"?",// 713
+	"?",// 714
+	"?",// 715
+	"?",// 716
+	"?",// 717
+	"?",// 718
+	"?",// 719
+	"?",// 720
+	"?",// 721
+	"?",// 722
+	"?",// 723
+	"?",// 724
+	"?",// 725
+	"?",// 726
+	"?",// 727
+	"?",// 728
+	"?",// 729
+	"?",// 730
+	"?",// 731
+	"?",// 732
+	"?",// 733
+	"?",// 734
+	"?",// 735
+	"?",// 736
+	"?",// 737
+	"?",// 738
+	"?",// 739
+	"?",// 740
+	"?",// 741
+	"?",// 742
+	"?",// 743
+	"?",// 744
+	"?",// 745
+	"?",// 746
+	"?",// 747
+	"?",// 748
+	"?",// 749
+	"?",// 750
+	"?",// 751
+	"?",// 752
+	"?",// 753
+	"?",// 754
+	"?",// 755
+	"?",// 756
+	"?",// 757
+	"?",// 758
+	"?",// 759
+	"?",// 760
+	"?",// 761
+	"?",// 762
+	"?",// 763
+	"?",// 764
+	"?",// 765
+	"?",// 766
+	"?",// 767
+	"?",// 768
+	"?",// 769
+	"?",// 770
+	"?",// 771
+	"?",// 772
+	"?",// 773
+	"?",// 774
+	"?",// 775
+	"?",// 776
+	"?",// 777
+	"?",// 778
+	"?",// 779
+	"?",// 780
+	"?",// 781
+	"?",// 782
+	"?",// 783
+	"?",// 784
+	"?",// 785
+	"?",// 786
+	"?",// 787
+	"?",// 788
+	"?",// 789
+	"?",// 790
+	"?",// 791
+	"?",// 792
+	"?",// 793
+	"?",// 794
+	"?",// 795
+	"?",// 796
+	"?",// 797
+	"?",// 798
+	"?",// 799
+	"?",// 800
+	"?",// 801
+	"?",// 802
+	"?",// 803
+	"?",// 804
+	"?",// 805
+	"?",// 806
+	"?",// 807
+	"?",// 808
+	"?",// 809
+	"?",// 810
+	"?",// 811
+	"?",// 812
+	"?",// 813
+	"?",// 814
+	"?",// 815
+	"?",// 816
+	"?",// 817
+	"?",// 818
+	"?",// 819
+	"?",// 820
+	"?",// 821
+	"?",// 822
+	"?",// 823
+	"?",// 824
+	"?",// 825
+	"?",// 826
+	"?",// 827
+	"?",// 828
+	"?",// 829
+	"?",// 830
+	"?",// 831
+	"?",// 832
+	"?",// 833
+	"?",// 834
+	"?",// 835
+	"?",// 836
+	"?",// 837
+	"?",// 838
+	"?",// 839
+	"?",// 840
+	"?",// 841
+	"?",// 842
+	"?",// 843
+	"?",// 844
+	"?",// 845
+	"?",// 846
+	"?",// 847
+	"?",// 848
+	"?",// 849
+	"?",// 850
+	"?",// 851
+	"?",// 852
+	"?",// 853
+	"?",// 854
+	"?",// 855
+	"?",// 856
+	"?",// 857
+	"?",// 858
+	"?",// 859
+	"?",// 860
+	"?",// 861
+	"?",// 862
+	"?",// 863
+	"?",// 864
+	"?",// 865
+	"?",// 866
+	"?",// 867
+	"?",// 868
+	"?",// 869
+	"?",// 870
+	"?",// 871
+	"?",// 872
+	"?",// 873
+	"?",// 874
+	"?",// 875
+	"?",// 876
+	"?",// 877
+	"?",// 878
+	"?",// 879
+	"?",// 880
+	"?",// 881
+	"?",// 882
+	"?",// 883
+	"?",// 884
+	"?",// 885
+	"?",// 886
+	"?",// 887
+	"?",// 888
+	"?",// 889
+	"?",// 890
+	"?",// 891
+	"?",// 892
+	"?",// 893
+	"?",// 894
+	"?",// 895
+	"?",// 896
+	"?",// 897
+	"?",// 898
+	"?",// 899
+	"?",// 900
+	"?",// 901
+	"?",// 902
+	"?",// 903
+	"?",// 904
+	"?",// 905
+	"?",// 906
+	"?",// 907
+	"?",// 908
+	"?",// 909
+	"?",// 910
+	"?",// 911
+	"?",// 912
+	"?",// 913
+	"?",// 914
+	"?",// 915
+	"?",// 916
+	"?",// 917
+	"?",// 918
+	"?",// 919
+	"?",// 920
+	"?",// 921
+	"?",// 922
+	"?",// 923
+	"?",// 924
+	"?",// 925
+	"?",// 926
+	"?",// 927
+	"?",// 928
+	"?",// 929
+	"?",// 930
+	"?",// 931
+	"?",// 932
+	"?",// 933
+	"?",// 934
+	"?",// 935
+	"?",// 936
+	"?",// 937
+	"?",// 938
+	"?",// 939
+	"?",// 940
+	"?",// 941
+	"?",// 942
+	"?",// 943
+	"?",// 944
+	"?",// 945
+	"?",// 946
+	"?",// 947
+	"?",// 948
+	"?",// 949
+	"?",// 950
+	"?",// 951
+	"?",// 952
+	"?",// 953
+	"?",// 954
+	"?",// 955
+	"?",// 956
+	"?",// 957
+	"?",// 958
+	"?",// 959
+	"?",// 960
+	"?",// 961
+	"?",// 962
+	"?",// 963
+	"?",// 964
+	"?",// 965
+	"?",// 966
+	"?",// 967
+	"?",// 968
+	"?",// 969
+	"?",// 970
+	"?",// 971
+	"?",// 972
+	"?",// 973
+	"?",// 974
+	"?",// 975
+	"?",// 976
+	"?",// 977
+	"?",// 978
+	"?",// 979
+	"?",// 980
+	"?",// 981
+	"?",// 982
+	"?",// 983
+	"?",// 984
+	"?",// 985
+	"?",// 986
+	"?",// 987
+	"?",// 988
+	"?",// 989
+	"?",// 990
+	"?",// 991
+	"?",// 992
+	"?",// 993
+	"?",// 994
+	"?",// 995
+	"?",// 996
+	"?",// 997
+	"?",// 998
+	"?",// 999
+	"?",// 1000
+	"?",// 1001
+	"?",// 1002
+	"?",// 1003
+	"?",// 1004
+	"?",// 1005
+	"?",// 1006
+	"?",// 1007
+	"?",// 1008
+	"?",// 1009
+	"?",// 1010
+	"?",// 1011
+	"?",// 1012
+	"?",// 1013
+	"?",// 1014
+	"?",// 1015
+	"?",// 1016
+	"?",// 1017
+	"?",// 1018
+	"?",// 1019
+	"?",// 1020
+	"?",// 1021
+	"?",// 1022
+	"?",// 1023
+	"?",// 1024
+	"?",// 1025
+	"?",// 1026
+	"?",// 1027
+	"?",// 1028
+	"?",// 1029
+	"?",// 1030
+	"?",// 1031
+	"?",// 1032
+	"?",// 1033
+	"?",// 1034
+	"?",// 1035
+	"?",// 1036
+	"?",// 1037
+	"?",// 1038
+	"?",// 1039
+	"?",// 1040
+	"?",// 1041
+	"?",// 1042
+	"?",// 1043
+	"?",// 1044
+	"?",// 1045
+	"?",// 1046
+	"?",// 1047
+	"?",// 1048
+	"?",// 1049
+	"?",// 1050
+	"?",// 1051
+	"?",// 1052
+	"?",// 1053
+	"?",// 1054
+	"?",// 1055
+	"?",// 1056
+	"?",// 1057
+	"?",// 1058
+	"?",// 1059
+	"?",// 1060
+	"?",// 1061
+	"?",// 1062
+	"?",// 1063
+	"?",// 1064
+	"?",// 1065
+	"?",// 1066
+	"?",// 1067
+	"?",// 1068
+	"?",// 1069
+	"?",// 1070
+	"?",// 1071
+	"?",// 1072
+	"?",// 1073
+	"?",// 1074
+	"?",// 1075
+	"?",// 1076
+	"?",// 1077
+	"?",// 1078
+	"?",// 1079
+	"?",// 1080
+	"?",// 1081
+	"?",// 1082
+	"?",// 1083
+	"?",// 1084
+	"?",// 1085
+	"?",// 1086
+	"?",// 1087
+	"?",// 1088
+	"?",// 1089
+	"?",// 1090
+	"?",// 1091
+	"?",// 1092
+	"?",// 1093
+	"?",// 1094
+	"?",// 1095
+	"?",// 1096
+	"?",// 1097
+	"?",// 1098
+	"?",// 1099
+	"?",// 1100
+	"?",// 1101
+	"?",// 1102
+	"?",// 1103
+	"?",// 1104
+	"?",// 1105
+	"?",// 1106
+	"?",// 1107
+	"?",// 1108
+	"?",// 1109
+	"?",// 1110
+	"?",// 1111
+	"?",// 1112
+	"?",// 1113
+	"?",// 1114
+	"?",// 1115
+	"?",// 1116
+	"?",// 1117
+	"?",// 1118
+	"?",// 1119
+	"?",// 1120
+	"?",// 1121
+	"?",// 1122
+	"?",// 1123
+	"?",// 1124
+	"?",// 1125
+	"?",// 1126
+	"?",// 1127
+	"?",// 1128
+	"?",// 1129
+	"?",// 1130
+	"?",// 1131
+	"?",// 1132
+	"?",// 1133
+	"?",// 1134
+	"?",// 1135
+	"?",// 1136
+	"?",// 1137
+	"?",// 1138
+	"?",// 1139
+	"?",// 1140
+	"?",// 1141
+	"?",// 1142
+	"?",// 1143
+	"?",// 1144
+	"?",// 1145
+	"?",// 1146
+	"?",// 1147
+	"?",// 1148
+	"?",// 1149
+	"?",// 1150
+	"?",// 1151
+	"?",// 1152
+	"?",// 1153
+	"?",// 1154
+	"?",// 1155
+	"?",// 1156
+	"?",// 1157
+	"?",// 1158
+	"?",// 1159
+	"?",// 1160
+	"?",// 1161
+	"?",// 1162
+	"?",// 1163
+	"?",// 1164
+	"?",// 1165
+	"?",// 1166
+	"?",// 1167
+	"?",// 1168
+	"?",// 1169
+	"?",// 1170
+	"?",// 1171
+	"?",// 1172
+	"?",// 1173
+	"?",// 1174
+	"?",// 1175
+	"?",// 1176
+	"?",// 1177
+	"?",// 1178
+	"?",// 1179
+	"?",// 1180
+	"?",// 1181
+	"?",// 1182
+	"?",// 1183
+	"?",// 1184
+	"?",// 1185
+	"?",// 1186
+	"?",// 1187
+	"?",// 1188
+	"?",// 1189
+	"?",// 1190
+	"?",// 1191
+	"?",// 1192
+	"?",// 1193
+	"?",// 1194
+	"?",// 1195
+	"?",// 1196
+	"?",// 1197
+	"?",// 1198
+	"?",// 1199
+	"?",// 1200
+	"?",// 1201
+	"?",// 1202
+	"?",// 1203
+	"?",// 1204
+	"?",// 1205
+	"?",// 1206
+	"?",// 1207
+	"?",// 1208
+	"?",// 1209
+	"?",// 1210
+	"?",// 1211
+	"?",// 1212
+	"?",// 1213
+	"?",// 1214
+	"?",// 1215
+	"?",// 1216
+	"?",// 1217
+	"?",// 1218
+	"?",// 1219
+	"?",// 1220
+	"?",// 1221
+	"?",// 1222
+	"?",// 1223
+	"?",// 1224
+	"?",// 1225
+	"?",// 1226
+	"?",// 1227
+	"?",// 1228
+	"?",// 1229
+	"?",// 1230
+	"?",// 1231
+	"?",// 1232
+	"?",// 1233
+	"?",// 1234
+	"?",// 1235
+	"?",// 1236
+	"?",// 1237
+	"?",// 1238
+	"?",// 1239
+	"?",// 1240
+	"?",// 1241
+	"?",// 1242
+	"?",// 1243
+	"?",// 1244
+	"?",// 1245
+	"?",// 1246
+	"?",// 1247
+	"?",// 1248
+	"?",// 1249
+	"?",// 1250
+	"?",// 1251
+	"?",// 1252
+	"?",// 1253
+	"?",// 1254
+	"?",// 1255
+	"?",// 1256
+	"?",// 1257
+	"?",// 1258
+	"?",// 1259
+	"?",// 1260
+	"?",// 1261
+	"?",// 1262
+	"?",// 1263
+	"?",// 1264
+	"?",// 1265
+	"?",// 1266
+	"?",// 1267
+	"?",// 1268
+	"?",// 1269
+	"?",// 1270
+	"?",// 1271
+	"?",// 1272
+	"?",// 1273
+	"?",// 1274
+	"?",// 1275
+	"?",// 1276
+	"?",// 1277
+	"?",// 1278
+	"?",// 1279
+	"?",// 1280
+	"?",// 1281
+	"?",// 1282
+	"?",// 1283
+	"?",// 1284
+	"?",// 1285
+	"?",// 1286
+	"?",// 1287
+	"?",// 1288
+	"?",// 1289
+	"?",// 1290
+	"?",// 1291
+	"?",// 1292
+	"?",// 1293
+	"?",// 1294
+	"?",// 1295
+	"?",// 1296
+	"?",// 1297
+	"?",// 1298
+	"?",// 1299
+	"?",// 1300
+	"?",// 1301
+	"?",// 1302
+	"?",// 1303
+	"?",// 1304
+	"?",// 1305
+	"?",// 1306
+	"?",// 1307
+	"?",// 1308
+	"?",// 1309
+	"?",// 1310
+	"?",// 1311
+	"?",// 1312
+	"?",// 1313
+	"?",// 1314
+	"?",// 1315
+	"?",// 1316
+	"?",// 1317
+	"?",// 1318
+	"?",// 1319
+	"?",// 1320
+	"?",// 1321
+	"?",// 1322
+	"?",// 1323
+	"?",// 1324
+	"?",// 1325
+	"?",// 1326
+	"?",// 1327
+	"?",// 1328
+	"?",// 1329
+	"?",// 1330
+	"?",// 1331
+	"?",// 1332
+	"?",// 1333
+	"?",// 1334
+	"?",// 1335
+	"?",// 1336
+	"?",// 1337
+	"?",// 1338
+	"?",// 1339
+	"?",// 1340
+	"?",// 1341
+	"?",// 1342
+	"?",// 1343
+	"?",// 1344
+	"?",// 1345
+	"?",// 1346
+	"?",// 1347
+	"?",// 1348
+	"?",// 1349
+	"?",// 1350
+	"?",// 1351
+	"?",// 1352
+	"?",// 1353
+	"?",// 1354
+	"?",// 1355
+	"?",// 1356
+	"?",// 1357
+	"?",// 1358
+	"?",// 1359
+	"?",// 1360
+	"?",// 1361
+	"?",// 1362
+	"?",// 1363
+	"?",// 1364
+	"?",// 1365
+	"?",// 1366
+	"?",// 1367
+	"?",// 1368
+	"?",// 1369
+	"?",// 1370
+	"?",// 1371
+	"?",// 1372
+	"?",// 1373
+	"?",// 1374
+	"?",// 1375
+	"?",// 1376
+	"?",// 1377
+	"?",// 1378
+	"?",// 1379
+	"?",// 1380
+	"?",// 1381
+	"?",// 1382
+	"?",// 1383
+	"?",// 1384
+	"?",// 1385
+	"?",// 1386
+	"?",// 1387
+	"?",// 1388
+	"?",// 1389
+	"?",// 1390
+	"?",// 1391
+	"?",// 1392
+	"?",// 1393
+	"?",// 1394
+	"?",// 1395
+	"?",// 1396
+	"?",// 1397
+	"?",// 1398
+	"?",// 1399
+	"?",// 1400
+	"?",// 1401
+	"?",// 1402
+	"?",// 1403
+	"?",// 1404
+	"?",// 1405
+	"?",// 1406
+	"?",// 1407
+	"?",// 1408
+	"?",// 1409
+	"?",// 1410
+	"?",// 1411
+	"?",// 1412
+	"?",// 1413
+	"?",// 1414
+	"?",// 1415
+	"?",// 1416
+	"?",// 1417
+	"?",// 1418
+	"?",// 1419
+	"?",// 1420
+	"?",// 1421
+	"?",// 1422
+	"?",// 1423
+	"?",// 1424
+	"?",// 1425
+	"?",// 1426
+	"?",// 1427
+	"?",// 1428
+	"?",// 1429
+	"?",// 1430
+	"?",// 1431
+	"?",// 1432
+	"?",// 1433
+	"?",// 1434
+	"?",// 1435
+	"?",// 1436
+	"?",// 1437
+	"?",// 1438
+	"?",// 1439
+	"?",// 1440
+	"?",// 1441
+	"?",// 1442
+	"?",// 1443
+	"?",// 1444
+	"?",// 1445
+	"?",// 1446
+	"?",// 1447
+	"?",// 1448
+	"?",// 1449
+	"?",// 1450
+	"?",// 1451
+	"?",// 1452
+	"?",// 1453
+	"?",// 1454
+	"?",// 1455
+	"?",// 1456
+	"?",// 1457
+	"?",// 1458
+	"?",// 1459
+	"?",// 1460
+	"?",// 1461
+	"?",// 1462
+	"?",// 1463
+	"?",// 1464
+	"?",// 1465
+	"?",// 1466
+	"?",// 1467
+	"?",// 1468
+	"?",// 1469
+	"?",// 1470
+	"?",// 1471
+	"?",// 1472
+	"?",// 1473
+	"?",// 1474
+	"?",// 1475
+	"?",// 1476
+	"?",// 1477
+	"?",// 1478
+	"?",// 1479
+	"?",// 1480
+	"?",// 1481
+	"?",// 1482
+	"?",// 1483
+	"?",// 1484
+	"?",// 1485
+	"?",// 1486
+	"?",// 1487
+	"?",// 1488
+	"?",// 1489
+	"?",// 1490
+	"?",// 1491
+	"?",// 1492
+	"?",// 1493
+	"?",// 1494
+	"?",// 1495
+	"?",// 1496
+	"?",// 1497
+	"?",// 1498
+	"?",// 1499
+	"?",// 1500
+	"?",// 1501
+	"?",// 1502
+	"?",// 1503
+	"?",// 1504
+	"?",// 1505
+	"?",// 1506
+	"?",// 1507
+	"?",// 1508
+	"?",// 1509
+	"?",// 1510
+	"?",// 1511
+	"?",// 1512
+	"?",// 1513
+	"?",// 1514
+	"?",// 1515
+	"?",// 1516
+	"?",// 1517
+	"?",// 1518
+	"?",// 1519
+	"?",// 1520
+	"?",// 1521
+	"?",// 1522
+	"?",// 1523
+	"?",// 1524
+	"?",// 1525
+	"?",// 1526
+	"?",// 1527
+	"?",// 1528
+	"?",// 1529
+	"?",// 1530
+	"?",// 1531
+	"?",// 1532
+	"?",// 1533
+	"?",// 1534
+	"?",// 1535
+	"compilernop"                 ,// 1536
+	"nop"                         ,// 1537
+	"jcond"                       ,// 1538
+	"jncond"                      ,// 1539
+	"int3"                        ,// 1540
+	"r"                           ,// 1541
+	"syscall"                     ,// 1542
+	"d"                           ,// 1543
+	"enter"                       ,// 1544
+	"const"                       ,// 1545
+	"return"                      ,// 1546
+	"leave"                       ,// 1547
+	"prereturn"                   ,// 1548
+	"ld"                          ,// 1549
+	"lea"                         ,// 1550
+	"indexfp"                     ,// 1551
+	"pha"                         ,// 1552
+	"plb"                         ,// 1553
+	"add"                         ,// 1554
+	"sub"                         ,// 1555
+	"drop"                        ,// 1556
+	"push"                        ,// 1557
+	"call"                        ,// 1558
+	"?"                           ,// 1559
+	"?"                           ,// 1560
+	"?"                           ,// 1561
+	"?"                           ,// 1562
+	"?"                           ,// 1563
+	"?"                           ,// 1564
+	"?"                           ,// 1565
+	"?"                           ,// 1566
+	"?"                           ,// 1567
+	"?"                           ,// 1568
+	"?"                           ,// 1569
+	"?"                           ,// 1570
+	"?"                           ,// 1571
+	"?"                           ,// 1572
+	"?"                           ,// 1573
+	"?"                           ,// 1574
+	"?"                           ,// 1575
+	"?"                           ,// 1576
+	"?"                           ,// 1577
+	"?"                           ,// 1578
+	"?"                           ,// 1579
+	"?"                           ,// 1580
+	"?"                           ,// 1581
+	"?"                           ,// 1582
+	"?"                           ,// 1583
+	"?"                           ,// 1584
+	"?"                           ,// 1585
+	"?"                           ,// 1586
+	"?"                           ,// 1587
 };
 struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"alignas"		,tToken_Keywordalignas		},
@@ -1078,10 +3442,15 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"for"			,tToken_Keywordfor		},
 	{"goto"			,tToken_Keywordgoto		},
 	{"if"			,tToken_Keywordif		},
+	{"int8_t"		,tToken_Keywordint8t		},
+	{"int16_t"		,tToken_Keywordint16t		},
+	{"int32_t"		,tToken_Keywordint32t		},
+	{"int64_t"		,tToken_Keywordint64t		},
 	{"inline"		,tToken_Keywordinline		},
 	{"int"			,tToken_Keywordint		},
 	{"long"			,tToken_Keywordlong		},
 	{"nullptr"		,tToken_Keywordnullptr		},
+//	{"namespace"		,tToken_Keywordnamespace	},
 	{"register"		,tToken_Keywordregister		},
 	{"restrict"		,tToken_Keywordrestrict		},
 	{"return"		,tToken_Keywordreturn		},
@@ -1097,6 +3466,10 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"typedef"		,tToken_Keywordtypedef		},
 	{"typeof"		,tToken_Keywordtypeof		},
 	{"typeof_unqual"	,tToken_Keywordtypeof_unqual	},
+	{"uint8_t"		,tToken_Keyworduint8t		},
+	{"uint16_t"		,tToken_Keyworduint16t		},
+	{"uint32_t"		,tToken_Keyworduint32t		},
+	{"uint64_t"		,tToken_Keyworduint64t		},
 	{"union"		,tToken_Keywordunion		},
 	{"unsigned"		,tToken_Keywordunsigned		},
 	{"void"			,tToken_Keywordvoid		},
@@ -1107,8 +3480,11 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 };
 // Target types
 typedef uint16_t tGTargetNearpointer;
+typedef uint16_t tGTargetSizet;
 typedef uint8_t  tGTargetSegment;
-typedef uint32_t tGTargetUintmax;
+typedef int      tGTargetUintmax;
+const tGTargetSizet GTargetStackframeArgumentsstart = 4;
+
 // XCC types
 typedef struct tToken {
 	short type;
@@ -1142,52 +3518,53 @@ typedef enum eGSegment {
 } eGSegment;
 typedef enum eGAtomictype {
 	eGAtomictype_Void = 0,
-	eGAtomictype_Structure,
-	eGAtomictype_Enumeration,
-	eGAtomictype_Unresolved,
+	eGAtomictype_Structure = 1,
+	eGAtomictype_Enumeration = 2,
+	eGAtomictype_Unresolved = 3,
 	// Internal types
-	eGAtomictype_Union, // Temporary type - gets converted to struct later on
-	eGAtomictype_Pointer,
-	eGAtomictype_Array,
-	eGAtomictype_Function,
+	eGAtomictype_Union = 4, // Temporary type - gets converted to struct later on
+	eGAtomictype_Pointer = 5,
+	eGAtomictype_Array = 6,
+	eGAtomictype_Function = 7,
 	// IR-side types (and optionally C-side)
-	eGAtomictype_Int8,
-	eGAtomictype_Uint8,
-	eGAtomictype_Int16,
-	eGAtomictype_Uint16,
-	//eGAtomictype_Int24,
-	//eGAtomictype_Uint24,
-	eGAtomictype_Int32,
-	eGAtomictype_Uint32,
-	//eGAtomictype_Int48,
-	//eGAtomictype_Uint48,
-	eGAtomictype_Int64,
-	eGAtomictype_Uint64,
-	eGAtomictype_Int80,
-	eGAtomictype_Uint80,
-	eGAtomictype_Float32,
-	eGAtomictype_Float64,
-	eGAtomictype_Float80,
+	eGAtomictype_Int8 = 8,
+	eGAtomictype_Uint8 = 9,
+	eGAtomictype_Int16 = 10,
+	eGAtomictype_Uint16 = 11,
+	//eGAtomictype_Int24 = 12,
+	//eGAtomictype_Uint24 = 13,
+	eGAtomictype_Int32 = 14,
+	eGAtomictype_Uint32 = 15,
+	//eGAtomictype_Int48 = 16,
+	//eGAtomictype_Uint48 = 17,
+	eGAtomictype_Int64 = 18,
+	eGAtomictype_Uint64 = 19,
+	eGAtomictype_Int80 = 20,
+	eGAtomictype_Uint80 = 21,
+	eGAtomictype_Float32 = 22,
+	eGAtomictype_Float64 = 23,
+	eGAtomictype_Float80 = 24,
 	// C-side types
-	eGAtomictype_Char,
-	eGAtomictype_Signedchar,
-	eGAtomictype_Unsignedchar,
-	eGAtomictype_Short,
-	eGAtomictype_Unsignedshort,
-	eGAtomictype_Int,
-	eGAtomictype_Unsigned,
-	eGAtomictype_Long,
-	eGAtomictype_Unsignedlong,
-	eGAtomictype_Longlong,
-	eGAtomictype_Unsignedlonglong,
-	eGAtomictype_Boolean,
-	eGAtomictype_Float,
-	eGAtomictype_Double,
-	eGAtomictype_Longdouble
+	eGAtomictype_Char = 25,
+	eGAtomictype_Signedchar = 26,
+	eGAtomictype_Unsignedchar = 27,
+	eGAtomictype_Short = 28,
+	eGAtomictype_Unsignedshort = 29,
+	eGAtomictype_Int = 30,
+	eGAtomictype_Unsigned = 31,
+	eGAtomictype_Long = 32,
+	eGAtomictype_Unsignedlong = 33,
+	eGAtomictype_Longlong = 34,
+	eGAtomictype_Unsignedlonglong = 35,
+	eGAtomictype_Boolean = 36,
+	eGAtomictype_Float = 37,
+	eGAtomictype_Double = 38,
+	eGAtomictype_Longdouble = 39
 } eGAtomictype;
 typedef struct {eGAtomictype atomictype; char* str;} GAtomictypetostring_Entry;
 GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Structure                 , "struct" },
+	{ eGAtomictype_Union                     , "union" },
 	{ eGAtomictype_Enumeration               , "enum" },
 	{ eGAtomictype_Unresolved                , "unresolved" },
 	{ eGAtomictype_Pointer                   , "pointer" },
@@ -1221,11 +3598,12 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Float                     , "float" },
 	{ eGAtomictype_Double                    , "double" },
 	{ eGAtomictype_Longdouble                , "long double" },
+	{ eGAtomictype_Void                      , "void" },
 	{ 0, 0 }
 };
 typedef struct tGOpcode { 
-	short opcode;
-	enum eGAtomictype instructionsize;
+	short opr;
+	enum eGAtomictype isize;
 } tGOpcode;
 typedef struct tGInstruction {
 	tGOpcode opcode; 
@@ -1234,12 +3612,12 @@ typedef struct tGInstruction {
 	tGTargetUintmax immediate;
 } tGInstruction;
 typedef struct { // tGTargetPointer
-	bool nonconstant;
+	bool nonconstant; // TODO: Refactor to use 'dynamic' segment instead of nonconstant specifier
 	// Constant pointer - segment-offset:
-	eGSegment segment;
+	eGSegment segment; 
 	tGTargetSegment bank;
 	tGTargetNearpointer offset;
-	// Dynamic pointer - tGInstructon*:
+	// Dynamic pointer - tGInstruction*:
 	tGInstruction* dynamicpointer;
 } tGTargetPointer;
 /* // Some details about types written forever ago
@@ -1272,6 +3650,7 @@ typedef struct { // tGTargetPointer
  */
 typedef enum eGValuecategory {
 	eGValuecategory_Null = 0,
+	eGValuecategory_Novalue = 0,
 	eGValuecategory_Leftvalue = 1,
 	eGValuecategory_Rightvalue = 2
 } eGValuecategory;
@@ -1286,7 +3665,7 @@ typedef struct tGPointernessmodifierslist {
 	bool restrictmodifier;
 	bool far; // Far pointer - segment:offset
 	struct tGPointernessmodifierslist * next;
-	tListnode /* <tGType */ * functionargs;
+	tListnode /* <tGType> */ * functionargs;
 } tGPointernessmodifierslist;
 typedef enum eGTypequalifiers {
 	eGTypequalifiers_Null = 0,
@@ -1298,13 +3677,14 @@ typedef struct tGType {
 	char* unresolvedsymbol;
 	eGAtomictype atomicbasetype;
 	struct tGType * complexbasetype;
-	void /* struct tGNamespace */ * structure;
+	struct tGNamespace * structure;
 	tList /* LxNode<Declaration> */ * precompiledstructure;
 	void /* tLxNode */ * precompiledenumeration;
 	eGValuecategory valuecategory;
 	eGTypequalifiers typequalifiers;
 	tListnode /* <tGType> */ * functionarguments;
 	tListnode /* <tGType> */ * templatemodifiers;
+	tGTargetSizet structsize;
 } tGType;
 typedef struct tGNamespace {
 	struct tGNamespace * parentnamespace;
@@ -1313,11 +3693,11 @@ typedef struct tGNamespace {
 } tGNamespace;
 enum mtGSymbol_eType {
 	mtGSymbol_eType_Null = 0,
-	mtGSymbol_eType_Constant,
+	mtGSymbol_eType_Constant, // consts
 	mtGSymbol_eType_Namespace,
-	mtGSymbol_eType_Pointer,
-	mtGSymbol_eType_Deferredevaulation,
-	mtGSymbol_eType_Typedef
+	mtGSymbol_eType_Pointer, // Functions and uninit. globals
+	mtGSymbol_eType_Deferredevaulation, // Initialized globals
+	mtGSymbol_eType_Typedef // Typedefs
 };
 typedef struct tGSymbol {
 	char* name;
@@ -1346,16 +3726,36 @@ typedef struct tLxNode {
 	tGType* returnedtype;
 } tLxNode;
 
-typedef struct tSpPrenode {
-} tSpPrenode;
+typedef struct tSppNode {
+	eTokentype type;
+	struct tSppNode* initializer;
+	struct tSppNode* condition;
+	struct tSppNode* left;
+	struct tSppNode* right;
+
+	struct tSppNode* parent;
+	tGTargetUintmax constant;
+	tGNamespace* name_space;
+	tGNamespace* symbol;
+	tGType* returnedtype;
+	char* identifier;
+} tSppNode;
+
+typedef struct tSpFunctionextinfo {
+	tGTargetSizet localssize;
+	tGTargetSizet argumentssize;
+} tSpFunctionextinfo;
 
 typedef struct tSpNode {
 	eTokentype type;
+	tGType* returnedtype;
 	struct tSpNode * initializer;
 	struct tSpNode * condition;
 	struct tSpNode * left;
 	struct tSpNode * right;
-	
+	tGTargetUintmax constant;
+	tGSymbol* symbol;
+	tSpFunctionextinfo* fextinfo;
 } tSpNode;
 
 //
@@ -1431,8 +3831,7 @@ declaration
 	| semicolon // empty declaration
 	;
 basetype
-	:
-	| int
+	: int
 	| unsigned
 	| short
 	| unsigned short
