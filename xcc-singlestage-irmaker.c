@@ -161,19 +161,22 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		};	break;
 		case tSplexem_Cast:
 			if(mtGType_Sizeof(self->returnedtype)!=mtGType_Sizeof(self->left->returnedtype)){
-				//printf("IG: [E] IgCompileExpression: Cast: Sizes mismatch: %i•%i \n",
+				//printf("IG: [D] IgCompileExpression: Cast: Sizes mismatch: %i•%i \n",
 				//	mtGType_Sizeof(self->returnedtype),
 				//	mtGType_Sizeof(self->left->returnedtype)
 				//);
-				//assert(mtGType_Sizeof(self->returnedtype)==mtGType_Sizeof(self->left->returnedtype));
+				//assert(mtGType_Sizeof(self->returnedtype)!=mtGType_Sizeof(self->left->returnedtype));
 				//ErfFatal();
 				return mtGInstruction_Join_Modify(
+					IgCompileExpression(self->left),
 					mtGInstruction_CreateCast(
 						tInstruction_Cast,
 						self->left->returnedtype->atomicbasetype,
-						self->returnedtype->atomicbasetype
-					),
-					IgCompileExpression(self->left)
+						   self->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->returnedtype->atomicbasetype
+					)
 				);
 			};
 			return IgCompileExpression(self->left);
@@ -183,14 +186,17 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				mtGInstruction_Join_Modify(
 					mtGInstruction_CreateBasic(
 						tInstruction_Pushleft,
-						self->left->returnedtype->atomicbasetype
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
 					),
 					mtGInstruction_Join_Modify(
 						IgCompileExpression(self->right),
 						mtGInstruction_Join_Modify(
 							mtGInstruction_CreateBasic(
 								tInstruction_Popright,
-								self->right->returnedtype->atomicbasetype
+								self->left->returnedtype->atomicbasetype
 							),
 							mtGInstruction_CreateSegmented(
 								tInstruction_Store,
@@ -216,6 +222,30 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				)
 			);
 		};	break;
+		case tSplexem_Shiftleft: {
+			if(self->right->type == tSplexem_Integerconstant){
+				return mtGInstruction_Join_Modify(
+					IgCompileExpression(self->left),
+					mtGInstruction_CreateBasic(
+						tInstruction_Constantshiftleft,
+						self->left->returnedtype->atomicbasetype
+					)
+				);
+			};
+			assert(false);
+		};	break;
+		case tSplexem_Shiftright: {
+			if(self->right->type == tSplexem_Integerconstant){
+				return mtGInstruction_Join_Modify(
+					IgCompileExpression(self->left),
+					mtGInstruction_CreateBasic(
+						tInstruction_Constantshiftleft,
+						self->left->returnedtype->atomicbasetype
+					)
+				);
+			};
+			assert(false);
+		};	break;
 		default:
 			printf("IG: [E] IgCompileExpression: Unrecognized "
 			       "node %i•%s \n",
@@ -235,6 +265,10 @@ tGInstruction* IgCompileConditionaljump(
 	tSpNode* self,
 	tGInstruction* jumptarget
 ){ // compiles some exprs to compare-jump-condition
+	assert(self);
+	assert(self->left);
+	assert(self->right);
+	assert(self->returnedtype);
 	assert(self->returnedtype->atomicbasetype==eGAtomictype_Boolean);
 	tGInstruction* expr = nullptr;
 	// Check for special cases
@@ -248,13 +282,21 @@ tGInstruction* IgCompileConditionaljump(
 			IgCompileExpression(self->left),
 			mtGInstruction_Join_Modify(
 				mtGInstruction_CreateBasic(
-					tInstruction_Pushleft,self->left->returnedtype->atomicbasetype
+					tInstruction_Pushleft,
+					   self->left->returnedtype->valuecategory
+					 ==eGValuecategory_Leftvalue
+					?eGAtomictype_Nearpointer
+					:self->left->returnedtype->atomicbasetype
 				),
 				mtGInstruction_Join_Modify(
 					IgCompileExpression(self->right),
 					mtGInstruction_Join_Modify(
 						mtGInstruction_CreateBasic(
-							tInstruction_Popright,self->right->returnedtype->atomicbasetype
+							tInstruction_Popright,
+							   self->left->returnedtype->valuecategory
+							 ==eGValuecategory_Leftvalue
+							?eGAtomictype_Nearpointer
+							:self->left->returnedtype->atomicbasetype
 						),
 						mtGInstruction_CreateCodepointer(
 							 mtGType_IsSigned(self->left->returnedtype)
@@ -282,14 +324,20 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 	assert(self);
 	switch(self->type){
 		case tSplexem_Blockstatement: {
+			ErfEnter_String("IgCompileStatement: Blockstatement");
 			tGInstruction* i;
 			if(self->left){
 				i=IgCompileStatement(self->left);
+				if(!i)i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				assert(i);
 			}else{
 				i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				assert(i);
 			};
+			assert(i);
 			assert(mtGInstruction_GetLast(i));
 			if(self->right)mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
+			ErfLeave();
 			return i;
 		};	break;
 		case tSplexem_Returnstatement: {
@@ -325,22 +373,16 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			return i;
 		};	break;
 		case tSplexem_Variabledeclaration: {
-			//	forloop: initializer
-			//	_loop:   cj##cond _end
-			//	         body
-			//	         iterator
-			//	         jmp _loop
-			//	_end:
-			//
-			//	init -> cond
-			//	cond -> body end
-			//
-			if(self->right==nullptr)return nullptr; // No initializer - no code emmited
+			ErfEnter_String("IgCompileStatement: Variabledeclaration");
+			if(self->right==nullptr){ // No initializer - no code emmited
+				ErfLeave();
+				return nullptr; 
+			}
 			assert(self!=nullptr);
 			assert(self->symbol);
 			assert(self->symbol->type->valuecategory == eGValuecategory_Leftvalue);
 			assert(self->symbol->symbolkind == mtGSymbol_eType_Pointer);
-			return mtGInstruction_Join_Modify(
+			tGInstruction* i = mtGInstruction_Join_Modify(
 					self->symbol->allocatedstorage->nonconstant 
 				?	mtGInstruction_CreateCodepointer(
 						tInstruction_Loadaddress,
@@ -383,7 +425,9 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 					)
 				)
 			);
-		};
+			ErfLeave();
+			return i;
+		};	break;
 		case tSplexem_Forstatement: {
 			//	forloop: initializer
 			//	         jmp   _cond
@@ -449,7 +493,7 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	assert(self->fextinfo);
 	assert(  self->returnedtype->atomicbasetype==eGAtomictype_Nearfunction
 	       ||self->returnedtype->atomicbasetype==eGAtomictype_Function);
-	ErfEnter_String("IG: IgCompileFunction: root");
+	ErfEnter_String("IgCompileFunction: root");
 	IgCurrentfunction = self;
 	// Find the place to write code to
 	tGInstruction* code = self->symbol->allocatedstorage->dynamicpointer;
@@ -457,7 +501,9 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	code->label = self->symbol->name;
 	if(self->right){ // If implementation provided
 		// Prologue
-		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateBasic(tInstruction_Enterframe,eGAtomictype_Void);
+		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateImmediate(
+			tInstruction_Enterframe,eGAtomictype_Void,
+			self->fextinfo->localssize);
 		// Compile function itself
 		mtGInstruction_GetLast(code)->next=IgCompileStatement(self->right);
 		// Implied return statement
@@ -490,7 +536,6 @@ tGInstruction* IgCompileVariable(tSpNode* self){
 			tInstruction_Allocatestorage,
 			self->returnedtype->atomicbasetype
 		);
-		assert(false);
 	};
 };
 void IgParse(tSpNode* self){
@@ -509,7 +554,9 @@ void IgParse(tSpNode* self){
 			mtGInstruction_GetLast(GCompiled[meGSegment_Code])->next=IgCompileFunction(self);
 			break;
 		case tSplexem_Variabledeclaration:
+			ErfEnter_String("IgParse: tSplexem_Variabledeclaration");
 			mtGInstruction_GetLast(GCompiled[meGSegment_Data])->next=IgCompileVariable(self);
+			ErfLeave();
 			break;
 		default:
 			assert(false);
@@ -576,6 +623,8 @@ void IgDumpir(tGInstruction** code, FILE* file){
 					||(j->opcode.opr==tInstruction_Enterframe) // It needs the size of stackframe
 					||(j->opcode.opr==tInstruction_Definevalue)// For obvious reasons
 					||(j->opcode.opr==tInstruction_Return)     // To deallocate passed parameters
+					||(j->opcode.opr==tInstruction_Constantshiftleft)
+					||(j->opcode.opr==tInstruction_Constantshiftright)
 				){
 					fprintf(
 						file,

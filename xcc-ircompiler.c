@@ -679,6 +679,18 @@ void IrcParseline(FILE* src,FILE* dst){
 	assert(instrdef);
 	// Emit expansion
 	fputc('\t',dst);
+	{	// Plop original instr down
+		fprintf(dst,"; %s ",opcode);
+		for(
+			tListnode /* <tIrcToken> */ * i = arguments->first;
+			i;
+			i=i->next
+		){
+			mtIrcToken_Emit(i->item,dst);
+		}
+		//fputc('\n',dst);
+		fputc('\t',dst);
+	}
 	for(tListnode /* <tIrcToken> */ * i = instrdef->expansion->first;i;i=i->next){
 		tIrcToken* tok = i->item;
 #ifdef qvGTrace

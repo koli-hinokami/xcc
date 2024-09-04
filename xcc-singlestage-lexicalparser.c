@@ -386,6 +386,10 @@ tLxNode* LxParseBlockstatement(tLxFetcher* fetcher){
 };
 
 tGType* LxParseBasetype(tLxFetcher* fetcher){
+	//
+#ifdef qvGTrace
+	printf("LX: [T] LxParseBasetype: Entered\n");
+#endif
 	tGType* type = mtGType_Create();
 	tLxFetcher savedfetcher = *fetcher;
 	// Clear structure
@@ -413,6 +417,8 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 	switch((token=mtLxFetcher_Peek(fetcher))->type){
 		case tToken_Keywordsigned:
 			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int;
+			if(mtLxFetcher_Eof(fetcher))break;
 			switch((token=mtLxFetcher_Peek(fetcher))->type){
 				case tToken_Keywordchar:
 					mtLxFetcher_Advance(fetcher);
@@ -445,6 +451,8 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			break;
 		case tToken_Keywordunsigned:
 			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Unsigned;
+			if(mtLxFetcher_Eof(fetcher))break;
 			switch((token=mtLxFetcher_Peek(fetcher))->type){
 				case tToken_Keywordchar:
 					mtLxFetcher_Advance(fetcher);

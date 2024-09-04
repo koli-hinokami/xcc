@@ -234,6 +234,8 @@ enum tTokentype {
 	tSplexem_Casttoboolean          = 1063, //
 	tSplexem_Switchcase             = 1064, //
 	tSplexem_Switchdefault          = 1065, //
+	tSplexem_Shiftleft              = 1066, //
+	tSplexem_Shiftright             = 1067, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Second AST string lexems
 	//                                      //        Actually are deprecated
@@ -276,6 +278,10 @@ enum tTokentype {
 	tInstruction_Popleft            = 1571, //Used to assist codegen
 	tInstruction_Lvalueincrement    = 1572, //Short form for read-modify-write increment. Leaves the pointer on stack.
 	tInstruction_Cast               = 1573, //Requires two types
+	tInstruction_Shiftleft          = 1574, //Requires two types
+	tInstruction_Shiftright         = 1575, //Requires two types
+	tInstruction_Constantshiftleft  = 1576, //Shifts by a constant amount
+	tInstruction_Constantshiftright = 1577, //Shifts by a constant amount
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1349,8 +1355,8 @@ char *TokenidtoName[]={
 	"tSplexem_Casttoboolean      ",// 1063
 	"tSplexem_Switchcase         ",// 1064
 	"tSplexem_Switchdefault      ",// 1065
-	"tSplexem_Undefined          ",// 1066
-	"tSplexem_Undefined          ",// 1067
+	"tSplexem_Shiftleft          ",// 1066
+	"tSplexem_Shiftright         ",// 1067
 	"tSplexem_Undefined          ",// 1068
 	"tSplexem_Undefined          ",// 1069
 	"tSplexem_Undefined          ",// 1070
@@ -3447,10 +3453,10 @@ char *TokenidtoName_Compact[]={
 	"plb"                         ,// 1571
 	"inc_rmw"                     ,// 1572
 	"cast"                        ,// 1573
-	"?"                           ,// 1574
-	"?"                           ,// 1575
-	"?"                           ,// 1576
-	"?"                           ,// 1577
+	"shl"                         ,// 1574
+	"shr"                         ,// 1575
+	"constantshl"                 ,// 1576
+	"constantshr"                 ,// 1577
 	"?"                           ,// 1578
 	"?"                           ,// 1579
 	"?"                           ,// 1580

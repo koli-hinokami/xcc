@@ -34,7 +34,11 @@ void TkUngetc(char ch){
 	ungetc(ch,GSourcefile);
 };
 tGTargetUintmax TkStringtonumber(char* str){
-	return atoi(str);
+	char* strtol_tail = nullptr;
+	long num = strtol(str,&strtol_tail,0);
+	assert(strtol_tail);
+	assert(strtol_tail[0]==0);
+	return num;
 };
 void TkTokenize(FILE* srcfile){
 	char buffer,buffer2;

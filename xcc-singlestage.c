@@ -614,16 +614,23 @@ bool mtGType_IsSigned(tGType* self){
 		case eGAtomictype_Intnearptr      :return true;
 		case eGAtomictype_Intfarptr       :return true;
 		case eGAtomictype_Nearpointer     :return false; 
+		// IR-side types
+		case eGAtomictype_Int8            :return true;
+		case eGAtomictype_Uint8           :return false;
+		case eGAtomictype_Int16           :return true;
+		case eGAtomictype_Uint16          :return false;
+		case eGAtomictype_Int32           :return true;
+		case eGAtomictype_Uint32          :return false;
 		// TODO: : ptrdiff_t is signed but nearpointer is not
 		default: 
-			printf("ss: [E] mtGType_IsSigned: Unrecognized atomic type %i\n",
-				self->atomicbasetype
+			printf("ss: [E] mtGType_IsSigned: Unrecognized atomic type %i∙%s\n",
+				self->atomicbasetype,
+				meGAtomictype_ToStringTable[self->atomicbasetype]
 			);
 			ErfError();
 			return false;
 			break;
 	};
-	
 };
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
@@ -1134,7 +1141,8 @@ tGInstruction* mtGInstruction_GetLast(tGInstruction* self){
 		return mtGInstruction_GetLast(self->next);
 	}
 };
-tGInstruction* mtGInstruction_Join_Modify(tGInstruction /* modifies */ * self, tGInstruction* val){
+tGInstruction* mtGInstruction_Join_Modify(tGInstruction /* modifies */ * self, tGInstruction* /* takeowns */ val){
+	if(!self)return val;
 	mtGInstruction_GetLast(self)->next=val;
 	return self;
 };

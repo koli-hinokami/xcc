@@ -126,14 +126,23 @@ void SpCompilefunctionarguments(
 		}
 	}else{
 		printf("SP: [E] SpCompilefunctionarguments: typeexpr==nullptr \n");
+		ErfError();
 	};
 };
-tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){
+tSpNode* mtSpNode_Promote(tSpNode* self,tGType* type){ // should've been called Cast
 #ifdef qvGTrace
 	printf("SP: [T] mtSpNode_Promote: entered\n");
 #endif
 	assert(mtGType_IsCastableto(self->returnedtype,type));
 	if(mtGType_Equals(self->returnedtype,type))return self;
+	if(self->type==tSplexem_Integerconstant)
+		return mtSpNode_Clone(
+			&(tSpNode){
+				.type=tSplexem_Integerconstant,
+				.constant=self->constant,
+				.returnedtype=type
+			}
+		);
 	return mtSpNode_Clone(
 		&(tSpNode){
 			.type=tSplexem_Cast,
@@ -215,7 +224,10 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 			return mtSpNode_Clone(
 				&(tSpNode){
 					.type=tSplexem_Cast,
-					.returnedtype=mtGType_CreateNearpointer(newtype),
+					.returnedtype=mtGType_SetValuecategory(
+						mtGType_CreateNearpointer(newtype),
+						eGValuecategory_Rightvalue
+					),
 					.left=self,
 				}
 			);
@@ -261,13 +273,14 @@ tSpNode* SpParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ * argume
 #ifdef qvGTrace
 	printf("SP: [T] SpiParsefunctionarguments(%p,%p): entered \n",ast,argumentslist);
 #endif
-	assert(argumentslist);
+	if(!argumentslist)return ast;
 	tListnode* args = argumentslist;
 	return SpiParsefunctionarguments(ast,&args);
 };
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
-		printf("SP: [E] SpParse: Nullpointer\n");
+		printf("SP: [W] SpParse: Nullpointer\n");
+		ErfWarning();
 		return nullptr;
 	};
 	if(self->type==tLexem_Identifier){
@@ -334,8 +347,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Blockstatement,
-						.left=SpParse(self->left),
-						.right=SpParse(self->right)
+						.left=self->left?SpParse(self->left):nullptr,
+						.right=self->right?SpParse(self->right):nullptr,
 					}
 				);
 			};	break;
@@ -348,7 +361,6 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//  Well, I think so, so those will live for now
 				//  Crap, initialization. Locals *must* live but
 				//   I'll need to do something with globals
-
 				//return nullptr;
 				{
 					char* name;
@@ -360,7 +372,6 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						),
 						eGValuecategory_Leftvalue
 					);
-
 					tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
 						self->name_space,
 						name,
@@ -745,6 +756,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				);
 				if(mtGType_GetBasetype(left->returnedtype)->valuecategory!=eGValuecategory_Leftvalue){
 					printf("SP: [E] SpParse: `=`: Assignment to right value \n");
+					ErfError();
 					GError();
 					assert(false);
 					return nullptr;
@@ -885,6 +897,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: Addition: Types not equal! \n");
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
@@ -906,6 +919,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: Substraction: Types not equal! \n");
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
@@ -930,6 +944,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						mtGType_ToString(left->returnedtype),
 						mtGType_ToString(right->returnedtype)
 					);
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
@@ -951,6 +966,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: `/`: Types not equal! \n");
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
@@ -975,12 +991,51 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						mtGType_ToString(left->returnedtype),
 						mtGType_ToString(right->returnedtype)
 					);
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Modulo,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+			};	break;
+			case tLexem_Shiftleft: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = mtSpNode_Promote(
+					SpInsertimpliedrvaluecast(SpParse(self->right)),
+					mtGType_Transform(
+						mtGType_CreateAtomic(
+							eGAtomictype_Short
+						)
+					)
+				);
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Shiftleft,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+			};	break;
+			case tLexem_Shiftright: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = mtSpNode_Promote(
+					SpInsertimpliedrvaluecast(SpParse(self->right)),
+					mtGType_Transform(
+						mtGType_CreateAtomic(
+							eGAtomictype_Short
+						)
+					)
+				);
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Shiftright,
 						.returnedtype=left->returnedtype,
 						.left=left,
 						.right=right,
@@ -1091,6 +1146,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: `<`: Types not equal! \n");
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
@@ -1119,6 +1175,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: Equality: Types not equal! \n");
+					ErfError();
 					return nullptr;
 				};
 
@@ -1147,6 +1204,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
 					printf("SP: [E] SpParse: Equality: Types not equal! \n");
+					ErfError();
 					return nullptr;
 				};
 				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
@@ -1169,4 +1227,30 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			return nullptr;
 	};
 };
-
+tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
+	assert(self);
+	{	// Init
+	};
+	{	// Recurse
+		if(self->initializer) self->initializer = SpOptimize(self->initializer);
+		if(self->condition)   self->condition   = SpOptimize(self->condition);
+		if(self->left)        self->left        = SpOptimize(self->left);
+		if(self->right)       self->right       = SpOptimize(self->right);
+	};
+	{	// Multiply by 1
+		if(
+			  self->type==tSplexem_Multiplication
+			&&self->right->type==tSplexem_Integerconstant
+			&&self->right->constant==1
+		){
+			self=self->left;
+		};
+	};
+	{	// Default - pass node through while recursing (again)
+		if(self->initializer) self->initializer = SpOptimize(self->initializer);
+		if(self->condition)   self->condition   = SpOptimize(self->condition);
+		if(self->left)        self->left        = SpOptimize(self->left);
+		if(self->right)       self->right       = SpOptimize(self->right);
+		return self;
+	};
+};
