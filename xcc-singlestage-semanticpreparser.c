@@ -123,7 +123,8 @@ char* SppGeneratetype_GetName(tLxNode* typeexpression){
 };
 
 tLxNode* SppPreparse(tLxNode* self){
-	// TODO: Propagate namespaces, kill multideclarations
+	if(self==nullptr)return nullptr;
+	// Propagate namespaces, kill multideclarations
 	// Should be callable before Symbolgen is ran
 	tLxNode* node = mtLxNode_Clone(self);
 	if(	// Create and propagate namespaces for Symbolgen and Semanticparser
@@ -177,7 +178,7 @@ tLxNode* SppPreparse(tLxNode* self){
 		if(self->left->type==tLexem_Comma){
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
-			node1->type=tLexem_Typedefinition; // gotta confirm that it isnt `(declare (assign) ...)`
+			node1->type=tLexem_Typedefinition; 
 			node1->returnedtype=self->returnedtype;
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
@@ -193,10 +194,12 @@ tLxNode* SppPreparse(tLxNode* self){
 		}else {
 			node->type=tLexem_Typedefinition;
 			node->returnedtype=self->returnedtype;
-			node->left=self->left;
-			return node;
 		};
 	};
+	// Return cloned node
+	node->left=SppPreparse(self->left);
+	node->right=SppPreparse(self->left);
+	return node;
 };
 
 
