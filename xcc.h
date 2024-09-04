@@ -393,6 +393,8 @@ typedef struct tSpNode {
 	char* identifier;
 	tSpFunctionextinfo* fextinfo;
 	tList /* <tSpNode> */ * switchlabels;
+	tGInstruction* boundbreak;
+	tGInstruction* boundcontinue;
 } tSpNode;
 
 //

@@ -432,8 +432,10 @@ void SgParse(tLxNode* ast){
 			};
 			break;
 		case tLexem_Forstatement:
+		case tLexem_Whilestatement:
 			SgParse(ast->initializer);
 		case tLexem_Ifstatement:
+		case tLexem_Switchstatement:
 			SgParse(ast->condition);
 			SgParse(ast->left);
 			SgParse(ast->right);
@@ -447,7 +449,6 @@ void SgParse(tLxNode* ast){
 			case tLexem_Assign:
 			case tLexem_Logicalnot:
 			case tLexem_Notequal:
-			case tLexem_Whilestatement:
 			case tLexem_Functioncall:
 			case tLexem_Postincrement:
 			case tLexem_Greaterequal:
@@ -460,16 +461,17 @@ void SgParse(tLxNode* ast){
 			case tLexem_Memberbypointer:
 			case tLexem_Switchcase:
 			case tLexem_Logicalor:
-			case tLexem_Switchstatement:
 			case tLexem_Bitwiseand:
 			case tLexem_Lessequal:
 			case tLexem_Greaterthan:
 			case tLexem_Increment:
+			case tLexem_Switchdefault:
+			case tLexem_Continuestatement:
 				break;
 		};
 		default:
 			fprintf(stderr,"SG: [E] SgParse: Unrecognized node type %i:%s\n",ast->type,TokenidtoName[ast->type]);
-			GError();
+			ErfError();
 			break;
 	};
 };
@@ -486,6 +488,8 @@ void SgFindunresolvedtypes_LxNode(tLxNode* node){
 	if(
 		  node->type!=tLexem_Switchcase
 		&&node->type!=tLexem_Switchdefault
+		&&node->type!=tLexem_Breakstatement
+		&&node->type!=tLexem_Continuestatement
 	)
 		if(node->initializer)
 			SgFindunresolvedtypes_LxNode(node->initializer);

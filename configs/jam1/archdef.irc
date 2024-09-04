@@ -223,6 +223,10 @@ opcode	v.cje.relative.nearptr	#1		: sub a, c | sbb b, d | or a, b | je #1
 opcode	v.cjne.relative.int16	#1		: sub a, c | sbb b, d | or a, b | jne #1
 opcode	v.cjne.relative.uint16	#1		: sub a, c | sbb b, d | or a, b | jne #1
 opcode	v.cjne.relative.nearptr	#1		: sub a, c | sbb b, d | or a, b | jne #1
+opcode	v.cje.relative.int8	#1		: cmp a, c | je #1
+opcode	v.cje.relative.uint8	#1		: cmp a, c | je #1
+opcode	v.cjne.relative.int8	#1		: cmp a, c | jne #1
+opcode	v.cjne.relative.uint8	#1		: cmp a, c | jne #1
 opcode	v.tjnz.relative.int8	#1		: test a  | jnz #1
 opcode	v.tjnz.relative.uint8	#1		: test a  | jnz #1
 opcode	v.tjnz.relative.int16	#1		: or a, b | jnz #1
@@ -272,3 +276,23 @@ opcode	v.mul.relative.uint16			: call Math_Multiply_16_16
 opcode	v.mul.relative.nearptr			: call Math_Multiply_16_16
 opcode	v.negate.relative.int16			: mov c, 255 | xor a, c | xor b, c | inc a | incc b
 opcode	v.index.relative.nearptr	#1	: mov cd, #1 | add a, c | adc b, d
+opcode	v.cje_const.relative.int16	#2, #1	: mov cd, #1 | sub cd, ab | or c, d | jz #2
+opcode	v.cje_const.relative.uint16	#2, #1	: mov cd, #1 | sub cd, ab | or c, d | jz #2
+opcode	v.cje_const.relative.nearptr	#2, #1	: mov cd, #1 | sub cd, ab | or c, d | jz #2
+opcode	v.cje_const.relative.int8	#2, #1	: mov c, #1 | cmp a, c | jz #2
+opcode	v.cje_const.relative.uint8	#2, #1	: mov c, #1 | cmp a, c | jz #2
+opcode	v.and.relative.int8			: and a, c
+opcode	v.and.relative.uint8			: and a, c
+opcode	v.and.relative.int16			: and a, c | and b, d
+opcode	v.and.relative.uint16			: and a, c | and b, d
+opcode	v.and.relative.nearptr			: and a, c | and b, d
+opcode	v.or.relative.int8			: or a, c
+opcode	v.or.relative.uint8			: or a, c
+opcode	v.or.relative.int16			: or a, c | or b, d
+opcode	v.or.relative.uint16			: or a, c | or b, d
+opcode	v.or.relative.nearptr			: or a, c | or b, d
+opcode	v.xor.relative.int8			: xor a, c
+opcode	v.xor.relative.uint8			: xor a, c
+opcode	v.xor.relative.int16			: xor a, c | xor b, d
+opcode	v.xor.relative.uint16			: xor a, c | xor b, d
+opcode	v.xor.relative.nearptr			: xor a, c | xor b, d

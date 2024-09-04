@@ -43,16 +43,18 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 					  expr->left==nullptr
 					||expr->left->type==tLexem_Nullexpression
 				)
-			)
-				return nullptr;
-			tGType* type = SppGeneratetype(
-				expr->returnedtype,
-				expr->left,
-				nullptr
-			);
-			mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
-			if(!SgNosearchfortypes)SgFindunresolvedtypes_Type(type);
-			retval = mtListnode_Cons(type,nullptr);
+			){
+				retval = nullptr;
+			}else{
+				tGType* type = SppGeneratetype(
+					expr->returnedtype,
+					expr->left,
+					nullptr
+				);
+				mtGType_GetBasetype(type)->valuecategory = eGValuecategory_Rightvalue;
+				if(!SgNosearchfortypes)SgFindunresolvedtypes_Type(type);
+				retval = mtListnode_Cons(type,nullptr);
+			};
 		};	break;
 		case tLexem_Nullexpression:
 			ErfUpdate_String("SppParsefunctionarguments: Nullexpression");
@@ -151,14 +153,12 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 				ErfUpdate_String("SppGeneratetype: Identifier");
 				if(name)*name=i->identifier;
 				mtGType_Transform(temptype);
-				temptype = mtGType_Warp(temptype);
 				ErfLeave();
 				return temptype;
 			case tLexem_Nullexpression:
 				ErfUpdate_String("SppGeneratetype: Nullexpr");
 				if(name)*name=nullptr;
 				mtGType_Transform(temptype);
-				temptype = mtGType_Warp(temptype);
 				ErfLeave();
 				return temptype;
 			default:
@@ -362,6 +362,8 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	// Return cloned node
 	if(	  (node->type!=tLexem_Switchcase)
 		&&(node->type!=tLexem_Switchdefault)
+		&&(node->type!=tLexem_Continuestatement)
+		&&(node->type!=tLexem_Breakstatement)
 	) node->initializer=SppPreparse(self->initializer,node);
 	node->condition=SppPreparse(self->condition,node);
 	node->left=SppPreparse(self->left,node);
@@ -518,6 +520,7 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 			};
 			assert(node->type==tLexem_Variabledeclaration);
 			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+			mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 			if(name){ // If we actually got a symbol
 				// Create symbol
 				mtGNamespace_Add(
@@ -534,7 +537,12 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 						)
 					)
 				);
-				*offset+=mtGType_Sizeof(type);
+				*offset+=mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Clone(type),
+						eGValuecategory_Rightvalue
+					)
+				);
 			}else{
 				// Anonymous structunion
 				SppCompileanonymousstructure(type,offset,self->structure);
@@ -575,7 +583,13 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 						)
 					)
 				);
-				if(mtGType_Sizeof(type)>unionsize)unionsize=mtGType_Sizeof(type);
+				tGTargetSizet sz = mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Clone(type),
+						eGValuecategory_Rightvalue
+					)
+				);
+				if(sz>unionsize)unionsize=sz;
 			}else{
 				// Anonymous structunion
 				SppCompileanonymousstructure(type,offset,self->structure);
@@ -592,6 +606,7 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 	};
 };
 void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUintmax* pos){
+	assert(enumtype);
 	ErfEnter_String(
 		mtString_Format(
 			"SppCompileenumeration_internal: node %i•%s",
@@ -609,7 +624,7 @@ void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUin
 			assert(self->right);
 			assert(self->right->type==tLexem_Integerconstant);
 			pos[0]=self->right->constant;
-			SppCompileenumeration_internal(enumtype->complexbasetype,self->left,pos);
+			SppCompileenumeration_internal(enumtype,self->left,pos);
 			break;
 		case tLexem_Identifier:
 			mtGNamespace_Add(
@@ -640,7 +655,8 @@ void SppCompileenumeration(tGType* self){
 	self->structure = malloc(0); // get a tag
 	tGTargetUintmax position;
 	SppCompileenumeration_internal(
-		self->complexbasetype,
+		self->complexbasetype?:
+			mtGType_Transform(mtGType_CreateAtomic(eGAtomictype_Int)),
 		self->precompiledenumeration,
 		&position
 	);
@@ -698,7 +714,12 @@ tGType* SppCompilestructure(tGType* self){
 						)
 					);
 					// Advance position
-					offset+=mtGType_Sizeof(type);
+					offset+=mtGType_Sizeof(
+						mtGType_SetValuecategory(
+							mtGType_Clone(type),
+							eGValuecategory_Rightvalue
+						)
+					);
 				}else{
 					// Anonymous structunion
 					SppCompileanonymousstructure(type,&offset,self->structure);
@@ -748,7 +769,13 @@ tGType* SppCompilestructure(tGType* self){
 					)
 				);
 				// Recalculate union size
-				if(mtGType_Sizeof(type)>offset)offset=mtGType_Sizeof(type);
+				tGTargetSizet sz = mtGType_Sizeof(
+					mtGType_SetValuecategory(
+						mtGType_Clone(type),
+						eGValuecategory_Rightvalue
+					)
+				);
+				if(sz>offset)offset=sz;
 			}else{
 				// Anonymous structunion
 				SppCompileanonymousstructure(type,&offset,self->structure);

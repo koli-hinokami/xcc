@@ -245,6 +245,11 @@ enum tTokentype {
 	tSplexem_Logicalnot             = 1073, //
 	tSplexem_Externaldeclaration    = 1074, //
 	tSplexem_Compoundliteral        = 1075, //
+	tSplexem_Continuestatement      = 1076, //
+	tSplexem_Bitwiseor              = 1077, //
+	tSplexem_Bitwisexor             = 1078, //
+	tSplexem_Logicaland             = 1079, //
+	tSplexem_Logicalor              = 1080, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
@@ -298,6 +303,9 @@ enum tTokentype {
 	tInstruction_Index              = 1582, //Intended for structures
 	tInstruction_Extern             = 1583, //External symbol
 	tInstruction_Global             = 1584, //Global symbol
+	tInstruction_Compareconstantjumpequal = 1585, //Solely for switches. No other reason to exist.
+	tInstruction_Bitwiseor          = 1586,
+	tInstruction_Bitwisexor         = 1587,
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1381,11 +1389,11 @@ char *TokenidtoName[]={
 	"tSplexem_Logicalnot         ",// 1073
 	"tSplexem_Externaldeclaration",// 1074
 	"tSplexem_Compoundliteral    ",// 1075
-	"tSplexem_Undefined          ",// 1076
-	"tSplexem_Undefined          ",// 1077
-	"tSplexem_Undefined          ",// 1078
-	"tSplexem_Undefined          ",// 1079
-	"tSplexem_Undefined          ",// 1080
+	"tSplexem_Continuestatement  ",// 1076
+	"tSplexem_Bitwiseor          ",// 1077
+	"tSplexem_Bitwisexor         ",// 1078
+	"tSplexem_Logicaland         ",// 1079
+	"tSplexem_Logicalor          ",// 1080
 	"tSplexem_Undefined          ",// 1081
 	"tSplexem_Undefined          ",// 1082
 	"tSplexem_Undefined          ",// 1083
@@ -3480,9 +3488,9 @@ char *TokenidtoName_Compact[]={
 	"index"                       ,// 1582
 	"extern"                      ,// 1583
 	"global"                      ,// 1584
-	"?"                           ,// 1585
-	"?"                           ,// 1586
-	"?"                           ,// 1587
+	"cje_const"                   ,// 1585
+	"or"                          ,// 1586
+	"xor"                         ,// 1587
 	"?"                           ,// 1588
 	"?"                           ,// 1589
 	"?"                           ,// 1590

@@ -73,6 +73,10 @@ char* /* __needs_free */ PrGettoken(){
 		||(PrPeekcharater()=='\t')
 	)PrEmitcharater(PrFetchcharater());
 #endif
+	// Empty lines with whitespace bypass
+	if(PrPeekcharater()=='\n'){
+		return buffer; // Probably empty string, but who cares
+	};
 	// A token is at least one charater
 	mtString_Appendchar(&buffer,PrFetchcharater()); 
 	// Cygwin skip whitespaces
@@ -237,7 +241,7 @@ void PrDefine(char* definition){
 };
 bool PriPreprocessdirective(char* command,char* arguments){
 #ifdef qvGTrace
-	//printf("PR: [T] PriPreprocessdirective(%s,%s): entered\n",command,arguments);
+	printf("PR: [T] PriPreprocessdirective(%s,%s): entered\n",command,arguments);
 #endif
 	if(strcmp(command,"define")==0){
 		// Skip whitespaces
@@ -249,7 +253,7 @@ bool PriPreprocessdirective(char* command,char* arguments){
 };
 bool PriPreprocesscrucialdirective(char* command,char* arguments){
 #ifdef qvGTrace
-	//printf("PR: [T] PriPreprocesscrucialdirective(%s,%s): entered\n",command,arguments);
+	printf("PR: [T] PriPreprocesscrucialdirective(%s,%s): entered\n",command,arguments);
 #endif
 	if(strcmp(command,"if")==0){
 		mtList_Prepend(&PrPendingifs,(void*)PrEvaulatecondition(arguments));
@@ -280,7 +284,7 @@ bool PriPreprocesscrucialdirective(char* command,char* arguments){
 };
 void PrPreprocesscrucialdirective(char* /* modifies */ directive){
 #ifdef qvGTrace
-	//printf("PR: [T] PrPreprocesscrucialdirective(%s): Entered\n",directive);
+	printf("PR: [T] PrPreprocesscrucialdirective(%s): Entered\n",directive);
 #endif
 	char command[256];
 	char arguments[256];
@@ -300,7 +304,7 @@ void PrPreprocesscrucialdirective(char* /* modifies */ directive){
 };
 void PrPreprocessdirective(char* /* modifies */ directive){
 #ifdef qvGTrace
-	//printf("PR: [T] PrPreprocessdirective(%s): Entered\n",directive);
+	printf("PR: [T] PrPreprocessdirective(%s): Entered\n",directive);
 #endif
 	char command[256];
 	char arguments[256];

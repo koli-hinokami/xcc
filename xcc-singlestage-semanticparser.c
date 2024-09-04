@@ -1,6 +1,7 @@
 // Semantic(al) parser
 tSpNode /* Function declaration */ * SpCurrentfunction;
 tSpNode /* `switch();` */ * SpCurrentswitch;
+tSpNode /* `for/switch;` */ * SpCurrentcontinue;
 tSpNode /* `for/switch;` */ * SpCurrentbreak;
 
 // -------------------------- Forward declarations --------------------------
@@ -805,30 +806,33 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return retval;
 			};	break;
 			case tLexem_Forstatement: { //(forloop init cond iter body)
-				tSpNode* i = mtSpNode_Clone(
-					&(tSpNode){
-						.type=tSplexem_Forstatement,                 //for(
-						.initializer=SpParse(self->initializer),     //	initializer;
-						.condition=                                  //	condition
-								self->condition->type                //
-							==	tLexem_Nullexpression                //
-						?	SpParse(self->condition)                 //
-						:	SpInsertintegertobooleancast(            //
-								SpInsertimpliedrvaluecast(           //
-									SpParse(self->condition)         //
-								)                                    // 
-							),                                       // ;
-						.left=mtSpNode_Clone(                        // iterator
-							&(tSpNode){                              //
-								.type=tSplexem_Expressionstatement,  //
-								.left=SpInsertimpliedrvaluecast(     //
-									SpParse(self->left)              //
-								),                                   //
-							}                                        //
-						),                                           // ;
-						.right=SpParse(self->right),                 //)body;
-					}
-				);
+				tSpNode* prevbreak  = SpCurrentbreak;
+				tSpNode* prevcont   = SpCurrentbreak;
+				tSpNode* i = mtSpNode_Create();
+				SpCurrentbreak      = i;
+				SpCurrentcontinue   = i;
+				i->type=tSplexem_Forstatement;               //for(
+				i->initializer=SpParse(self->initializer);   //	initializer;
+				i->condition=                                //	condition
+						self->condition->type                //
+					==	tLexem_Nullexpression                //
+				?	SpParse(self->condition)                 //
+				:	SpInsertintegertobooleancast(            //
+						SpInsertimpliedrvaluecast(           //
+							SpParse(self->condition)         //
+						)                                    // 
+					);                                       // ;
+				i->left=mtSpNode_Clone(                      // iterator
+					&(tSpNode){                              //
+						.type=tSplexem_Expressionstatement,  //
+						.left=SpInsertimpliedrvaluecast(     //
+							SpParse(self->left)              //
+						),                                   //
+					}                                        //
+				);                                           // ;
+				i->right=SpParse(self->right);               //)body;
+				SpCurrentbreak      = prevbreak;
+				SpCurrentcontinue   = prevcont;
 				ErfLeave();
 				return i;
 			};	break;
@@ -840,7 +844,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				i->type = tSplexem_Switchstatement;
 				i->switchlabels = mtList_Create();
 				i->left = SpParse(self->left);
-				i->right = SpParse(self->right);
+				i->condition = SpInsertimpliedrvaluecast(
+					SpParse(self->condition));
 				SpCurrentswitch = prevswitch;
 				SpCurrentbreak  = prevbreak;
 				ErfLeave();
@@ -858,6 +863,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* i = mtSpNode_Create();
 				i->type = tSplexem_Switchdefault;
 				mtList_Append((SpCurrentswitch->switchlabels),i);
+				ErfLeave();
+				return i;
+			};	break;
+			case tLexem_Continuestatement: {
+				tSpNode* i = mtSpNode_Create();
+				i->type = tSplexem_Continuestatement;
+				i->initializer = SpCurrentcontinue;
 				ErfLeave();
 				return i;
 			};	break;
@@ -995,7 +1007,26 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return retval;
 			case tLexem_Identifier: 
 				{
-					tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
+					tGSymbol* symbol = nullptr;
+					symbol = mtGNamespace_Findsymbol_NameKind(
+						self->name_space,
+						self->identifier,
+						mtGSymbol_eType_Constant
+					);
+					if(symbol){
+						assert(symbol->type);
+						return mtSpNode_Clone(
+							&(tSpNode){
+								.type=tSplexem_Integerconstant,
+								.returnedtype=mtGType_SetValuecategory(
+									mtGType_Clone(symbol->type),
+									eGValuecategory_Rightvalue
+								),
+								.constant=symbol->value,
+							}
+						);
+					};
+					symbol = mtGNamespace_Findsymbol_NameKind(
 						self->name_space,
 						self->identifier,
 						mtGSymbol_eType_Pointer
@@ -1107,11 +1138,13 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* left = SpParse(self->left);
 				// Don't parse right yet!
 				// ↓ TODO: Allow auto-cast to pointer to structure
+				assert(left->returnedtype);
 				assert(left->returnedtype->atomicbasetype==eGAtomictype_Structure);
+				assert(self->right);
 				assert(self->right->type==tLexem_Identifier);
 				assert(left->returnedtype->structure);
 #ifdef qvGDebug
-				if(!left->returnedtype->complexbasetype->structure){
+				if(!left->returnedtype->structure){
 					fprintf(stderr,"SP: [E] "
 					               "SpParse: "
 					               "tLexem_Memberbypointer: "
@@ -1173,8 +1206,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				assert(mtGType_IsPointer(left->returnedtype));
 				assert(   left->returnedtype->complexbasetype->atomicbasetype
 				       != eGAtomictype_Unresolved);
-				assert(   left->returnedtype->complexbasetype->atomicbasetype
-				       == eGAtomictype_Structure);
+				if(left->returnedtype->complexbasetype->atomicbasetype!=eGAtomictype_Structure){
+					fprintf(stderr,"SP: [E] "
+					               "SpParse: "
+					               "tLexem_Memberbypointer: "
+					               "Type <%s> doesn't to structure\n",
+					               mtGType_ToString(left->returnedtype)
+					);
+					assert(false);
+				};
 				assert(self->right->type==tLexem_Identifier);
 #ifdef qvGDebug
 				if(!left->returnedtype->complexbasetype->structure){
@@ -1212,12 +1252,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					assert(    mtGType_GetValuecategory(left->returnedtype)
 					         ==eGValuecategory_Rightvalue
 						   &&  mtGType_IsPointer(left->returnedtype));
-					assert(  symbol->type->valuecategory 
-					       ==eGValuecategory_Leftvalue);
+					//assert(  symbol->type->valuecategory
+					//       ==eGValuecategory_Leftvalue);
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Structuremember,
-							.returnedtype=symbol->type,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Clone(symbol->type),
+								eGValuecategory_Leftvalue
+							),
 							.left=left,
 							.constant=symbol->allocatedstorage->offset
 						}
@@ -1557,7 +1600,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
-					printf("SP: [E] SpParse: Substraction: Types not equal! \n");
+					printf("SP: [E] SpParse: Substraction: Types not equal! %s•%s\n",mtGType_ToString(left->returnedtype),mtGType_ToString(right->returnedtype));
 					ErfError();
 					return nullptr;
 				};
@@ -1736,6 +1779,108 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.returnedtype=left->returnedtype,
 						.left=left,
 						.right=nullptr,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Logicaland: {
+				tSpNode* left = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->left)));
+				tSpNode* right = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->right)));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Logicaland,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Logicalor: {
+				tSpNode* left = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->left)));
+				tSpNode* right = SpInsertintegertobooleancast(
+					SpInsertimpliedrvaluecast(
+						SpParse(self->right)));
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Logicalor,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Bitwiseor: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				SpArithmeticpromotion(&left,&right);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: Bitwiseor: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Bitwiseor,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
+			case tLexem_Bitwisexor: {
+				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				
+				//if(mtGType_Sizeof(left->returnedtype)<mtGType_Sizeof(right->returnedtype))
+				//	left=mtSpNode_Promote(left,right->returnedtype);
+				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
+				//	right=mtSpNode_Promote(right,left->returnedtype);
+				SpArithmeticpromotion(&left,&right);
+				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
+					printf("SP: [E] SpParse: Bitwisexor: Types not equal! %s•%s\n",
+						mtGType_ToString(left->returnedtype),
+						mtGType_ToString(right->returnedtype)
+					);
+					ErfError();
+					return nullptr;
+				};
+				assert(mtGType_Sizeof(right->returnedtype)==mtGType_Sizeof(left->returnedtype));
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Bitwisexor,
+						.returnedtype=left->returnedtype,
+						.left=left,
+						.right=right,
 					}
 				);
 				ErfLeave();
@@ -2061,7 +2206,10 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 		
 	};
 	{	// Recurse
-		if(self->initializer) self->initializer = SpOptimize(self->initializer);
+		if(
+			  (self->type!=tSplexem_Breakstatement)
+			&&(self->type!=tSplexem_Continuestatement)
+		) if(self->initializer) self->initializer = SpOptimize(self->initializer);
 		if(self->condition)   self->condition   = SpOptimize(self->condition);
 		if(self->left)        self->left        = SpOptimize(self->left);
 		if(self->right)       self->right       = SpOptimize(self->right);
