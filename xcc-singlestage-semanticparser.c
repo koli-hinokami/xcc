@@ -1,12 +1,13 @@
 // Semantic(al) parser
 tSpNode* SpCurrentfunction;
+
+
 tSpNode* mtSpNode_Create(void){
 	return calloc(sizeof(tSpNode),1);
 };
 tSpNode* mtSpNode_Clone(tSpNode* self){
 	return memcpy(malloc(sizeof(tSpNode)),self,sizeof(tSpNode));
 };
-
 tSpFunctionextinfo* mtSpFunctionextinfo_Create(){
 	return calloc(sizeof(tSpFunctionextinfo),1);
 };
@@ -79,12 +80,14 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return nullptr;
 				break;
 			case tLexem_Variabledeclaration:
-				return nullptr;
+				// Do I even need to handle those?
+				//  Well, I think so, so those will live for now
+
+				//return nullptr;
 				//return mtSpNode_Clone(
 				//	&(tSpNode){
 				//		.type=tSplexem_Variabledeclaration,
-				//		.returnedtype=SppGeneratetype(self->returnedtype),
-				//		.constant=self->constant
+				//		.symbol=mtGNamespace_Findsymbol_NameKind(GRootnamespace,SppGeneratetype_GetName(self->left))
 				//	}
 				//);
 				break;

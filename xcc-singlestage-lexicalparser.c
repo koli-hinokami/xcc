@@ -2787,7 +2787,7 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 						typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
 						return mtLxNode_Clone(
 							&(tLxNode){
-								.type=tLexem_Variabledeclaration,
+								.type=tLexem_Rawvariabledeclaration,
 								.returnedtype=basetype,
 								.left=LxParseTypeexpression(typeexprfetcher),
 								.right=nullptr

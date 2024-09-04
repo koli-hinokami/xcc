@@ -116,7 +116,88 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 	printf("SPP:[E] SppGeneratetype: Internal inconsistency: forloop dropped at nullptr\n");
 	exit(5);
 };
+char* SppGeneratetype_GetName(tLxNode* typeexpression){
+	char* name;
+	SppGeneratetype(nullptr,typeexpression,&name);
+	return name;
+};
 
+tLxNode* SppPreparse(tLxNode* self){
+	// TODO: Propagate namespaces, kill multideclarations
+	// Should be callable before Symbolgen is ran
+	tLxNode* node = mtLxNode_Clone(self);
+	if(	// Create and propagate namespaces for Symbolgen and Semanticparser
+		  (self->type==tLexem_Blockstatement)
+		||(self->type==tLexem_Forstatement)
+	){
+		node->name_space=mtGNamespace_CreateInherit(self->name_space);
+	}else{
+		node->name_space=self->name_space;
+	};
+	// Kill multideclarations that are currently returned by semanticparser
+	if(self->type==tLexem_Rawvariabledeclaration){
+		// Two types possible -
+		//  • Multideclaration - tLexem_Comma
+		//  • and unparsed initialized declaration - tLexem_Assign
+		if(self->left->type==tLexem_Comma){
+			// Split and recurse
+			tLxNode* node1 = mtLxNode_Create();
+			node1->type=tLexem_Rawvariabledeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
+			node1->returnedtype=self->returnedtype;
+			node1->left=self->left->left;
+			tLxNode* node2 = mtLxNode_Create();
+			node2->type=tLexem_Rawvariabledeclaration;
+			node2->returnedtype=self->returnedtype;
+			node2->left=self->left->right;
+			
+			node->type=tLexem_Declarationlist;
+			node->left=SppPreparse(node1);
+			node->right=SppPreparse(node2);
+			free(node1);
+			free(node2);
+			return node;
+		}else if(self->left->type==tLexem_Assign){
+			// Split typeexpr and initializer
+			node->type=tLexem_Variabledeclaration;
+			node->returnedtype=self->returnedtype;
+			node->left=self->left->left;
+			node->right=self->left->right;
+			return node;
+		}else {
+			// Confirm being Variabledeclaration
+			node->type=tLexem_Variabledeclaration;
+			node->returnedtype=self->returnedtype;
+			node->left=self->left;
+			node->right=nullptr;
+			return node;
+		};
+	};
+	// Also kill multidefinitions for typedefs
+	if(self->type==tLexem_Typedefinition){
+		if(self->left->type==tLexem_Comma){
+			// Split and recurse
+			tLxNode* node1 = mtLxNode_Create();
+			node1->type=tLexem_Typedefinition; // gotta confirm that it isnt `(declare (assign) ...)`
+			node1->returnedtype=self->returnedtype;
+			node1->left=self->left->left;
+			tLxNode* node2 = mtLxNode_Create();
+			node2->type=tLexem_Rawvariabledeclaration;
+			node2->returnedtype=self->returnedtype;
+			node2->left=self->left->right;
+			
+			node->type=tLexem_Declarationlist;
+			node->returnedtype=self->returnedtype;
+			node->left=SppPreparse(node1);
+			node->right=SppPreparse(node2);
+			return node;
+		}else {
+			node->type=tLexem_Typedefinition;
+			node->returnedtype=self->returnedtype;
+			node->left=self->left;
+			return node;
+		};
+	};
+};
 
 
 

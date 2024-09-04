@@ -30,6 +30,11 @@ Timestamps:
 	21apr2024 23:04 UTC+5       Publicrelease 5 Interim 1. Changelog lost.
 	22apr2024 22:37 UTC+5       Publicrelease 5 Interim 2. Next to no changes.
 	24apr2024 11:02 UTC+5       Publicrelease 6. Next to no changes.
+	26apr2024 16:53 UTC+5       Publicrelease 7. Starting Semanticparser.
+	26apr2024 20:45 UTC+5       Publicrelease 7 Interim 1. Minor changes.
+	29apr2024 01:28 UTC+5       Publicrelease 7 Interim 2. After a rather 
+	                            long break, finally getting Semanticpreparser 
+				    together.
 
 Stages:
 	¤ Embedder
@@ -101,6 +106,8 @@ Things to be done:
 	    Try to adapt CC65's linker
 	¤ Packer/simulator:
 	    Maybe not make it?
+
+
 IR Generator notes:
 	IgCompile(tSpNode* self){
 		switch(self->type){

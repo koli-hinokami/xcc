@@ -474,6 +474,11 @@ tGSymbol* mtGSymbol_Create(){
 tGNamespace* mtGNamespace_Create(){
 	return calloc(sizeof(tGNamespace),1);
 };
+tGNamespace* mtGNamespace_CreateInherit(tGNamespace* parent){
+	tGNamespace* i = mtGNamespace_Create();
+	i->parentnamespace=parent;
+	return i;
+};
 tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum mtGSymbol_eType kind){
 #ifdef qvGTrace
 	printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");

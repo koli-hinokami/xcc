@@ -169,7 +169,7 @@ enum tTokentype {
 	tLexem_Restrictmodifier	        = 576,
 	tLexem_Numericconstant	        = 577,
 	tLexem_Stringconstant	        = 578,
-	//tLexem_	        = 579,
+	tLexem_Rawvariabledeclaration	= 579,
 	//tLexem_	        = 580,
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
@@ -776,7 +776,7 @@ char *TokenidtoName[]={
 	"tLexem_Restrictmodifier     ",// 576
 	"tLexem_Numericconstant      ",// 577
 	"tLexem_Stringconstant       ",// 578
-	"tLexem_Undefined            ",// 579
+	"tLexem_Rawvariabledeclarati>",// 579
 	"tLexem_Undefined            ",// 580
 	"tLexem_Undefined            ",// 581
 	"tLexem_Undefined            ",// 582
@@ -2042,8 +2042,8 @@ typedef struct tLxNode {
 	tGType* returnedtype;
 } tLxNode;
 
-typedef struct tSpPrenode {
-} tSpPrenode;
+//typedef struct tSpPrenode {
+//} tSpPrenode;
 
 typedef struct tSpFunctionextinfo {
 } tSpFunctionextinfo;
