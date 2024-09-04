@@ -599,11 +599,12 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 		case EOF: // If errno==0 quietly return nullptr elseways yell at the user that we gone bad
 			//if(errno==0)return nullptr;
 			// But now that I think of the special cases like reading arguments while encountering EOF...
-			return mtAsmToken_Clone(
-				&(tAsmToken){
-					.type = eAsmTokentype_Newline,
-				}
-			);
+			if(errno==0)
+				return mtAsmToken_Clone(
+					&(tAsmToken){
+						.type = eAsmTokentype_Newline,
+					}
+				);
 			printf("ASM:[E] mtAsmToken_Get(FILE* %p): Error %i•\"%s\" while fetching charater\n",src,errno,strerror(errno));
 			ErfError();
 			return nullptr;
@@ -664,7 +665,9 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 						continue;
 					case '\\':
 						fgetc(src);
-						switch(fpeekc(src)){
+						int j;
+						i = j = fgetc(src);
+						switch(j){
 							case EOF:
 								fprintf(
 									stderr,
@@ -675,11 +678,22 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 								ErfFatal();
 								assert(false);
 								break;
-							case 'n': i='\n'; break;
-							case 'r': i='\r'; break;
+							case 'a':  i = '\a';       break;
+							case 'b':  i = '\b';       break;
+							case 'e':  i = '\e';       break;
+							case 'f':  i = '\f';       break;
+							case 'n':  i = '\n';       break;
+							case 'r':  i = '\r';       break;
+							case 't':  i = '\t';       break;
+							case 'u':  assert(false);  break;
+							case 'v':  i = '\v';       break;
+							case 'x':  assert(false);  break;
+							case '\'': i = '\'';       break;
+							case '\"': i = '\"';       break;
 							default:
-								i = fgetc(src);
+								//i = fgetc(src);
 						};
+						break;
 					default:
 						i = fgetc(src);
 						break;
@@ -701,10 +715,23 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 			while(fpeekc(src)!='\"'){ // To end of string
 				if(fpeekc(src)=='\\'){ // If escape seen
 					fgetc(src); // Skip the backslash
-					mtString_Append(&str,(char[2]){fgetc(src),0}); 
-					// And handle the escape. Currently just put
-					// whatever charater is after backslash even
-					// if it is string terminator.
+					char buf;
+					switch(buf = fgetc(src)){
+						case 'a':  buf = '\a';      break;
+						case 'b':  buf = '\b';      break;
+						case 'e':  buf = '\e';      break;
+						case 'f':  buf = '\f';      break;
+						case 'n':  buf = '\n';      break;
+						case 'r':  buf = '\r';      break;
+						case 't':  buf = '\t';      break;
+						case 'u':  assert(false);   break;
+						case 'v':  buf = '\v';      break;
+						case 'x':  assert(false);   break;
+						case '\'': buf = '\'';      break;
+						case '\"': buf = '\"';      break;
+						default:
+					};
+					mtString_Append(&str,(char[2]){buf,0}); 
 				}else{ // Else if no escape
 					mtString_Append(&str,(char[2]){fgetc(src),0}); 
 					// Plain add charater to string.
@@ -787,11 +814,14 @@ tAsmToken* mtAsmToken_Get(FILE* src){ // Constructor
 };
 char* mtAsmToken_ToString(tAsmToken* self){
 	return mtString_Clone(
-		 self->type==eAsmTokentype_Identifier ?self->string
-		:self->type==eAsmTokentype_Newline    ?"\\n"
-		:self->type==eAsmTokentype_Charater   ?(char[2]){self->ch,0}
+		 self->type==eAsmTokentype_Charater   ?(char[2]){self->ch,0}
 		:self->type==eAsmTokentype_Argument   ?(char[3]){'#',self->ch,0}
+		:self->type==eAsmTokentype_Newline    ?"\\n"
+		//:self->type==eAsmTokentype_Argumenttoken ?TODO
 		:self->type==eAsmTokentype_Number     ?mtString_Join("&",mtString_FromInteger(self->number))
+		:self->type==eAsmTokentype_Identifier ?self->string
+		:self->type==eAsmTokentype_Label      ?mtString_Join(self->string,":")
+		:self->type==eAsmTokentype_String     ?mtString_Format("\"%s\"", self->string)
 		:mtString_Format("(token %p unknein type %i)",self,self->type)
 	);
 }
@@ -950,7 +980,26 @@ tGTargetNearpointer AsmGetlabelvalue(char* name){
 		)
 	)->offset;
 };
-
+void AsmEmitByte(FILE* dst, uint8_t byte){
+	tAsmBinarytoken tok;
+	memset(&tok, 0, sizeof(tok));
+	tok.size = eAsmBinarytokensize_Lobyte;
+	tok.type = eAsmBinarytokentype_Raw;
+	tok.label = nullptr;
+	tok.arg = 0;
+	tok.disp = byte;
+	mtAsmBinarytoken_Emit(&tok, dst);
+};
+void AsmDryemitByte(uint8_t byte){
+	tAsmBinarytoken tok;
+	memset(&tok, 0, sizeof(tok));
+	tok.size = eAsmBinarytokensize_Lobyte;
+	tok.type = eAsmBinarytokentype_Raw;
+	tok.label = nullptr;
+	tok.arg = 0;
+	tok.disp = byte;
+	mtAsmBinarytoken_Dryemit(&tok);
+};
 // -- Instruction defining --
 
 void AsmReadinstructiondefinition(FILE* src){
@@ -1244,7 +1293,26 @@ void AsmSecondpassline(FILE* dst){
 				FILE* stream = fopen(fname,"r");
 				if(!stream){
 					printf(
-						"AsmCommonparseline: Directive .include: Unable to open file \"%s\": Error %i•%s\n",
+						"AsmSecondpassline: Directive .include: Unable to open file \"%s\": Error %i•%s\n",
+						fname, errno, strerror(errno)
+					);
+				};
+				mtList_Prepend(&AsmIncludelist,stream);
+				mtString_Destroy(fname);
+				return;
+			}else if(strcmp(tok->string,".gl_include")==0){
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* fname = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Newline);
+				mtAsmToken_Destroy(tok);
+				FILE* stream = fopen(mtString_Format("/etc/xcc/%s/%s",AsmArchitecturename,fname),"r");
+				if(!stream){
+					printf(
+						"AsmSecondpassline: Directive .gl_include: Unable to open file \"%s\": Error %i•%s\n",
 						fname, errno, strerror(errno)
 					);
 				};
@@ -1288,6 +1356,17 @@ void AsmSecondpassline(FILE* dst){
 				assert(tok->type==eAsmTokentype_Number);
 				//AsmCreatelabel_ValueSegment(identifier,tok->number,0);
 				mtAsmToken_Destroy(tok);
+				return;
+			}else if(strcmp(tok->string,".sz")==0){
+				mtAsmToken_Destroy(tok);
+				// Emit a byte zeroterminated string
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* str = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				for(char* i = str; *i; i++)
+					AsmEmitByte(dst, *i);
+				AsmEmitByte(dst, 0);
 				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);
@@ -1403,6 +1482,25 @@ void AsmFirstpassline(){
 				};
 				mtString_Destroy(fname);
 				return;
+			}else if(strcmp(tok->string,".gl_include")==0){
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* fname = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_Newline);
+				mtAsmToken_Destroy(tok);
+				FILE* stream = fopen(mtString_Format("/etc/xcc/%s/%s",AsmArchitecturename,fname),"r");
+				if(!stream){
+					printf(
+						"AsmSecondpassline: Directive .gl_include: Unable to open file \"%s\": Error %i•%s\n",
+						fname, errno, strerror(errno)
+					);
+				};
+				mtList_Prepend(&AsmIncludelist,stream);
+				mtString_Destroy(fname);
+				return;
 			}else if(strcmp(tok->string,".segment")==0){
 				mtAsmToken_Destroy(tok);
 				tok = mtAsmToken_Get(getcurrentfile());
@@ -1426,6 +1524,17 @@ void AsmFirstpassline(){
 				assert(tok->type==eAsmTokentype_Number);
 				AsmCreatelabel_ValueSegment(identifier,tok->number,0);
 				mtAsmToken_Destroy(tok);
+				return;
+			}else if(strcmp(tok->string,".sz")==0){
+				mtAsmToken_Destroy(tok);
+				// Emit a byte zeroterminated string
+				tok = mtAsmToken_Get(getcurrentfile());
+				assert(tok->type==eAsmTokentype_String);
+				char* str = mtString_Clone(tok->string);
+				mtAsmToken_Destroy(tok);
+				for(char* i = str; *i; i++)
+					AsmDryemitByte(*i);
+				AsmDryemitByte(0);
 				return;
 			}else if(strcmp(tok->string,".extern")==0){
 				mtAsmToken_Destroy(tok);

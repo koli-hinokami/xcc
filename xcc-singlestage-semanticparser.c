@@ -298,6 +298,10 @@ tSpNode* SpiParsefunctionarguments(tSpNode* ast, tListnode /* <tGType> */ ** arg
 				i = SpInsertimpliedrvaluecast(ast);
 			}else{
 				// Argument type is present
+				mtGType_Verifycast(
+					SpInsertimpliedrvaluecast(ast)->returnedtype,
+					(tGType*)((*argumentslist)->item)
+				);
 				i = mtSpNode_Promote(
 					SpInsertimpliedrvaluecast(ast),
 					(tGType*)((*argumentslist)->item)
@@ -536,7 +540,7 @@ tSpNode* SpCompileinitializer(tGType* type, tLxNode* self){
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
 		printf("SP: [W] SpParse: Nullpointer\n");
-		ErfWarning();
+		//ErfWarning();
 		return nullptr;
 	};
 	if(self->type==tLexem_Identifier){
@@ -623,7 +627,6 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				return node;
 			};	break;
 			case tLexem_Blockstatement: {
-				ErfLeave();
 				retval = mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Blockstatement,
@@ -631,6 +634,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						.right=self->right?SpParse(self->right):nullptr,
 					}
 				);
+				ErfLeave();
 				return retval;
 			};	break;
 			case tLexem_Typedefinition:
@@ -841,6 +845,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* prevbreak  = SpCurrentbreak;
 				tSpNode* i = mtSpNode_Create();
 				SpCurrentswitch = i;
+				SpCurrentbreak = i;
 				i->type = tSplexem_Switchstatement;
 				i->switchlabels = mtList_Create();
 				i->left = SpParse(self->left);
@@ -1019,7 +1024,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							&(tSpNode){
 								.type=tSplexem_Integerconstant,
 								.returnedtype=mtGType_SetValuecategory(
-									mtGType_Clone(symbol->type),
+									mtGType_Deepclone(symbol->type),
 									eGValuecategory_Rightvalue
 								),
 								.constant=symbol->value,
@@ -1041,7 +1046,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Symbol,
-							.returnedtype=symbol->type,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Deepclone(symbol->type),
+								eGValuecategory_Leftvalue
+							),
 							.symbol=symbol,
 						}
 					);
@@ -1258,7 +1266,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						&(tSpNode){
 							.type=tSplexem_Structuremember,
 							.returnedtype=mtGType_SetValuecategory(
-								mtGType_Clone(symbol->type),
+								mtGType_Deepclone(symbol->type),
 								eGValuecategory_Leftvalue
 							),
 							.left=left,
@@ -1319,13 +1327,6 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};
 			case tLexem_Functioncall: {
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
-				if(left->returnedtype->atomicbasetype!=eGAtomictype_Nearpointer){
-					printf("SP: [F] Unexcepted type when calling a function: %i instead of %i\n",
-						left->returnedtype->atomicbasetype,
-						eGAtomictype_Nearpointer
-					);
-					assert(false);
-				}
 				assert(mtGType_IsPointer(left->returnedtype));
 				assert(mtGType_IsFunction(left->returnedtype->complexbasetype));
 				tSpNode* right = SpParsefunctionarguments(
@@ -1370,7 +1371,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				tSpNode* right = mtSpNode_Promote(
 					SpInsertimpliedrvaluecast(SpParse(self->right)),
 					mtGType_SetValuecategory(
-						mtGType_Clone(left->returnedtype),
+						mtGType_Deepclone(left->returnedtype),
 						eGValuecategory_Rightvalue
 					)
 				);
@@ -1386,7 +1387,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					&(tSpNode){
 						.type=tSplexem_Assign,
 						.returnedtype=mtGType_SetValuecategory(
-							mtGType_Clone(left->returnedtype),
+							mtGType_Deepclone(left->returnedtype),
 							eGValuecategory_Rightvalue
 						),
 						.left=left,

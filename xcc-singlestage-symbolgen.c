@@ -466,7 +466,9 @@ void SgParse(tLxNode* ast){
 			case tLexem_Greaterthan:
 			case tLexem_Increment:
 			case tLexem_Switchdefault:
+			case tLexem_Breakstatement:
 			case tLexem_Continuestatement:
+			case tLexem_Structuremember:
 				break;
 		};
 		default:

@@ -977,6 +977,7 @@ tGSymbol* mtGSymbol_CreateConstant(char* name, tGType* type, tGTargetUintmax val
 	temp->name = name;
 	temp->symbolkind = mtGSymbol_eType_Constant;
 	temp->type = type;
+	temp->value = val;
 	return temp;
 };
 tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){
@@ -1044,6 +1045,8 @@ char* mtGSymbol_ToString(tGSymbol* self){
 		);
 	};
 	LfWriteline(buffer);
+};
+void mtGType_Verifycast(tGType* from, tGType* to){ // Throws warnings/errors on invalid casts
 };
 
 // ------------------------------ class tLxNode ------------------------------

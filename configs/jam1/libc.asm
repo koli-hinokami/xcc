@@ -84,6 +84,20 @@ memset_l:
 	dec	d
 	jnz	tx
 	ret
+strlen:	.global
+	pop	ab
+regstrlen:	.global
+	mov	d,	0
+_l:	mov	tx,	ab
+	mov	c,	[tx]
+	tjz	c,	_r
+	inc	ab
+	inc	d
+	jnz	_l
+	break
+_r:	mov	a,	d
+	mov	b,	0
+	ret
 math_divide_16_8: .global	; stdcall uint16_t(uint16_t, uint8_t)
 	pop	ab
 	pop	c
