@@ -120,6 +120,7 @@ void LnCompile(char* file){
 	//SgUnresolvedtypes = mtList_Create();
 	fprintf(stderr,"L:  [M] Symbolgen second pass - finding unresolved types\n");
 	SgFindunresolvedtypes(GRootnamespace);
+	SgFindunresolvedtypes_LxNode(GLexed);
 	fprintf(stderr,"L:  [M] Symbolgen second pass - resolving unresolved types\n");
 	SgResolveunresolvedtypes();
 	fprintf(stderr,"L:  [M] Symbolgen second pass - compiling structures\n");

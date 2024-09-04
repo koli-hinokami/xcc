@@ -1544,7 +1544,8 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				if(parenthesation==0){
 					switch(((tToken*)i->item)->type){
 						case tToken_Bitwiseand:
-							splitpoint=i;
+							if(i!=fetcher->fetchfrom)
+								splitpoint=i;
 							// leftassociative -> full break out of forloop
 						default:
 							break;

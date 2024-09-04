@@ -236,6 +236,7 @@ enum tTokentype {
 	tSplexem_Switchdefault          = 1065, //
 	tSplexem_Shiftleft              = 1066, //
 	tSplexem_Shiftright             = 1067, //
+	tSplexem_Negation               = 1068, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Second AST string lexems
 	//                                      //        Actually are deprecated
@@ -282,6 +283,8 @@ enum tTokentype {
 	tInstruction_Shiftright         = 1575, //Requires two types
 	tInstruction_Constantshiftleft  = 1576, //Shifts by a constant amount
 	tInstruction_Constantshiftright = 1577, //Shifts by a constant amount
+	tInstruction_Allocatestorage2   = 1578, //Requires immediate that tells how many times to reserve the storage
+	tInstruction_Multiply           = 1579, //Doesn't produce top half of result
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1357,7 +1360,7 @@ char *TokenidtoName[]={
 	"tSplexem_Switchdefault      ",// 1065
 	"tSplexem_Shiftleft          ",// 1066
 	"tSplexem_Shiftright         ",// 1067
-	"tSplexem_Undefined          ",// 1068
+	"tSplexem_Negation           ",// 1068
 	"tSplexem_Undefined          ",// 1069
 	"tSplexem_Undefined          ",// 1070
 	"tSplexem_Undefined          ",// 1071
@@ -3457,8 +3460,8 @@ char *TokenidtoName_Compact[]={
 	"shr"                         ,// 1575
 	"constantshl"                 ,// 1576
 	"constantshr"                 ,// 1577
-	"?"                           ,// 1578
-	"?"                           ,// 1579
+	"r2"                          ,// 1578
+	"mul"                         ,// 1579
 	"?"                           ,// 1580
 	"?"                           ,// 1581
 	"?"                           ,// 1582

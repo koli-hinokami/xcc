@@ -3,6 +3,7 @@
 
 // -- Globals --
 tSpNode* IgCurrentfunction;
+tList /* <tInstruction*> */ IgPendingsideeffects;
 // -- Forward declarations --
 tGInstruction* IgCompileExpression(tSpNode* self);
 // -- Functions --
@@ -59,19 +60,34 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		case tSplexem_Addition: {
 			tGInstruction* i;
 			i=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Pushleft,self->left->returnedtype->atomicbasetype);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,
+				self->left->returnedtype->atomicbasetype
+			);
 			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Popright,self->right->returnedtype->atomicbasetype);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Add,self->right->returnedtype->atomicbasetype);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Add,
+				self->left->returnedtype->atomicbasetype
+			);
 			return i;
 		};	break;
 		case tSplexem_Substraction: {
 			tGInstruction* i;
 			i=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Pushleft,self->left->returnedtype->atomicbasetype);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,self->left->returnedtype->atomicbasetype
+			);
 			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Popright,self->right->returnedtype->atomicbasetype);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Substract,self->right->returnedtype->atomicbasetype);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,self->right->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Multiply,self->right->returnedtype->atomicbasetype
+			);
 			return i;
 		};	break;
 		case tSplexem_Symbol:
@@ -196,7 +212,10 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						mtGInstruction_Join_Modify(
 							mtGInstruction_CreateBasic(
 								tInstruction_Popright,
-								self->left->returnedtype->atomicbasetype
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
 							),
 							mtGInstruction_CreateSegmented(
 								tInstruction_Store,
@@ -226,9 +245,10 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			if(self->right->type == tSplexem_Integerconstant){
 				return mtGInstruction_Join_Modify(
 					IgCompileExpression(self->left),
-					mtGInstruction_CreateBasic(
+					mtGInstruction_CreateImmediate(
 						tInstruction_Constantshiftleft,
-						self->left->returnedtype->atomicbasetype
+						self->left->returnedtype->atomicbasetype,
+						self->right->constant
 					)
 				);
 			};
@@ -238,13 +258,29 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			if(self->right->type == tSplexem_Integerconstant){
 				return mtGInstruction_Join_Modify(
 					IgCompileExpression(self->left),
-					mtGInstruction_CreateBasic(
-						tInstruction_Constantshiftleft,
-						self->left->returnedtype->atomicbasetype
+					mtGInstruction_CreateImmediate(
+						tInstruction_Constantshiftright,
+						self->left->returnedtype->atomicbasetype,
+						self->right->constant
 					)
 				);
 			};
 			assert(false);
+		};	break;
+		case tSplexem_Multiplication: {
+			tGInstruction* i;
+			i=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Multiply,self->left->returnedtype->atomicbasetype
+			);
+			return i;
 		};	break;
 		default:
 			printf("IG: [E] IgCompileExpression: Unrecognized "
@@ -395,7 +431,8 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 							eGAtomictype_Nearpointer,
 							self->symbol->allocatedstorage->offset
 						),
-						 	self->symbol->allocatedstorage->segment==meGSegment_Stackframe
+							  self->symbol->allocatedstorage->segment
+							==meGSegment_Stackframe
 						?	mtGInstruction_CreateBasic(
 								tInstruction_Indexfp,
 								eGAtomictype_Nearpointer
@@ -406,14 +443,20 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				mtGInstruction_Join_Modify(
 					mtGInstruction_CreateBasic(
 						tInstruction_Pushleft,
-						self->returnedtype->atomicbasetype
+						   self->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->returnedtype->atomicbasetype
 					),
 					mtGInstruction_Join_Modify(
 						IgCompileExpression(self->right),
 						mtGInstruction_Join_Modify(
 							mtGInstruction_CreateBasic(
 								tInstruction_Popright,
-								self->right->returnedtype->atomicbasetype
+								   self->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->returnedtype->atomicbasetype
 							),
 							mtGInstruction_CreateSegmented(
 								tInstruction_Store,
@@ -503,7 +546,7 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 		// Prologue
 		mtGInstruction_GetLast(code)->next=mtGInstruction_CreateImmediate(
 			tInstruction_Enterframe,eGAtomictype_Void,
-			self->fextinfo->localssize);
+			self->fextinfo->localssize+2);
 		// Compile function itself
 		mtGInstruction_GetLast(code)->next=IgCompileStatement(self->right);
 		// Implied return statement
@@ -529,7 +572,20 @@ tGInstruction* IgCompileVariable(tSpNode* self){
 	assert(self->type==tSplexem_Variabledeclaration);
 	if(self->returnedtype->atomicbasetype==eGAtomictype_Array){
 		// Compile an array
-		assert(false);
+		assert(!self->returnedtype->dynamicarraysize);
+		assert(self->returnedtype->arraysize);
+		return mtGInstruction_CreateImmediate(
+			tInstruction_Allocatestorage2,
+			eGAtomictype_Uint8,
+			mtGType_Sizeof(
+				mtGType_SetValuecategory(
+					mtGType_Deepclone(
+						self->returnedtype
+					),
+					eGValuecategory_Rightvalue
+				)
+			)
+		);
 	}else{
 		// Relatively normal variable
 		return mtGInstruction_CreateBasic(
@@ -625,6 +681,7 @@ void IgDumpir(tGInstruction** code, FILE* file){
 					||(j->opcode.opr==tInstruction_Return)     // To deallocate passed parameters
 					||(j->opcode.opr==tInstruction_Constantshiftleft)
 					||(j->opcode.opr==tInstruction_Constantshiftright)
+					||(j->opcode.opr==tInstruction_Allocatestorage2)
 				){
 					fprintf(
 						file,

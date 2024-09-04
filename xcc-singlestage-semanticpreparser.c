@@ -607,3 +607,17 @@ tGType* SppCompilestructure(tGType* self){
 	};
 	return self;
 };
+tGType* SppForceresolvetype(tGType* self, tGNamespace* namespace){
+	if(self==nullptr)return nullptr;
+	self->complexbasetype=SppForceresolvetype(self->complexbasetype,namespace);
+	if(self->atomicbasetype!=eGAtomictype_Unresolved)return self;
+	eGValuecategory valcat = self->valuecategory;
+	tGType* type = mtGNamespace_Findsymbol_NameKind(
+		namespace,
+		self->unresolvedsymbol,
+		mtGSymbol_eType_Typedef
+	)->type;
+	*self=*type;
+	mtGType_SetValuecategory(self,valcat);
+	return self;
+};
