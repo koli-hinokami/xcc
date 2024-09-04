@@ -1568,7 +1568,7 @@ int main(int argc, char** argv){
 				AsmConfigdir?:"/etc/xcc/",
 				mtString_Join(
 					AsmArchitecturename,
-					".asm"
+					"/archdef.asm"
 				)
 			),
 			"r"

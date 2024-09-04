@@ -750,7 +750,7 @@ int main(int argc, char** argv){
 			IrcConfigdir?:"/etc/xcc/",
 			mtString_Join(
 				IrcArchitecturename,
-				".irc"
+				"/archdef.irc"
 			)
 		),
 		"r"
