@@ -695,8 +695,21 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 	};
 	return self;
 };
+tGType /* gives ownership */ * mtGType_Warp(tGType /* takeown */ * self){
+	ErfEnter_String("mtGType_Warp");
+	tGType* temp = mtGType_GetBasetype(self);
+	tGType* base = mtGType_GetBasetype(self);
+	for(tGType* i = self;i!=base;){
+		tGType* j = i->complexbasetype;
+		i->complexbasetype=temp;
+		temp = i;
+		i = j;
+	};
+	ErfLeave();
+	return temp;
+};
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
-char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
+char* mtGType_ToString_Embeddable_Legacy(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
 	char *s2;
 	if(self==nullptr){
@@ -761,7 +774,6 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 				)
 			);
 			mtString_Append(&s1," bytes */ ");
-
 			//// No display of member locations right now
 			//// Member locations
 			//for(tListnode* i=self->structure->symbols.first;i!=nullptr;i=i->next){
@@ -864,11 +876,92 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		);
 	};
 };
+char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
+	char* s1 = mtString_Create();
+	if(self==nullptr){
+		mtString_Append(&s1,"totally_invalid");
+	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
+		assert(self->unresolvedsymbol);
+		mtString_Append(&s1,"unresolved<");
+		mtString_Append(&s1,self->unresolvedsymbol);
+		mtString_Append(&s1,">");
+	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
+		assert(self->unresolvedsymbol);
+		mtString_Append(&s1,"enum ");
+		mtString_Append(&s1,self->unresolvedsymbol);
+	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
+		mtString_Append(&s1,"struct ");
+		mtString_Append(&s1,self->unresolvedsymbol?:"(anonymous)");
+		if(self->precompiledstructure){
+			char* s2 = mtString_Format(" ( /* %i fields */ )",
+				mtList_Count(self->precompiledstructure));
+			mtString_Append(&s1,s2);
+			mtString_Destroy(s2);
+		};
+		if(self->structure){
+			char* s2 = mtString_Format(" { /* %i bytes */ }",
+				(int)self->structsize);
+			mtString_Append(&s1,s2);
+			mtString_Destroy(s2);
+		};
+	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"*");
+	}else if(self->atomicbasetype==eGAtomictype_Nearpointer){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"*near");
+	}else if(self->atomicbasetype==eGAtomictype_Farpointer){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"*far");
+	}else if(self->atomicbasetype==eGAtomictype_Array){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		char* s2 = mtString_Format("[%i]",(int)self->arraysize);
+		mtString_Append(&s1,s2);
+		mtString_Destroy(s2);
+	}else if(self->atomicbasetype==eGAtomictype_Function){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"(");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		}
+		mtString_Trimlast(s1);
+		mtString_Append(&s1,")");
+	}else if(self->atomicbasetype==eGAtomictype_Nearfunction){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"(");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		}
+		//mtString_Trimlast(s1);
+		mtString_Append(&s1,")near");
+	}else if(self->atomicbasetype==eGAtomictype_Farfunction){ 
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		mtString_Append(&s1,"(");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		};
+		mtString_Trimlast(s1);
+		mtString_Append(&s1,")far");
+	}else{
+		mtString_Append(&s1,meGAtomictype_ToStringTable[self->atomicbasetype]);
+	};
+	return s1;
+};
 
 // ------------------------------ class tGSymbol ------------------------------
 
 tGSymbol* mtGSymbol_Create(){
 	return calloc(sizeof(tGSymbol),1);
+};
+tGSymbol* mtGSymbol_CreateConstant(char* name, tGType* type, tGTargetUintmax val){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->symbolkind = mtGSymbol_eType_Constant;
+	temp->type = nullptr;
+	return temp;
 };
 tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){
 	tGSymbol* temp = mtGSymbol_Create();
@@ -1043,9 +1136,10 @@ tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum m
 	//printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");
 	printf("ss: [T] mtGNamespace_Findsymbol_NameKind(namespace %p, symbol %i•%s): Entered \n",self,kind,name);
 #endif
+	assert(name);
 	// Empty namespace
 	if(self==nullptr){
-		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found \n",self,kind,name);
+		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found: No namespace \n",self,kind,name);
 		return nullptr;
 	};
 

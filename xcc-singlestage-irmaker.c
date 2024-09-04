@@ -120,34 +120,51 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			);
 		};	break;
 		case tSplexem_Symbol: {
-			assert(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue);
-			assert(self->symbol->allocatedstorage); // by now storage should be allocated...
-			if(self->symbol->allocatedstorage->nonconstant){
-				retval = mtGInstruction_CreateCodepointer(
-					tInstruction_Loadaddress,
-					eGAtomictype_Nearpointer,
-					self->symbol->allocatedstorage->dynamicpointer
+			assert(self->symbol);
+			if(self->symbol->symbolkind==mtGSymbol_eType_Constant){
+				// Constant produced by something like an enum
+				retval = mtGInstruction_CreateImmediate(
+					tInstruction_Constant,
+					self->returnedtype->atomicbasetype,
+					self->symbol->value
 				);
 			}else{
-				assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
-				if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
-					retval = mtGInstruction_Join_Modify(
-						mtGInstruction_CreateImmediate(
-							tInstruction_Constant,
-							eGAtomictype_Nearpointer,
-							self->symbol->allocatedstorage->offset
-						),
-						mtGInstruction_CreateBasic(
-							tInstruction_Indexfp,
-							eGAtomictype_Nearpointer
-						)
+				// Variable
+				assert(  mtGType_GetBasetype(self->returnedtype)->valuecategory
+				       ==eGValuecategory_Leftvalue);
+				assert(self->symbol->allocatedstorage); // by now storage should be allocated...
+				// Decide on constantness of the pointer
+				if(self->symbol->allocatedstorage->nonconstant){
+					// Something like a globalvar
+					retval = mtGInstruction_CreateCodepointer(
+						tInstruction_Loadaddress,
+						eGAtomictype_Nearpointer,
+						self->symbol->allocatedstorage->dynamicpointer
 					);
 				}else{
-					retval = mtGInstruction_CreateImmediate(
-						tInstruction_Constant,
-						self->returnedtype->atomicbasetype,
-						self->symbol->allocatedstorage->offset
-					);
+					// Something like a localvar
+					assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
+					if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
+						// Index by FP
+						retval = mtGInstruction_Join_Modify(
+							mtGInstruction_CreateImmediate(
+								tInstruction_Constant,
+								eGAtomictype_Nearpointer,
+								self->symbol->allocatedstorage->offset
+							),
+							mtGInstruction_CreateBasic(
+								tInstruction_Indexfp,
+								eGAtomictype_Nearpointer
+							)
+						);
+					}else{
+						// Plain constant
+						retval = mtGInstruction_CreateImmediate(
+							tInstruction_Constant,
+							self->returnedtype->atomicbasetype,
+							self->symbol->allocatedstorage->offset
+						);
+					};
 				};
 			};
 		};	break;

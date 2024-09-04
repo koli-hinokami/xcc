@@ -387,6 +387,35 @@ int main(int argc, char* argv[], char** envp){
 	printf("EM: [D] Compiling %s->%s for %s\n",
 		EmSourcefilename,EmTargetfilename,EmArchitecturename);
 	src = fopen(EmSourcefilename,"r");
+	if(!src){
+		int shadowerrno = errno;
+		fprintf(stderr,
+			"EM: [E] Unable to open source file \"%s\": Error %i•%s\n",
+			EmSourcefilename,
+			shadowerrno,
+			strerror(shadowerrno));
+		//fprintf(stdout, 
+		//	"EM: [E] Unable to open source file \"%s\": Error %i•%s\n",
+		//	EmSourcefilename,
+		//	shadowerrno,
+		//	strerror(shadowerrno));
+		ErfError();
+		// In case error is suppressed, create empty target file
+		dst = fopen(EmTargetfilename,"w");
+		if(!dst){
+			fprintf(stderr,
+				"EM: [F] main: Errorrecovery: Unable to open source -> create empty target file:\n"
+				"EM: [F]                      Unable to create target file \"%s\":\n"
+				"EM: [F]                      Error %i•%s\n",
+				EmTargetfilename,
+				errno,
+				strerror(errno));
+			ErfFatal();
+			assert(false);
+		};
+		fclose(dst);
+		exit(0);
+	};
 	dst = fopen(EmTargetfilename,"w");
 	//Do the main preprocessing job
 	preprocess( /* src,dst */ );

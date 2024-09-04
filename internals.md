@@ -240,6 +240,13 @@ Actions that are intented to be present are:
 * 13: user    .farrodata  r   init  Far readonly data segment
 * 14: user    .farbss     rw  bss   Far uninitialized data segment
 * 15: user    .lostack    rw  bss   Resident stack
+* 16: user    .data_al    rw  init  Page-aligned data (256 bytes commonly)
+* 20: user    .constr     r   init  `int (*constructors[])(void)`
+                                     Pointers to constructor functions { of
+                                     various modules } that are called by libc.
+* 21: user    .destr      r   init  `int (*destructors[])(void)`
+                                     Same as constructors but destructors.
+
 
 Note that .code/.data/.rodata/.udata segments may be swapped in and out on
 some systems so interrupt handlers and such have to reside in .lowcode and

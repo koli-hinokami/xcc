@@ -151,12 +151,14 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 				ErfUpdate_String("SppGeneratetype: Identifier");
 				if(name)*name=i->identifier;
 				mtGType_Transform(temptype);
+				temptype = mtGType_Warp(temptype);
 				ErfLeave();
 				return temptype;
 			case tLexem_Nullexpression:
 				ErfUpdate_String("SppGeneratetype: Nullexpr");
 				if(name)*name=nullptr;
 				mtGType_Transform(temptype);
+				temptype = mtGType_Warp(temptype);
 				ErfLeave();
 				return temptype;
 			default:
@@ -430,7 +432,9 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			assert(self->dynamicarraysize==nullptr);
 			return mtGType_Sizeof(self->complexbasetype)*self->arraysize;
 		case eGAtomictype_Function:
-			assert(false);
+		case eGAtomictype_Nearfunction:
+		case eGAtomictype_Farfunction:
+			fprintf(stderr,"spp:[F] mtGType_Sizeof: calculating size of a function\n");
 			ErfFatal();
 			return 9999;
 		// IR-side types (and optionally C-side)
@@ -483,12 +487,17 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 				printf("spp:[F] mtGType_Sizeof: Unrecognized atomic type %i•%s \n",
 					self->atomicbasetype,str
 				);
+				fprintf(stderr,
+					"spp:[F] mtGType_Sizeof: Unrecognized atomic type %i•%s \n",
+					self->atomicbasetype,str
+				);
 				ErfFatal();
 				assert(false);
 			};
 			break;
 	};
 	printf("spp:[F] mtGType_Sizeof: Absolutely incomprehensible control flow occured \n");
+	ErfFatal();
 	assert(false);
 	return 9999;
 };
@@ -502,6 +511,11 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 		){
 			tLxNode* node = i->item;
 			char* name = nullptr;
+			if(node->type==tLexem_Declarationlist){
+				// Flatten in place. Violence.
+				i->item=node->left;
+				i->next=mtListnode_Cons(node->right,i->next);
+			};
 			assert(node->type==tLexem_Variabledeclaration);
 			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
 			if(name){ // If we actually got a symbol
@@ -537,6 +551,12 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 		){
 			tLxNode* node = i->item;
 			char* name = nullptr;
+			if(node->type==tLexem_Declarationlist){
+				// Flatten in place. Violence.
+				i->item=node->left;
+				i->next=mtListnode_Cons(node->right,i->next);
+			};
+			node=i->item;
 			assert(node->type==tLexem_Variabledeclaration);
 			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
 			if(name){ // If we actually got a symbol
@@ -565,9 +585,66 @@ void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespa
 		*offset+=unionsize;
 		//self->structsize=offset;
 	}else{
+		fprintf(stdout,"spp:[F] SppCompileanonymousstructure: unrecognized type %s\n",mtGType_ToString(self));
+		fprintf(stderr,"spp:[F] SppCompileanonymousstructure: unrecognized type %s\n",mtGType_ToString(self));
+		ErfError();
 		assert(false);	
 	};
-
+};
+void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUintmax* pos){
+	ErfEnter_String(
+		mtString_Format(
+			"SppCompileenumeration_internal: node %i•%s",
+			self->type,
+			TokenidtoName[self->type]
+		)
+	);
+	assert(self);
+	switch(self->type){
+		case tLexem_Comma:
+			SppCompileenumeration_internal(enumtype,self->left,pos);
+			SppCompileenumeration_internal(enumtype,self->right,pos);
+			break;
+		case tLexem_Assign:
+			assert(self->right);
+			assert(self->right->type==tLexem_Integerconstant);
+			pos[0]=self->right->constant;
+			SppCompileenumeration_internal(enumtype->complexbasetype,self->left,pos);
+			break;
+		case tLexem_Identifier:
+			mtGNamespace_Add(
+				GRootnamespace,
+				mtGSymbol_CreateConstant(
+					self->identifier,
+					enumtype,
+					pos[0]
+				)
+			);
+			break;
+		case tLexem_Nullexpression:
+			break;
+		default:
+			fprintf(stdout,"spp:[F] SppCompileenumeration_internal: unrecognized node type %i•%s\n",self->type,TokenidtoName[self->type]);
+			fprintf(stderr,"spp:[F] SppCompileenumeration_internal: unrecognized node type %i•%s\n",self->type,TokenidtoName[self->type]);
+			ErfError();
+			break;
+	};
+	ErfLeave();
+};
+void SppCompileenumeration(tGType* self){
+	ErfEnter_String("SppCompileenumeration");
+	assert(self);
+	assert(self->complexbasetype); // Enumeration's type
+	if(self->atomicbasetype!=eGAtomictype_Enumeration) return;
+	if(self->structure) return;
+	self->structure = malloc(0); // get a tag
+	tGTargetUintmax position;
+	SppCompileenumeration_internal(
+		self->complexbasetype,
+		self->precompiledenumeration,
+		&position
+	);
+	ErfLeave();
 };
 tGType* SppCompilestructure(tGType* self){
 #ifdef qvGTrace
@@ -575,7 +652,10 @@ tGType* SppCompilestructure(tGType* self){
 #endif
 	assert(self);
 	if(self->structure)return self; // already compiled
-	if(self->atomicbasetype==eGAtomictype_Structure){
+	if(self->atomicbasetype==eGAtomictype_Enumeration){
+		// A hack for enumerations
+		SppCompileenumeration(self);
+	}else if(self->atomicbasetype==eGAtomictype_Structure){
 		tGTargetNearpointer offset=0;
 		self->structure = mtGNamespace_Create();
 		for(
@@ -590,6 +670,12 @@ tGType* SppCompilestructure(tGType* self){
 			printf("SPP:[T] SppCompilestructure: (end) \n");
 #endif
 			char* name = nullptr;
+			if(0)if(node->type==tLexem_Declarationlist){
+				// Flatten in place. Violence.
+				i->item=node->left;
+				i->next=mtListnode_Cons(node->right,i->next);
+			};
+			node=i->item;
 			if(node->type==tLexem_Variabledeclaration){
 				if(node->returnedtype->atomicbasetype==eGAtomictype_Structure)
 					SppCompilestructure(node->returnedtype);
@@ -638,6 +724,11 @@ tGType* SppCompilestructure(tGType* self){
 		){
 			tLxNode* node = i->item;
 			char* name = nullptr;
+			if(node->type==tLexem_Declarationlist){
+				// Flatten in place. Violence.
+				i->item=node->left;
+				i->next=mtListnode_Cons(node->right,i->next);
+			};
 			assert(node->type==tLexem_Variabledeclaration);
 			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
 			if(name){ // If we actually got a symbol
@@ -674,6 +765,7 @@ tGType* SppForceresolvetype(tGType* self, tGNamespace* namespace){
 	self->complexbasetype=SppForceresolvetype(self->complexbasetype,namespace);
 	if(self->atomicbasetype!=eGAtomictype_Unresolved)return self;
 	eGValuecategory valcat = self->valuecategory;
+	assert(self->unresolvedsymbol);
 	tGType* type = mtGNamespace_Findsymbol_NameKind(
 		namespace,
 		self->unresolvedsymbol,

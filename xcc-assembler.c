@@ -88,7 +88,7 @@ typedef struct { // Relocationentry
 
 // -- Preprocessor constants --
 
-#define qiAsmMaxsegments 16
+#define qiAsmMaxsegments 32
 
 // -- Forward declarations --
 
@@ -1659,6 +1659,7 @@ int main(int argc, char** argv){
 		// Read archdef
 		AsmReadinstructiondefinitions(archdeffile);
 		// Dump archdep
+#ifdef qvGTrace
 		if(1){
 			printf("ASM:[D] . Dumping instructions defined \n");
 			fflush(stdout);
@@ -1678,6 +1679,7 @@ int main(int argc, char** argv){
 			};
 			printf("ASM:[D] ' \n");
 		}
+#endif
 	};
 	// Open source/dest files
 	AsmSourcestream = fopen(AsmSourcefilename,"r");
@@ -1688,6 +1690,8 @@ int main(int argc, char** argv){
 			errno,
 			strerror(errno)
 		);
+		ErfError();
+		exit(0);
 	};
 	FILE* dstfile = fopen(AsmTargetfilename,"wb");
 	if(!dstfile){

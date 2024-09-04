@@ -52,14 +52,14 @@ void SpCompilefunctionarguments(
 #ifdef qvGTrace
 	printf("SP: [T] SpCompilefunctionarguments: entered \n");
 #endif
-	// if(comma){
-	// 	recurse(self->left,,);recurse(->right,,);
-	// else 
-	// 	namespace.find(typeexpr->name)->pointer=
-	// 		new Pointer(
-	// 			segment_stackframe,
-	// 			fextinfo->argumentssize-=sizeof(typeexpr->type)
-	// 		);
+	//	if(comma){
+	//		recurse(self->left,,);recurse(->right,,);
+	//	else 
+	//		namespace.find(typeexpr->name)->pointer=
+	//			new Pointer(
+	//				segment_stackframe,
+	//				fextinfo->argumentssize-=sizeof(typeexpr->type)
+	//			);
 	if(typeexpr){
 		if(typeexpr->type==tLexem_Comma){
 			// TODO: General retargetability: Implement distinction between
@@ -316,11 +316,25 @@ tSpNode* SpParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ * argume
 	return SpiParsefunctionarguments(ast,&args);
 };
 void SpArithmeticpromotion(tSpNode* *left, tSpNode* *right){
+	assert(left);
+	assert(right);
+	char* prefixstring = 
+		mtString_Format(
+			"SpArithmeticpromotion(left=%p->%p t:%s,right=%p->%p t:%s)",
+			left,*left,
+			mtGType_ToString(left[0]->returnedtype),
+			right,*right,
+			mtGType_ToString(right[0]->returnedtype)
+		);
+	ErfEnter_String(prefixstring);
 	// If the types are the same, that type is the common type.
+	ErfUpdate_String(mtString_Join(prefixstring,": Equality check"));
 	if(mtGType_Equals(left[0]->returnedtype,right[0]->returnedtype))return;
 	// { Here comes my tweak - when you add scalar to pointer,
 	//   weird things happen:
+	ErfUpdate_String(mtString_Join(prefixstring,": Scalar+pointer check"));
 	if(mtGType_IsPointer(left[0]->returnedtype)){
+		ErfUpdate_String(mtString_Join(prefixstring,": Scalar+pointer"));
 		*right=mtSpNode_Clone(
 			&(tSpNode){ // mul<ptr> cast<ptr>right cast<ptr>sizeof(left[])
 				.type=tSplexem_Multiplication,
@@ -370,11 +384,8 @@ void SpArithmeticpromotion(tSpNode* *left, tSpNode* *right){
 				),
 			}
 		);
-		return;
-	};
-	// }
-	// Else, the types are different:
-	{
+	}else{ // Else, the types are different:
+		ErfUpdate_String(mtString_Join(prefixstring,": Different types"));
 		// . If the types have the same signedness (both signed or both 
 		// | unsigned), the operand whose type has the lesser conversion 
 		// ' rank1 is implicitly converted2 to the other type.
@@ -398,7 +409,8 @@ void SpArithmeticpromotion(tSpNode* *left, tSpNode* *right){
 		}
 	}
 	printf("SP: [W] SpArithmeticpromotion: Unimplemented code hit!\n");
-	ErfWarning();
+	//ErfWarning();
+	ErfLeave();
 };
 tSpNode* SpCompileinitializer(tGType* type, tLxNode* self){
 	// Decide between scalar, array and structunion initialization
@@ -633,6 +645,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//return nullptr;
 				{
 					char* name;
+					ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Get type");
 					// Get type
 					tGType* type = mtGType_SetValuecategory(
 						SppGeneratetype(
@@ -642,62 +655,75 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						),
 						eGValuecategory_Leftvalue
 					);
-					// Get symbol
-					tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
-						self->name_space,
-						name,
-						mtGSymbol_eType_Pointer
-					);
-					// Update type
-					type=symbol->type;
-					// Allocate storage
-					if(SpCurrentfunction){
-						// Allocate local variable storage
-						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
-						symbol->allocatedstorage=SpAllocatelocalvarstorage(
-							SpCurrentfunction->fextinfo,
-							mtGType_Sizeof(
-								mtGType_SetValuecategory(
-									mtGType_Deepclone(
-										symbol->type
-									),
-									eGValuecategory_Rightvalue
-								)
-							)
-						);
+					if(!name){
+						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: No name, skipping");
+						ErfLeave();
+						return nullptr;
 					}else{
-						// Allocating global variable storage is done in 
-						// IR Generator
-						symbol->allocatedstorage=nullptr;
-						//assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
-						//symbol->allocatedstorage=SpAllocateglobalvarstorage(
-						//	mtGType_Sizeof(
-						//		mtGType_SetValuecategory(
-						//			mtGType_Deepclone(
-						//				symbol->type
-						//			),
-						//			eGValuecategory_Rightvalue
-						//		)
-						//	)
-						//);
+						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Get symbol");
+						// Get symbol
+						tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
+							self->name_space,
+							name,
+							mtGSymbol_eType_Pointer
+						);
+						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Update type");
+						// Update type
+						type=symbol->type;
+						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Allocate storage");
+						// Allocate storage
+						if(SpCurrentfunction){
+							ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Allocate localvar storage");
+							// Allocate local variable storage
+							assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
+							symbol->allocatedstorage=SpAllocatelocalvarstorage(
+								SpCurrentfunction->fextinfo,
+								mtGType_Sizeof(
+									mtGType_SetValuecategory(
+										mtGType_Deepclone(
+											symbol->type
+										),
+										eGValuecategory_Rightvalue
+									)
+								)
+							);
+						}else{
+							ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Allocate globalvar storage: Delegated to IR Generator");
+							// Allocating global variable storage is done in 
+							// IR Generator
+							symbol->allocatedstorage=nullptr;
+							//assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
+							//symbol->allocatedstorage=SpAllocateglobalvarstorage(
+							//	mtGType_Sizeof(
+							//		mtGType_SetValuecategory(
+							//			mtGType_Deepclone(
+							//				symbol->type
+							//			),
+							//			eGValuecategory_Rightvalue
+							//		)
+							//	)
+							//);
+						};
+						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Compile initializer");
+						// Compile initializer
+						tSpNode* right = 
+							self->right
+							?SpCompileinitializer(type, self->right)
+							:nullptr;
+						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Return node");
+						// Return node
+						retval = mtSpNode_Clone(
+							&(tSpNode){
+								.type=tSplexem_Variabledeclaration,
+								.returnedtype=type,
+								//.identifier=name,
+								.symbol=symbol,
+								.right=right,
+							}
+						);
+						ErfLeave();
+						return retval;
 					};
-					// Compile initializer
-					tSpNode* right = 
-						self->right
-						?SpCompileinitializer(type, self->right)
-						:nullptr;
-					// Return node
-					retval = mtSpNode_Clone(
-						&(tSpNode){
-							.type=tSplexem_Variabledeclaration,
-							.returnedtype=type,
-							//.identifier=name,
-							.symbol=symbol,
-							.right=right,
-						}
-					);
-					ErfLeave();
-					return retval;
 				};
 				//return nullptr;
 				break;

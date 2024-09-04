@@ -1,7 +1,7 @@
 // ----------- Symbol list generator ------------
 tList /* <tGType> */ * SgUnresolvedtypes;
 tList /* <tGType> */ * SgUnresolvedstructures;
-tList /* <tGType> */ * SgCompilablestructures;
+tList /* <tGType> */ * SgCompilablestructures; // Also has unions and enums
 tGNamespace* GStructuretypes;
 bool SgNosearchfortypes;
 
@@ -11,8 +11,14 @@ void SgRegisterstructure(tGType* type){
 	printf("SG: [T] SgRegisterstructure: entered \n");
 #endif
 	assert(type);
-	assert(type->atomicbasetype==eGAtomictype_Structure);
+	assert(
+		  type->atomicbasetype==eGAtomictype_Structure
+		||type->atomicbasetype==eGAtomictype_Union
+		||type->atomicbasetype==eGAtomictype_Enumeration
+	);
 	mtList_Append(SgCompilablestructures,type); 
+	if(type->atomicbasetype!=eGAtomictype_Structure
+	 &&type->atomicbasetype!=eGAtomictype_Union) return;
 	if(type->unresolvedsymbol){
 		// Do we have fields declared?
 		if(type->precompiledstructure){
@@ -42,9 +48,14 @@ void SgRegisterstructureTraverse(tGType* type){
 		printf("SG: [W] SgCompileandregisterstructs: `type==nullptr` \n");
 	}else switch(type->atomicbasetype){
 		case eGAtomictype_Structure:
+		case eGAtomictype_Union:
 			if(type->precompiledstructure){
-				mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgRegisterstructureTraverse);
+				mtList_Foreach(
+					type->precompiledstructure,
+					(void(*)(void*))SgRegisterstructureTraverse
+				);
 			};
+		case eGAtomictype_Enumeration:
 			SgRegisterstructure(type);
 			break;
 		case eGAtomictype_Unresolved:

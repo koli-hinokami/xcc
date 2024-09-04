@@ -10,6 +10,7 @@ typedef enum LdArgpOptiontags {
 	eLdArgpOptiontags_Confdir      = 'c',
 	eLdArgpOptiontags_Outputfile   = 'o',
 	eLdArgpOptiontags_Nostdlib     = 'f',
+	eLdArgpOptiontags_Listing      = 'l',
 } eLdArgpOptiontags;
 
 typedef enum eAsmBinarytokensize {
@@ -80,7 +81,7 @@ typedef struct {
 
 // -- Preprocessor constants --
 
-#define qiLdMaxsegments 16
+#define qiLdMaxsegments 32
 #define qiLdMaxmodules  32
 
 // -- Forward declarations --
@@ -124,6 +125,14 @@ struct argp_option LdArgpOptions[] = {
 		.doc = "Don't link standard library",
 		.group = null,
 	},
+	{	
+		.name = "listing",
+		.key = eLdArgpOptiontags_Listing,
+		.arg = "listing.lst",
+		.flags = null,
+		.doc = "Listing file. Has all the labels in it.",
+		.group = null,
+	},
 	{	// Terminator entry
 		.name = nullptr,
 		.key = null,
@@ -164,6 +173,7 @@ struct argp LdArgpParserstruct = {
 FILE* LdTargetfile;
 char* LdArchitecturename;
 char* LdConfigdir;
+FILE* LdListingfile;
 
 tList /* <tLdExternlabel> */ LdExportedsymbols;
 tGTargetNearpointer LdCurrentposition,LdCurrentalternativeposition;
@@ -229,6 +239,9 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 };
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
 	printf("LD: [D] Exporting label %-25s:%.4x (%i)\n",name,position,position);
+	if(LdListingfile){
+		fprintf(LdListingfile,"%4x\t%s\n",position,name);
+	};
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
 	self->name = name;
@@ -291,6 +304,8 @@ char* mtLdLinkerscriptentry_ToString(tLdLinkerscriptentry* self){
 		?	mtString_Format("symbol %s",self->symbol)
 		:	self->type==eLdLinkerscriptentrykind_Loadsymbol
 		?	mtString_Format("loadsymbol %s",self->symbol)
+		:	self->type==eLdLinkerscriptentrykind_Pad
+		?	mtString_Format("pad %x (%i)",self->offset,self->offset)
 		:	mtString_Join(
 				"(unk type ",
 				mtString_Join(
@@ -368,7 +383,9 @@ void LdReadlinkerscript(FILE* archdeffile){
 // -- First pass --
 
 void LdFirstpassfile(int currentsegment, FILE* srcfile){
-	//printf("LD: [T] LdFirstpassfile: Entered\n");
+#ifdef qvGDebug
+	printf("LD: [T] LdFirstpassfile(int currentsegment %i, FILE* src %p): Entered\n",currentsegment,srcfile);
+#endif // qvGDebug
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		//printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
@@ -463,8 +480,10 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 };
 
 void LdFirstpass(tLdLinkerscriptentry* self){
-	//printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
-	//	mtLdLinkerscriptentry_ToString(self));
+#ifdef qvGDebug
+	printf("LD: [D] LdFirstpass(linkerscriptentry <%s>): Entered\n",
+		mtLdLinkerscriptentry_ToString(self));
+#endif // qvGDebug
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Parse segment and generate exported symbols' position 
@@ -526,7 +545,9 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 // -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
-	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+#ifdef qvGDebug
+	printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+#endif // qvGDebug
 	int i = 0;
 	ErfEnter_String("LdSecondpassfile");
 	while(fpeekc(srcfile)!=EOF){
@@ -646,8 +667,10 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 };
 
 void LdSecondpass(tLdLinkerscriptentry* self){
-	//printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
-	//	mtLdLinkerscriptentry_ToString(self));
+#ifdef qvGDebug
+	printf("LD: [D] LdSecondpass(linkerscriptentry <%s>): Entered\n",
+		mtLdLinkerscriptentry_ToString(self));
+#endif // qvGDebug
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Emit a segment while applying relocations
@@ -680,8 +703,10 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 				ErfError();
 			}else{
 				unsigned offset = self->offset - LdCurrentposition;
-				for(unsigned i=offset;--i;)
-					fputc(0,LdTargetfile);
+				if(offset!=0)
+					for(unsigned i=offset;i--;){
+						fputc(0,LdTargetfile);
+					};
 				LdCurrentposition            += offset;
 				LdCurrentalternativeposition += offset;
 			};
@@ -839,6 +864,19 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			LdNostandardlibrary = true;
 			return 0;
 			break;
+		case eLdArgpOptiontags_Listing:
+			if(LdListingfile){
+				return ARGP_ERR_UNKNOWN;
+			}else{
+				LdListingfile = fopen(optionvalue,"w");
+				if(!LdTargetfile){
+					printf("LD: [E] Unable to create listing file \"%s\": %i•%s\n",
+						optionvalue,errno,strerror(errno));
+					ErfError();
+					return 0;
+				};
+			};
+			break;
 		case ARGP_KEY_ARG: {
 			FILE* srcfile = fopen(optionvalue,"rb");
 			if(!srcfile){
@@ -847,6 +885,9 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				ErfError();
 				return 0;
 			};
+#ifdef qvGDebug
+			printf("LD: [D] File %p is \"%s\"\n",srcfile,optionvalue);
+#endif
 			mtList_Append(&LdSourcefiles,srcfile);
 		};	break;
 		case ARGP_KEY_END: // Create and emit output binary
@@ -870,6 +911,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 					ErfError();
 				}else{
 					mtList_Append(&LdSourcefiles,file);
+					printf("LD: [D] File %p is \"%s\"\n",file,fname);
 				};
 				// Load crt0
 				fname = mtString_Join(
@@ -886,6 +928,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 					ErfError();
 				}else{
 					mtList_Append(&LdSourcefiles,file);
+					printf("LD: [D] File %p is \"%s\"\n",file,fname);
 				};
 			};
 			// First pass on linker script entries - get addresses
@@ -898,6 +941,9 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			// Second pass on linker script entries - emit while relocating
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
 				LdSecondpass(i->item);
+			// Finalize
+			if(LdListingfile) // Vim modeline
+				fprintf(LdListingfile,"\n;\tvim:tw=78:ts=8:noet:\n");
 			break;
 		default:
 			return ARGP_ERR_UNKNOWN;
@@ -923,6 +969,7 @@ void LnNullpointerhandler(int signum){
 	ErfFatal();
 };
 int main(int argc, char** argv){
+	setvbuf(stdout,nullptr,_IONBF,0);
 	signal(SIGSEGV,LnNullpointerhandler);
 	signal(SIGABRT,LnFailedassertionhandler);
 	// Parse arguments
