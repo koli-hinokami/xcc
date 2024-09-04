@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -g -O0 -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
 -DqszGVersion=\"1.0.1.0\" \
--DqvGDebug -DqvGTrace -D_qvGTraceexpressions
+-DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
 #-D__buildlab__=\"$(USER)\"
 TIMESTAMP = `date +%y%m%d-%H%M`
 DEPS = hyperheader.h xcc.h softpipe.h cstrings.h basictypes.h lists.h Makefile

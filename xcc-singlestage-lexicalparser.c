@@ -394,7 +394,6 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 							type->atomicbasetype = eGAtomictype_Unsignedlong;
 							break;
 					};
-					type->atomicbasetype = eGAtomictype_Unsignedshort;
 					break;
 				default:
 					type->atomicbasetype = eGAtomictype_Unsigned;
@@ -413,8 +412,49 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Char;
 			break;
+		case tToken_Keywordlong:
 			mtLxFetcher_Advance(fetcher);
-			type->atomicbasetype = eGAtomictype_Long;
+			switch(mtLxFetcher_Peek(fetcher)->type){
+				case tToken_Keywordlong:
+					mtLxFetcher_Advance(fetcher);
+					type->atomicbasetype = eGAtomictype_Longlong;
+					break;
+				default:
+					type->atomicbasetype = eGAtomictype_Long;
+					break;
+			};
+			break;
+		case tToken_Keywordint8t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int8;
+			break;
+		case tToken_Keywordint16t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int16;
+			break;
+		case tToken_Keywordint32t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int32;
+			break;
+		case tToken_Keywordint64t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Int64;
+			break;
+		case tToken_Keyworduint8t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint8;
+			break;
+		case tToken_Keyworduint16t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint16;
+			break;
+		case tToken_Keyworduint32t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint32;
+			break;
+		case tToken_Keyworduint64t:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Uint64;
 			break;
 		case tToken_Keywordbool:
 			mtLxFetcher_Advance(fetcher);
@@ -2303,7 +2343,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 #endif
 							return mtLxNode_Clone(
 								&(tLxNode){
-									.type=tLexem_Comma,
+									.type=tLexem_Assign,
 									.left=LxParseTypeexpression(
 										&(tLxFetcher){
 											.fetchfrom=fetcher->fetchfrom,

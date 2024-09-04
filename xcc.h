@@ -97,6 +97,14 @@ enum tTokentype {
 	tToken_Keywordvoid		= 170,		//void
 	tToken_Keywordvolatile		= 171,		//volatile
 	tToken_Keywordwhile		= 172,		//while
+	tToken_Keywordint8t		= 173,		//int8_t
+        tToken_Keywordint16t		= 174,		//int16_t
+        tToken_Keywordint32t		= 175,		//int32_t
+        tToken_Keywordint64t		= 176,		//int64_t
+	tToken_Keyworduint8t		= 177,		//uint8_t
+        tToken_Keyworduint16t		= 178,		//uint16_t
+        tToken_Keyworduint32t		= 179,		//uint32_t
+        tToken_Keyworduint64t		= 180,		//uint64_t
 	//tToken_			= 256,		//	String tokens
 	tToken_Identifier		= 256,		//Generic identifier
 	tToken_String			= 257,		//String
@@ -1778,6 +1786,10 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"for"			,tToken_Keywordfor		},
 	{"goto"			,tToken_Keywordgoto		},
 	{"if"			,tToken_Keywordif		},
+	{"int8_t"		,tToken_Keywordint8t		},
+	{"int16_t"		,tToken_Keywordint16t		},
+	{"int32_t"		,tToken_Keywordint32t		},
+	{"int64_t"		,tToken_Keywordint64t		},
 	{"inline"		,tToken_Keywordinline		},
 	{"int"			,tToken_Keywordint		},
 	{"long"			,tToken_Keywordlong		},
@@ -1798,6 +1810,10 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"typedef"		,tToken_Keywordtypedef		},
 	{"typeof"		,tToken_Keywordtypeof		},
 	{"typeof_unqual"	,tToken_Keywordtypeof_unqual	},
+	{"uint8_t"		,tToken_Keyworduint8t		},
+	{"uint16_t"		,tToken_Keyworduint16t		},
+	{"uint32_t"		,tToken_Keyworduint32t		},
+	{"uint64_t"		,tToken_Keyworduint64t		},
 	{"union"		,tToken_Keywordunion		},
 	{"unsigned"		,tToken_Keywordunsigned		},
 	{"void"			,tToken_Keywordvoid		},

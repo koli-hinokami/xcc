@@ -675,6 +675,8 @@ tGInstruction* mtGInstruction_CreateCnop(){
 	return i;
 };
 // --------------------- Tokenizer ---------------------
+void GFinalize(){
+};
 #include "xcc-singlestage-tokenizer.c"
 #include "xcc-singlestage-fetcher.c"
 #include "xcc-singlestage-lexicalparser.c"

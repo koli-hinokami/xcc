@@ -295,6 +295,13 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			// TODO: Enumeration with base type other that `int`
 			return 2;
 		case eGAtomictype_Unresolved:
+			printf("SPP:[F] mtGType_Sizeof(%s): Calculating size of an unresolved type \n",mtGType_ToString(self));
+#ifdef qvGIgnorefatals
+			return 0;
+#else
+			GFinalize();
+			exit(1);
+#endif
 			assert(false);
 		// Internal types
 		case eGAtomictype_Union: // Temporary type - gets converted to struct later on

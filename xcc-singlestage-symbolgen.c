@@ -314,6 +314,18 @@ void SgRegisterunresolvedtype(tGType* type){
 	printf("SG: [D] Registering unresolved type `%s`\n",type->unresolvedsymbol);
 	mtList_Append(SgUnresolvedtypes,type);
 };
+void SgFindunresolvedtypes_Type(tGType* type);
+void SgFindunresolvedtypes_LxNode(tLxNode* node){
+	assert(node);
+	if(node->type==tLexem_Variabledeclaration){
+		SgFindunresolvedtypes_Type(node->returnedtype);
+	}else{
+		printf("SG: [W] SgFindunresolvedtypes_LxNode: Unexcepted node type %i:%s inside node %s \n",
+			node->type,TokenidtoName[node->type],
+			mtLxNode_ToString(node)
+		);
+	};
+};
 void SgFindunresolvedtypes_Type(tGType* type){
 #ifdef qvGTrace
 	//printf("SG: [T] SgFindunresolvedtypes_Type(%p:%s): entered \n",type,mtGType_ToString_Embeddable(type));
@@ -332,6 +344,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			break;
 		case eGAtomictype_Structure: // I still need to compile structures
 		case eGAtomictype_Union:     
+			mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgFindunresolvedtypes_LxNode);
 			//SgRegistercompilablestructure(type);
 		default:
 	};
