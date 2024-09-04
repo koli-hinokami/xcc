@@ -454,30 +454,34 @@ tGType* SppCompilestructure(tGType* self){
 		){
 			tLxNode* node = i->item;
 			char* name = nullptr;
-			assert(node->type==tLexem_Variabledeclaration);
-			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
-			if(name){ // If we actually got a symbol
-				// Create symbol
-				mtGNamespace_Add(
-					self->structure,
-					mtGSymbol_CreatePointer(
-						name,
-						type,
-						mtGTargetPointer_Clone(
-							&(tGTargetPointer){
-								.nonconstant=false,
-								.segment=meGSegment_Relative,
-								.offset=offset
-							}
+			if(node->type==tLexem_Variabledeclaration){
+				tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+				if(name){ // If we actually got a symbol
+					// Create symbol
+					mtGNamespace_Add(
+						self->structure,
+						mtGSymbol_CreatePointer(
+							name,
+							type,
+							mtGTargetPointer_Clone(
+								&(tGTargetPointer){
+									.nonconstant=false,
+									.segment=meGSegment_Relative,
+									.offset=offset
+								}
+							)
 						)
-					)
-				);
-				// Advance position
-				offset+=mtGType_Sizeof(type);
-			}else{
-				// Anonymous structunion
-				SppCompileanonymousstructure(type,&offset,self->structure);
+					);
+					// Advance position
+					offset+=mtGType_Sizeof(type);
+				}else{
+					// Anonymous structunion
+					SppCompileanonymousstructure(type,&offset,self->structure);
 
+				};
+			}else if(node->type==tLexem_Nulldeclaration){
+			}else{
+				printf("SPP:[E] SppCompilestructure: Invalid declaration inside structure! \n");
 			};
 		};
 		self->structsize=offset;

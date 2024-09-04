@@ -285,31 +285,31 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		if(self->precompiledstructure){
 			//mtString_Append(&s1," { ... }");
 			mtString_Append(&s1," ( ");
-			mtString_Append(&s1,"/*");
+			mtString_Append(&s1,"/* ");
 			mtString_Append(&s1,
 				mtString_FromInteger(
 					mtList_Count(self->precompiledstructure)
 				)
 			);
-			mtString_Append(&s1," fields */ ");
+			mtString_Append(&s1," fields */");
 
 			// Inlined List.foreach cuz no capturing lambdas *yet*
-			for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
-				mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
-				mtString_Append(&s1,";");
-			}
+			//for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
+			//	mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
+			//	mtString_Append(&s1,";");
+			//}
 			mtString_Append(&s1," )");
 		};
 		if(self->structure){
 			//mtString_Append(&s1," { ... }");
 			mtString_Append(&s1," { ");
-			mtString_Append(&s1,"/*");
+			mtString_Append(&s1,"/* ");
 			mtString_Append(&s1,
 				mtString_FromInteger(
 					self->structsize
 				)
 			);
-			mtString_Append(&s1," bytes */ ");
+			mtString_Append(&s1," bytes */");
 			// No display of member locations right now
 			mtString_Append(&s1," }");
 		};

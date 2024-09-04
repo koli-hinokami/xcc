@@ -401,5 +401,5 @@ void SgResolveunresolvedtypes(){
 };
 void SgCompilestructures(){
 	printf("SP: [D] SgCompilestructures: entered \n");
-	mtList_Foreach(SgCompilablestructures,SppCompilestructure);
+	mtList_Foreach(SgCompilablestructures,(void(*)(void*))SppCompilestructure);
 };
