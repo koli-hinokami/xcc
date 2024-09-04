@@ -188,7 +188,7 @@ void SgParse(tLxNode* ast){
 	};
 #ifdef qvGTrace
 	printf("SG: [T] SgParse: Entered with node %i∙%s\n",ast->type,TokenidtoName[ast->type]);
-	//LfPrint_LxNode(ast);
+	//if(ast->type!=tLexem_Declarationlist)LfPrint_LxNode(ast);
 #endif
 	switch(ast->type){
 		case tLexem_Nulldeclaration:
@@ -229,14 +229,16 @@ void SgParse(tLxNode* ast){
 					nullptr
 				)
 			);
-			mtGNamespace_Add( // And it's namespace... you need to
-			                  // take care of locals, after all...
-				ast->name_space,
-				mtGSymbol_CreateNamespace(
-					name,
-					ast->right->name_space
-				)
-			);
+			if(ast->right){
+				mtGNamespace_Add( // And it's namespace... you need to
+						  // take care of locals, after all...
+					ast->name_space,
+					mtGSymbol_CreateNamespace(
+						name,
+						ast->right->name_space
+					)
+				);
+			};
 			SgParse(ast->right); // functions and their locals...
 		};	break;
 		case tLexem_Variabledeclaration: {

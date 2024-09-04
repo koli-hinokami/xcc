@@ -44,6 +44,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				node->returnedtype = SgGeneratetype(self->returnedtype,self->left,&name);
 				// Bind symbol
 				node->symbol=mtGNamespace_Findsymbol_NameKind(GRootnamespace,name,mtGSymbol_eType_Pointer);
+				 // And insert clashnop inside
+				 node->symbol->allocatedstorage=mtGTargetPointer_CreateDynamic(mtGInstruction_CreateCnop());
 				// Compile function
 				node->fextinfo = mtSpFunctionextinfo_Create();
 				node->right=SpParse(self->right);

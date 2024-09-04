@@ -653,8 +653,26 @@ tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
 	temp->symbolkind = mtGSymbol_eType_Typedef;
 	return temp;
 };
+tGTargetPointer* mtGTargetPointer_Create(){
+	return calloc(sizeof(tGTargetPointer),1);
+};
 tGTargetPointer* mtGTargetPointer_Clone(tGTargetPointer* self){
 	return memcpy(malloc(sizeof(tGTargetPointer)),self,sizeof(tGTargetPointer));
+};
+tGTargetPointer* mtGTargetPointer_CreateDynamic(tGInstruction* instr){
+	tGTargetPointer* i=mtGTargetPointer_Create();
+	i->nonconstant=true;
+	i->dynamicpointer=instr;
+	return i;
+};
+tGInstruction* mtGInstruction_Create(){
+	return calloc(sizeof(tGInstruction),1);
+};
+tGInstruction* mtGInstruction_CreateCnop(){
+	tGInstruction* i=mtGInstruction_Create();
+	i->opcode.opr=tInstruction_Cnop;
+	i->opcode.isize=eGAtomictype_Void;
+	return i;
 };
 // --------------------- Tokenizer ---------------------
 #include "xcc-singlestage-tokenizer.c"

@@ -187,6 +187,7 @@ enum tTokentype {
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
 	//tToken_	        	= 1536,		//	IR instructions
+	tInstruction_Cnop		= 1536+0,	//Clash nop - used internally
 	tInstruction_Nop		= 1536+1,	//No operation
 	tInstruction_Jumptrue		= 1536+2,	//Jump if true
 	tInstruction_Jumpfalse		= 1536+3,	//Jump if false
@@ -1926,8 +1927,8 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ 0, 0 }
 };
 typedef struct tGOpcode { 
-	short opcode;
-	enum eGAtomictype instructionsize;
+	short opr;
+	enum eGAtomictype isize;
 } tGOpcode;
 typedef struct tGInstruction {
 	tGOpcode opcode; 

@@ -11,6 +11,7 @@ tSppNode* mtSppNode_Create(){
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name);
 tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
+	return nullptr;
 	if(!expr){
 		// wat
 		fprintf(stderr,"SG: [E] SppParsefunctionarguments: Null pointer!\n");
@@ -27,18 +28,18 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 			// Assumming we got them, tailcall to SpGeneratetype
 			assert(expr);
 			switch(expr->type){
+				case tLexem_Typeexpression:
+					return mtListnode_Cons(SppGeneratetype(expr->returnedtype,expr->left,nullptr),nullptr);
+					break;
+				case tLexem_Nullexpression:
+					printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");
+					return nullptr;
+					break;
 				default:
 					fprintf(stderr,"SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
 					printf("SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
 					printf("SPP:[E] SppParsefunctionarguments: Full ast:\n");
 					LfPrint_LxNode(expr);
-					break;
-				case tLexem_Typeexpression:
-					return mtListnode_Cons(SppGeneratetype(expr->returnedtype,expr->left,nullptr),nullptr);
-					break;
-				case tLexem_Nullexpression:
-					printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");				
-					return nullptr;
 					break;
 			};
 		};	break;
@@ -225,6 +226,7 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	};
 	// Also kill multidefinitions for typedefs
 	if(self->type==tLexem_Typedefinition){
+		if(self->left)
 		if(self->left->type==tLexem_Comma){
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();

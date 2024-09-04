@@ -55,7 +55,10 @@ void mtList_Removefirst(ptList self){
 	};
 }
 void mtList_Prepend(ptList self, void* item){
-	if(self->last == nullptr){ // List empty
+	if(self==nullptr){
+		// who is the idiot who tries to append an item to nowhere
+		printf("ul: [E] lists.h: mtList_Append: who is the idiot who tries to append an item to nowhere \n");
+	}else if(self->last == nullptr){ // List empty
 		self->first = mtListnode_Cons(item,nullptr);
 		self->last = self->first;
 	}else if(self->first == self->last){ // List contains one item
