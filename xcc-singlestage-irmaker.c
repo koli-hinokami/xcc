@@ -41,87 +41,89 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 	printf("IG: [T] IgCompileExpression: entered %i•%s\n",self->type,TokenidtoName[self->type]);
 	LfPrint_SpNode(self);
 #endif
+	tGInstruction* retval = nullptr;
+	ErfEnter_String(
+		mtString_Format(
+			"IgCompileExpression: %i•%s",
+			self->type,
+			TokenidtoName[self->type]
+		)
+	);
 	switch(self->type){
-		case tSplexem_Integerconstant:
-			return mtGInstruction_CreateImmediate(
+		case tSplexem_Integerconstant: {
+			retval = mtGInstruction_CreateImmediate(
 				tInstruction_Constant,
 				self->returnedtype->atomicbasetype,
 				self->constant
 			);
+		};	break;
 		case tSplexem_Dereference: {
-			tGInstruction* i;
-			i = IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateSegmented(
-				tInstruction_Load,
-				meGSegment_Data,
-				self->returnedtype->atomicbasetype
+			retval = mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Load,
+					meGSegment_Data,
+					self->returnedtype->atomicbasetype
+				)
 			);
-			return i;
 		};	break;
 		case tSplexem_Negation: {
-			tGInstruction* i;
-			i = IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			retval = IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Negation,
 				self->returnedtype->atomicbasetype
 			);
-			return i;
 		};	break;
 		case tSplexem_Bitwiseand: {
-			tGInstruction* i;
-			i=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			retval=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Pushleft,
 				self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Popright,
 				self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Bitwiseand,
 				self->left->returnedtype->atomicbasetype
 			);
-			return i;
 		};	break;
 		case tSplexem_Addition: {
-			tGInstruction* i;
-			i=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			retval=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Pushleft,
 				self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Popright,
 				self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Add,
 				self->left->returnedtype->atomicbasetype
 			);
-			return i;
 		};	break;
 		case tSplexem_Substraction: {
-			tGInstruction* i;
-			i=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			retval=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Pushleft,self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Popright,self->right->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Substract,self->right->returnedtype->atomicbasetype
 			);
-			return i;
 		};	break;
-		case tSplexem_Symbol:
+		case tSplexem_Symbol: {
 			assert(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue);
+			assert(self->symbol->allocatedstorage); // by now storage should be allocated...
 			if(self->symbol->allocatedstorage->nonconstant){
-				return mtGInstruction_CreateCodepointer(
+				retval = mtGInstruction_CreateCodepointer(
 					tInstruction_Loadaddress,
 					eGAtomictype_Nearpointer,
 					self->symbol->allocatedstorage->dynamicpointer
@@ -129,7 +131,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			}else{
 				assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
 				if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
-					return mtGInstruction_Join_Modify(
+					retval = mtGInstruction_Join_Modify(
 						mtGInstruction_CreateImmediate(
 							tInstruction_Constant,
 							eGAtomictype_Nearpointer,
@@ -141,15 +143,16 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						)
 					);
 				}else{
-					return mtGInstruction_CreateImmediate(
+					retval = mtGInstruction_CreateImmediate(
 						tInstruction_Constant,
 						self->returnedtype->atomicbasetype,
 						self->symbol->allocatedstorage->offset
 					);
 				};
 			};
+		};	break;
 		case tSplexem_Functioncall: {
-			tGInstruction* i = mtGInstruction_CreateCnop();
+			retval = mtGInstruction_CreateCnop();
 			//i=IgCompileExpression(self->left);
 			//mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(tInstruction_Pushleft,self->left->returnedtype->atomicbasetype);
 			//mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
@@ -160,21 +163,20 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			// TODO: General: Find a way to get fextinfo by symbol
 			//                and assert that we're calling an 
 			//                stdcall subroutine
-			mtGInstruction_GetLast(i)->next=IgCompileFunctionarguments(
+			mtGInstruction_GetLast(retval)->next=IgCompileFunctionarguments(
 				self->right
 			);
-			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Call,self->left->returnedtype->atomicbasetype);
-			return i;
 		};	break;
 		case tSplexem_Nullexpression: {
-			return mtGInstruction_CreateImmediate(tInstruction_Constant,eGAtomictype_Void,0);
+			retval = mtGInstruction_CreateImmediate(tInstruction_Constant,eGAtomictype_Void,0);
 		};	break;
 		case tSplexem_Stringconstant: {
 			assert(mtGType_GetBasetype(self->returnedtype)->valuecategory==eGValuecategory_Leftvalue);
 			if(self->symbol->allocatedstorage->nonconstant){
-				return mtGInstruction_CreateCodepointer(
+				retval = mtGInstruction_CreateCodepointer(
 					tInstruction_Loadaddress,
 					eGAtomictype_Nearpointer,
 					self->symbol->allocatedstorage->dynamicpointer
@@ -182,7 +184,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			}else{
 				assert(self->symbol->allocatedstorage->segment!=meGSegment_Far);
 				if(self->symbol->allocatedstorage->segment==meGSegment_Stackframe){
-					return mtGInstruction_Join_Modify(
+					retval = mtGInstruction_Join_Modify(
 						mtGInstruction_CreateImmediate(
 							tInstruction_Constant,
 							eGAtomictype_Nearpointer,
@@ -194,7 +196,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						)
 					);
 				}else{
-					return mtGInstruction_CreateImmediate(
+					retval = mtGInstruction_CreateImmediate(
 						tInstruction_Constant,
 						self->returnedtype->atomicbasetype,
 						self->symbol->allocatedstorage->offset
@@ -202,7 +204,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				};
 			};
 		};	break;
-		case tSplexem_Cast:
+		case tSplexem_Cast: {
 			if(mtGType_Sizeof(self->returnedtype)!=mtGType_Sizeof(self->left->returnedtype)){
 				//printf("IG: [D] IgCompileExpression: Cast: Sizes mismatch: %i•%i \n",
 				//	mtGType_Sizeof(self->returnedtype),
@@ -210,7 +212,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				//);
 				//assert(mtGType_Sizeof(self->returnedtype)!=mtGType_Sizeof(self->left->returnedtype));
 				//ErfFatal();
-				return mtGInstruction_Join_Modify(
+				retval = mtGInstruction_Join_Modify(
 					IgCompileExpression(self->left),
 					mtGInstruction_CreateCast(
 						tInstruction_Cast,
@@ -221,10 +223,12 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						:self->returnedtype->atomicbasetype
 					)
 				);
+			}else{
+				retval = IgCompileExpression(self->left);
 			};
-			return IgCompileExpression(self->left);
+		};	break;
 		case tSplexem_Assign: {
-			return mtGInstruction_Join_Modify(
+			retval = mtGInstruction_Join_Modify(
 				IgCompileExpression(self->left),
 				mtGInstruction_Join_Modify(
 					mtGInstruction_CreateBasic(
@@ -258,7 +262,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		case tSplexem_Preincrement: {
 			assert(  self->left->returnedtype->valuecategory
 			       ==eGValuecategory_Leftvalue);
-			return mtGInstruction_Join_Modify(
+			retval = mtGInstruction_Join_Modify(
 				IgCompileExpression(self->left),
 				mtGInstruction_CreateSegmented(
 					tInstruction_Lvalueincrement,
@@ -270,7 +274,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		};	break;
 		case tSplexem_Shiftleft: {
 			if(self->right->type == tSplexem_Integerconstant){
-				return mtGInstruction_Join_Modify(
+				retval = mtGInstruction_Join_Modify(
 					IgCompileExpression(self->left),
 					mtGInstruction_CreateImmediate(
 						tInstruction_Constantshiftleft,
@@ -278,12 +282,13 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						self->right->constant
 					)
 				);
+			}else{
+				assert(false);
 			};
-			assert(false);
 		};	break;
 		case tSplexem_Shiftright: {
 			if(self->right->type == tSplexem_Integerconstant){
-				return mtGInstruction_Join_Modify(
+				retval = mtGInstruction_Join_Modify(
 					IgCompileExpression(self->left),
 					mtGInstruction_CreateImmediate(
 						tInstruction_Constantshiftright,
@@ -291,26 +296,25 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						self->right->constant
 					)
 				);
+			}else{
+				assert(false);
 			};
-			assert(false);
 		};	break;
 		case tSplexem_Multiplication: {
-			tGInstruction* i;
-			i=IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			retval=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Pushleft,self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Popright,self->left->returnedtype->atomicbasetype
 			);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+			mtGInstruction_GetLast(retval)->next=mtGInstruction_CreateBasic(
 				tInstruction_Multiply,self->left->returnedtype->atomicbasetype
 			);
-			return i;
 		};	break;
 		case tSplexem_Structuremember: {
-			return mtGInstruction_Join_Modify(
+			retval = mtGInstruction_Join_Modify(
 				IgCompileExpression(self->left),
 				mtGInstruction_CreateImmediate(
 					tInstruction_Index,
@@ -322,7 +326,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				)
 			);
 		};	break;
-		default:
+		default: {
 			printf("IG: [E] IgCompileExpression: Unrecognized "
 			       "node %i•%s \n",
 				self->type,TokenidtoName[self->type]
@@ -331,11 +335,11 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			LfPrint_SpNode(self);
 			printf("IG: [E] IgCompileExpression: (secondary ast snippet end) \n");
 			ErfError();
-			return nullptr;
+			retval = nullptr;
+		};	break;
 	};
-	printf("IG: [F] IgCompileExpression: Absolutely incomprehensible control flow occured \n");
-	assert(false);
-	return nullptr;
+	ErfLeave();
+	return retval;
 };
 tGInstruction* IgCompileInvertedconditionaljump(
 	tSpNode* self,
@@ -843,11 +847,309 @@ tGInstruction* IgCompileConditionaljump(
 	};
 	return expr;
 }
+tGInstruction* IgEvaulaterelocateableconstantexpression(tSpNode*self){
+	switch(self->type){
+		default:
+			fprintf(
+				stderr,
+				"IG: [E] IgEvaulaterelocateableconstantexpression: "
+				"Unrecognized node type %i•%s\n",
+				self->type,
+				TokenidtoName[self->type]
+			);
+			fprintf(
+				stderr,
+				"IG: [E] IgEvaulaterelocateableconstantexpression: "
+				"Unrecognized node type %i•%s\n",
+				self->type,
+				TokenidtoName[self->type]
+			);
+			printf(
+				"IG: [E]                                           "
+				"Secondary AST snippet:"
+			);
+			LfPrint_SpNode(self);
+			ErfError();
+			return nullptr;
+	};
+	assert(false);
+	return nullptr;
+};
+tGInstruction* IgCompileglobalvariable(
+	tGType* type, 
+	tSpNode* self
+){ // Compile global variable's initializer
+	ErfEnter_String(
+		mtString_Format("IgCompileglobalvariable type:<%s> node:%p",
+			mtGType_ToString(type),self)
+	);
+	tGInstruction* retval = nullptr;
+	if(mtGType_IsScalar(type)){
+		// Scalar type. Compile as initializer
+		{	// Typeset cppreference page just for lulz
+			// -
+			// ___________________________________
+			// \ C / C language / Initialization /
+			//  '''''''''''''''''''''''''''''''''
+			//   Scalar initialization
+			// ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+			// 
+			// When initializing an object of scalar type, the initializer must
+			// be a single expression
+			// 
+			// The initializer for a scalar (an object of integer type including
+			// booleans and enumerated types, floating type including complex 
+			// and imaginary, and pointer type including pointer to function) 
+			// must be a single expression, optionally enclosed in braces, or an
+			// empty initializer(since C23):
+			// ---------------------------------------
+			//   = expression         (1)
+			// ---------------------------------------
+			//   = { expression }     (2)
+			// ---------------------------------------
+			//   = { }                (3)  (since C23)
+			// ---------------------------------------
+			// 1,2)  The expression is evaluated, and its value, after conversion
+			//      as if by assignment to the type of the object, becomes the
+			//      initial value of the object being initialized.
+			//   3)  The object is empty-initialized, i.e. initialized to numeric
+			//      zero for an object of an arithmetic or enumeration type, or 
+			//      null pointer value for an object of a pointer type.
+			//
+			//   Notes
+			// 
+			// Because of the rules that apply to conversions as if by 
+			// assignment, const and volatile qualifiers on the declared type 
+			// are ignored when determining which type to convert the 
+			// expression to.
+			// 
+			// See initialization for the rules that apply when no initializer
+			// is used.
+			// 
+			// As with all other initializations, expression must be a constant
+			// expression when initializing objects of static or thread-local
+			// storage duration.
+			// 
+			// The expression cannot be a comma operator (unless parenthesized)
+			// because the comma at the top level would be interpreted as the
+			// beginning of the next declarator.
+			// 
+			// When initializing objects of floating-point type, all
+			// computations for the objects with automatic storage duration are
+			// done as-if at execution time and are affected by the current
+			// rounding; floating-point errors are reported as specified in
+			// math_errhandling. For objects of static and thread-local storage
+			// duration, computations are done as-if at compile time, and no
+			// exceptions are raised:
+			// ┌────────────────────────────────────────────────────────────┐
+			// │ void f(void)                                               │
+			// │ {                                                          │
+			// │ #pragma STDC FENV_ACCESS ON                                │
+			// │     static float v = 1.1e75; // does not raise exceptions: │
+			// │                              // static init                │
+			// │                                                            │
+			// │     float u[] = { 1.1e75 }; // raises FE_INEXACT           │
+			// │     float w = 1.1e75;       // raises FE_INEXACT           │
+			// │                                                            │
+			// │     double x = 1.1e75; // may raise FE_INEXACT (depends    │
+			// │                        // on FLT_EVAL_METHOD)              │
+			// │     float y = 1.1e75f; // may raise FE_INEXACT (depends    │
+			// │                        // on FLT_EVAL_METHOD)              │
+			// │                                                            │
+			// │     long double z = 1.1e75; // does not raise exceptions   │
+			// │                             // (conversion is exact)       │
+			// │ }                                                          │
+			// └────────────────────────────────────────────────────────────┘
+			// 
+			//    Example
+			// 
+			// ┌────────────────────────────────────────────────────────────┐
+			// │ #include <stdbool.h>                                       │
+			// │ int main(void)                                             │
+			// │ {                                                          │
+			// │     bool b = true;                                         │
+			// │     const double d = 3.14;                                 │
+			// │     int k = 3.15; // conversion from double to int         │
+			// │     int n = {12}, // optional braces                       │
+			// │        *p = &n,   // non-constant expression OK for        │
+			// │                   // automatic variable                    │
+			// │        (*fp)(void) = main;                                 │
+			// │     enum {RED, BLUE} e = RED; // enumerations are scalar   │
+			// │                               // types as well             │
+			// │ }                                                          │
+			// └────────────────────────────────────────────────────────────┘
+		};
+		if(!self){
+			retval = mtGInstruction_CreateBasic(
+				tInstruction_Allocatestorage,
+				type->atomicbasetype
+			);
+		}else{
+			retval = IgEvaulaterelocateableconstantexpression(self);
+		};
+	}else switch(type->atomicbasetype){
+		case eGAtomictype_Array:
+			if(!self){
+				for(int n=0;n<type->arraysize;n++){
+					retval=mtGInstruction_Join_Modify(retval,
+						IgCompileglobalvariable(
+							type->complexbasetype,
+							nullptr
+						)
+					);
+				};
+			}else{
+				tSpNode* j = self;
+				assert(j->type==tSplexem_Comma); // Semanticparser provides a 
+				                                 // comma-separated list of initializers
+				assert(!type->dynamicarraysize);
+				for(int n=0;n<type->arraysize;n++){
+					retval=mtGInstruction_Join_Modify(retval,
+						IgCompileglobalvariable(
+							type->complexbasetype,
+							j?j->left:nullptr
+						)
+					);
+					if(j)j=j->right;
+				};
+			};
+			break;
+		default:
+			fprintf(
+				stderr,
+				"IG: [E] IgCompileglobalvariable: "
+				"Unrecognized type %i•%s <%s>\n",
+				type->atomicbasetype,
+				meGAtomictype_ToStringTable[type->atomicbasetype],
+				mtGType_ToString(type)
+			);
+			fprintf(
+				stdout,
+				"IG: [E] IgCompilelocalvariable: "
+				"Unrecognized type %i•%s <%s>\n",
+				type->atomicbasetype,
+				meGAtomictype_ToStringTable[type->atomicbasetype],
+				mtGType_ToString(type)
+			);
+			ErfError();
+			break;
+	};
+	ErfLeave();
+	return retval;
+};
+tGInstruction* IgCompilelocalvariable(
+	tGTargetPointer* var,
+	tGTargetSizet offset, 
+	tGType* type, 
+	tSpNode* self
+){ // Compiles local variable's initializer
+	ErfEnter_String(
+		mtString_Format(
+			"IgCompilelocalvariable var:%p offset:%i type:<%s> node:%p",
+			var,
+			offset,
+			mtGType_ToString(type),
+			self
+		)
+	);
+	assert(var);
+	assert(type);
+	assert(self);
+	if(mtGType_IsScalar(type)){
+		// Scalar type. Compile as initializer
+		tGInstruction* i = mtGInstruction_Join_Modify(
+				// Load pointer to variable
+				var->nonconstant 
+			?	mtGInstruction_Join_Modify(
+					// In case of a global
+					mtGInstruction_CreateCodepointer(
+						tInstruction_Loadaddress,
+						eGAtomictype_Nearpointer,
+						var->dynamicpointer
+					),
+					mtGInstruction_CreateImmediate(
+						tInstruction_Index,
+						eGAtomictype_Nearpointer,
+						offset
+					)
+				)
+			:	mtGInstruction_Join_Modify(
+					// In case of a local
+					mtGInstruction_CreateImmediate(
+						tInstruction_Constant,
+						eGAtomictype_Nearpointer,
+						var->offset+offset
+					),
+						  var->segment
+						==meGSegment_Stackframe
+					?	mtGInstruction_CreateBasic(
+							tInstruction_Indexfp,
+							eGAtomictype_Nearpointer
+						)
+					:	nullptr
+				)
+			,
+			mtGInstruction_Join_Modify(
+				// Glue
+				mtGInstruction_CreateBasic(
+					tInstruction_Pushleft,
+					   self->returnedtype->valuecategory
+					 ==eGValuecategory_Leftvalue
+					?eGAtomictype_Nearpointer
+					:self->returnedtype->atomicbasetype
+				),
+				mtGInstruction_Join_Modify(
+					// Initializer
+					IgCompileExpression(self),
+					mtGInstruction_Join_Modify(
+						// Glue
+						mtGInstruction_CreateBasic(
+							tInstruction_Popright,
+							   self->returnedtype->valuecategory
+							 ==eGValuecategory_Leftvalue
+							?eGAtomictype_Nearpointer
+							:self->returnedtype->atomicbasetype
+						),
+						// Write it
+						mtGInstruction_CreateSegmented(
+							tInstruction_Store,
+							meGSegment_Data, // TODO: Segmentation: Get segment using
+											 //        mtSpNode_GetSegment(self->right)
+							self->returnedtype->atomicbasetype
+						)
+					)
+				)
+			)
+		);
+		return i;
+	}else switch(type->atomicbasetype){
+		default:
+			fprintf(
+				stderr,
+				"IG: [E] IgCompilelocalvariable: "
+				"Unrecognized type %i•%s <%s>\n",
+				type->atomicbasetype,
+				meGAtomictype_ToStringTable[type->atomicbasetype],
+				mtGType_ToString(type)
+			);
+			fprintf(
+				stdout,
+				"IG: [E] IgCompilelocalvariable: "
+				"Unrecognized type %i•%s <%s>\n",
+				type->atomicbasetype,
+				meGAtomictype_ToStringTable[type->atomicbasetype],
+				mtGType_ToString(type)
+			);
+			ErfError();
+			return nullptr;
+			break;
+	};
+};
 tGInstruction* IgCompileStatement(tSpNode* self){
+	assert(self);
 #ifdef qvGTrace
 	printf("IG: [T] IgCompileStatement: entered %i•%s\n",self->type,TokenidtoName[self->type]);
 #endif
-	assert(self);
 	switch(self->type){
 		case tSplexem_Declarationlist: {
 			ErfEnter_String("IgCompileStatement: Declarationlist");
@@ -868,18 +1170,16 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 		};	break;
 		case tSplexem_Blockstatement: {
 			ErfEnter_String("IgCompileStatement: Blockstatement");
-			tGInstruction* i;
-			if(self->left){
-				i=IgCompileStatement(self->left);
-				if(!i)i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+			tGInstruction* i = mtGInstruction_CreateCnop();
+			ErfUpdate_String("IgCompileStatement: Blockstatement - left");
+			if(self->left)  mtGInstruction_GetLast(i)->next=IgCompileStatement(self->left);
+			ErfUpdate_String("IgCompileStatement: Blockstatement - right");
+			if(self->right) {
 				assert(i);
-			}else{
-				i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
-				assert(i);
+				assert(mtGInstruction_GetLast(i));
+				mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
 			};
-			assert(i);
-			assert(mtGInstruction_GetLast(i));
-			if(self->right)mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
+			ErfUpdate_String("IgCompileStatement: Blockstatement - post");
 			ErfLeave();
 			return i;
 		};	break;
@@ -906,77 +1206,92 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			return i;
 		};	break;
 		case tSplexem_Expressionstatement: {
+			ErfEnter_String("IgCompileStatement: Expressionstatement");
 			tGInstruction* i;
 			i=IgCompileExpression(self->left);
+			assert(i);
 			assert(mtGInstruction_GetLast(i));
 			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
 				tInstruction_Drop,
 				self->left->returnedtype->atomicbasetype
 			);
+			ErfLeave();
 			return i;
 		};	break;
 		case tSplexem_Variabledeclaration: {
 			ErfEnter_String("IgCompileStatement: Variabledeclaration");
-			if(self->right==nullptr){ // No initializer - no code emmited
-				ErfLeave();
-				return nullptr; 
-			}
-			assert(self!=nullptr);
+			tGInstruction* i;
+			assert(self);
 			assert(self->symbol);
-			assert(self->symbol->type->valuecategory == eGValuecategory_Leftvalue);
-			assert(self->symbol->symbolkind == mtGSymbol_eType_Pointer);
-			tGInstruction* i = mtGInstruction_Join_Modify(
-					self->symbol->allocatedstorage->nonconstant 
-				?	mtGInstruction_CreateCodepointer(
-						tInstruction_Loadaddress,
-						eGAtomictype_Nearpointer,
-						self->symbol->allocatedstorage->dynamicpointer
-					)
-				:	mtGInstruction_Join_Modify(
-						mtGInstruction_CreateImmediate(
-							tInstruction_Constant,
-							eGAtomictype_Nearpointer,
-							self->symbol->allocatedstorage->offset
-						),
-							  self->symbol->allocatedstorage->segment
-							==meGSegment_Stackframe
-						?	mtGInstruction_CreateBasic(
-								tInstruction_Indexfp,
-								eGAtomictype_Nearpointer
-							)
-						:	nullptr
-					)
-				,
-				mtGInstruction_Join_Modify(
-					mtGInstruction_CreateBasic(
-						tInstruction_Pushleft,
-						   self->returnedtype->valuecategory
-						 ==eGValuecategory_Leftvalue
-						?eGAtomictype_Nearpointer
-						:self->returnedtype->atomicbasetype
-					),
-					mtGInstruction_Join_Modify(
-						IgCompileExpression(self->right),
-						mtGInstruction_Join_Modify(
-							mtGInstruction_CreateBasic(
-								tInstruction_Popright,
-								   self->returnedtype->valuecategory
-								 ==eGValuecategory_Leftvalue
-								?eGAtomictype_Nearpointer
-								:self->returnedtype->atomicbasetype
-							),
-							mtGInstruction_CreateSegmented(
-								tInstruction_Store,
-								meGSegment_Data, // TODO: Segmentation: Get segment using
-												 //        mtSpNode_GetSegment(self->right)
-								self->right->returnedtype->atomicbasetype
-							)
-						)
-					)
-				)
-			);
+			if(self->right)
+				i = IgCompilelocalvariable(
+					self->symbol->allocatedstorage,
+					0,
+					self->returnedtype,
+					self->right
+				);
+			else
+				i=nullptr;
 			ErfLeave();
 			return i;
+			//if(self->right==nullptr){ // No initializer - no code emmited
+			//	ErfLeave();
+			//	return nullptr; 
+			//}
+			//assert(self!=nullptr);
+			//assert(self->symbol);
+			//assert(self->symbol->type->valuecategory == eGValuecategory_Leftvalue);
+			//assert(self->symbol->symbolkind == mtGSymbol_eType_Pointer);
+			//tGInstruction* i = mtGInstruction_Join_Modify(
+			//		self->symbol->allocatedstorage->nonconstant 
+			//	?	mtGInstruction_CreateCodepointer(
+			//			tInstruction_Loadaddress,
+			//			eGAtomictype_Nearpointer,
+			//			self->symbol->allocatedstorage->dynamicpointer
+			//		)
+			//	:	mtGInstruction_Join_Modify(
+			//			mtGInstruction_CreateImmediate(
+			//				tInstruction_Constant,
+			//				eGAtomictype_Nearpointer,
+			//				self->symbol->allocatedstorage->offset
+			//			),
+			//				  self->symbol->allocatedstorage->segment
+			//				==meGSegment_Stackframe
+			//			?	mtGInstruction_CreateBasic(
+			//					tInstruction_Indexfp,
+			//					eGAtomictype_Nearpointer
+			//				)
+			//			:	nullptr
+			//		)
+			//	,
+			//	mtGInstruction_Join_Modify(
+			//		mtGInstruction_CreateBasic(
+			//			tInstruction_Pushleft,
+			//			   self->returnedtype->valuecategory
+			//			 ==eGValuecategory_Leftvalue
+			//			?eGAtomictype_Nearpointer
+			//			:self->returnedtype->atomicbasetype
+			//		),
+			//		mtGInstruction_Join_Modify(
+			//			IgCompileExpression(self->right),
+			//			mtGInstruction_Join_Modify(
+			//				mtGInstruction_CreateBasic(
+			//					tInstruction_Popright,
+			//					   self->returnedtype->valuecategory
+			//					 ==eGValuecategory_Leftvalue
+			//					?eGAtomictype_Nearpointer
+			//					:self->returnedtype->atomicbasetype
+			//				),
+			//				mtGInstruction_CreateSegmented(
+			//					tInstruction_Store,
+			//					meGSegment_Data, // TODO: Segmentation: Get segment using
+			//									 //        mtSpNode_GetSegment(self->right)
+			//					self->right->returnedtype->atomicbasetype
+			//				)
+			//			)
+			//		)
+			//	)
+			//);
 		};	break;
 		case tSplexem_Forstatement: {
 			//	forloop: initializer
@@ -1069,11 +1384,13 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			//		cjn	_e
 			//		true
 			//_e
+			tGInstruction* cond;
 			ErfEnter_String("IgCompileStatement: `if`");
 			tGInstruction* i = mtGInstruction_CreateCnop();
-			ErfUpdate_String("IgCompileStatement: `if` - then");
+			ErfUpdate_String("IgCompileStatement: `if` - then?");
+			assert(self);
+			assert(self->left);
 			tGInstruction* thenbranch = IgCompileStatement(self->left);
-			tGInstruction* cond;
 			if(self->right){
 				ErfUpdate_String("IgCompileStatement: `if` - else");
 				tGInstruction* elsebranch = IgCompileStatement(self->right);
@@ -1125,6 +1442,7 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	assert(  self->returnedtype->atomicbasetype==eGAtomictype_Nearfunction
 	       ||self->returnedtype->atomicbasetype==eGAtomictype_Function);
 	ErfEnter_String("IgCompileFunction: root");
+	ErfUpdate_String(mtString_Join("IgCompileFunction: ",self->symbol->name));
 	IgCurrentfunction = self;
 	// Find the place to write code to
 	tGInstruction* code = self->symbol->allocatedstorage->dynamicpointer;
@@ -1158,49 +1476,61 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 tGInstruction* IgCompileVariable(tSpNode* self){
 	assert(self);
 	tGInstruction* retval;
-	if(self->returnedtype->atomicbasetype==eGAtomictype_Array){
-		// Compile an array
-		assert(!self->returnedtype->dynamicarraysize);
-		assert(self->returnedtype->arraysize);
-		retval = mtGInstruction_Join_Modify(
-			mtGInstruction_SetLabel(
-				mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
-				mtString_Clone(self->symbol->name)
-			),
-			mtGInstruction_CreateImmediate(
-				tInstruction_Allocatestorage2,
-				eGAtomictype_Uint8,
-				mtGType_Sizeof(
-					mtGType_SetValuecategory(
-						mtGType_Deepclone(
-							self->returnedtype
-						),
-						eGValuecategory_Rightvalue
-					)
-				)
-			)
-		);
-	}else{
-		// Relatively normal variable
-		retval = mtGInstruction_Join_Modify(
-			mtGInstruction_SetLabel(
-				mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
-				mtString_Clone(self->symbol->name)
-			),
+	retval = mtGInstruction_Join_Modify(
+		mtGInstruction_SetLabel(
 			mtGInstruction_CreateBasic(
-				tInstruction_Allocatestorage,
-				self->returnedtype->atomicbasetype
-			)
-		);
-	};
-	assert(self);
-	assert(self->symbol);
-	assert(self->symbol->allocatedstorage);
-	assert(self->symbol->allocatedstorage->dynamicpointer);
-	*self->symbol->allocatedstorage->dynamicpointer=*retval;
-	retval=self->symbol->allocatedstorage->dynamicpointer;
-
+				tInstruction_Global,
+				eGAtomictype_Void
+			),
+			self->symbol->name
+		),
+		IgCompileglobalvariable(self->returnedtype,self->right)
+	);
+	self->symbol->allocatedstorage=mtGTargetPointer_CreateDynamic(retval);
 	return retval;
+	//// Old code
+	//if(self->returnedtype->atomicbasetype==eGAtomictype_Array){
+	//	// Compile an array
+	//	assert(!self->returnedtype->dynamicarraysize);
+	//	assert(self->returnedtype->arraysize);
+	//	retval = mtGInstruction_Join_Modify(
+	//		mtGInstruction_SetLabel(
+	//			mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
+	//			mtString_Clone(self->symbol->name)
+	//		),
+	//		mtGInstruction_CreateImmediate(
+	//			tInstruction_Allocatestorage2,
+	//			eGAtomictype_Uint8,
+	//			mtGType_Sizeof(
+	//				mtGType_SetValuecategory(
+	//					mtGType_Deepclone(
+	//						self->returnedtype
+	//					),
+	//					eGValuecategory_Rightvalue
+	//				)
+	//			)
+	//		)
+	//	);
+	//}else{
+	//	// Relatively normal variable
+	//	retval = mtGInstruction_Join_Modify(
+	//		mtGInstruction_SetLabel(
+	//			mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
+	//			mtString_Clone(self->symbol->name)
+	//		),
+	//		mtGInstruction_CreateBasic(
+	//			tInstruction_Allocatestorage,
+	//			self->returnedtype->atomicbasetype
+	//		)
+	//	);
+	//};
+	//assert(self);
+	//assert(self->symbol);
+	//assert(self->symbol->allocatedstorage);
+	//assert(self->symbol->allocatedstorage->dynamicpointer);
+	//*self->symbol->allocatedstorage->dynamicpointer=*retval;
+	//retval=self->symbol->allocatedstorage->dynamicpointer;
+	//return retval;
 };
 void IgParse(tSpNode* self){
 	assert(self);

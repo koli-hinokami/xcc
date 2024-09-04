@@ -460,6 +460,88 @@ bool mtGType_IsArray(tGType* self){
 	)return true;
 	return false;
 };
+bool mtGType_IsScalar(tGType* self){
+	switch(self->atomicbasetype){
+		case eGAtomictype_Char            :return true;
+		case eGAtomictype_Signedchar      :return true;
+		case eGAtomictype_Unsignedchar    :return true;
+		case eGAtomictype_Short           :return true;
+		case eGAtomictype_Unsignedshort   :return true;
+		case eGAtomictype_Int             :return true;
+		case eGAtomictype_Unsigned        :return true;
+		case eGAtomictype_Long            :return true;
+		case eGAtomictype_Unsignedlong    :return true;
+		case eGAtomictype_Longlong        :return true;
+		case eGAtomictype_Unsignedlonglong:return true;
+		case eGAtomictype_Float           :return true;
+		case eGAtomictype_Double          :return true;
+		case eGAtomictype_Longdouble      :return true;
+		case eGAtomictype_Pointer         :return true;
+		case eGAtomictype_Sizet           :return true;
+		case eGAtomictype_Intptr          :return true;
+		case eGAtomictype_Intnearptr      :return true;
+		case eGAtomictype_Intfarptr       :return true;
+		case eGAtomictype_Nearpointer     :return true;
+		// IR-side types
+		case eGAtomictype_Int8            :return true;
+		case eGAtomictype_Uint8           :return true;
+		case eGAtomictype_Int16           :return true;
+		case eGAtomictype_Uint16          :return true;
+		case eGAtomictype_Int32           :return true;
+		case eGAtomictype_Uint32          :return true;
+		// TODO: : ptrdiff_t is signed but nearpointer is not
+		case eGAtomictype_Array           :return false;
+		case eGAtomictype_Structure       :return false;
+		default: 
+			printf("ss: [E] mtGType_IsScalar: Unrecognized atomic type %i∙%s\n",
+				self->atomicbasetype,
+				meGAtomictype_ToStringTable[self->atomicbasetype]
+			);
+			ErfError();
+			return false;
+			break;
+	};
+};
+bool mtGType_IsSigned(tGType* self){
+	switch(self->atomicbasetype){
+		case eGAtomictype_Char            :return false;
+		case eGAtomictype_Signedchar      :return true;
+		case eGAtomictype_Unsignedchar    :return false;
+		case eGAtomictype_Short           :return true;
+		case eGAtomictype_Unsignedshort   :return false;
+		case eGAtomictype_Int             :return true;
+		case eGAtomictype_Unsigned        :return false;
+		case eGAtomictype_Long            :return true;
+		case eGAtomictype_Unsignedlong    :return false;
+		case eGAtomictype_Longlong        :return true;
+		case eGAtomictype_Unsignedlonglong:return false;
+		case eGAtomictype_Float           :return true;
+		case eGAtomictype_Double          :return true;
+		case eGAtomictype_Longdouble      :return true;
+		case eGAtomictype_Pointer         :return true;
+		case eGAtomictype_Sizet           :return false;
+		case eGAtomictype_Intptr          :return true;
+		case eGAtomictype_Intnearptr      :return true;
+		case eGAtomictype_Intfarptr       :return true;
+		case eGAtomictype_Nearpointer     :return false; 
+		// IR-side types
+		case eGAtomictype_Int8            :return true;
+		case eGAtomictype_Uint8           :return false;
+		case eGAtomictype_Int16           :return true;
+		case eGAtomictype_Uint16          :return false;
+		case eGAtomictype_Int32           :return true;
+		case eGAtomictype_Uint32          :return false;
+		// TODO: : ptrdiff_t is signed but nearpointer is not
+		default: 
+			printf("ss: [E] mtGType_IsSigned: Unrecognized atomic type %i∙%s\n",
+				self->atomicbasetype,
+				meGAtomictype_ToStringTable[self->atomicbasetype]
+			);
+			ErfError();
+			return false;
+			break;
+	};
+};
 tGType* mtGType_Compose(tGType* t1,tGType* t2){
 	fprintf(stderr,"G:  [F] mtGType_Compose: Unfinished code hit! \n");
 	exit(2);
@@ -612,46 +694,6 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 		default: break;
 	};
 	return self;
-};
-bool mtGType_IsSigned(tGType* self){
-	switch(self->atomicbasetype){
-		case eGAtomictype_Char            :return false;
-		case eGAtomictype_Signedchar      :return true;
-		case eGAtomictype_Unsignedchar    :return false;
-		case eGAtomictype_Short           :return true;
-		case eGAtomictype_Unsignedshort   :return false;
-		case eGAtomictype_Int             :return true;
-		case eGAtomictype_Unsigned        :return false;
-		case eGAtomictype_Long            :return true;
-		case eGAtomictype_Unsignedlong    :return false;
-		case eGAtomictype_Longlong        :return true;
-		case eGAtomictype_Unsignedlonglong:return false;
-		case eGAtomictype_Float           :return true;
-		case eGAtomictype_Double          :return true;
-		case eGAtomictype_Longdouble      :return true;
-		case eGAtomictype_Pointer         :return true;
-		case eGAtomictype_Sizet           :return false;
-		case eGAtomictype_Intptr          :return true;
-		case eGAtomictype_Intnearptr      :return true;
-		case eGAtomictype_Intfarptr       :return true;
-		case eGAtomictype_Nearpointer     :return false; 
-		// IR-side types
-		case eGAtomictype_Int8            :return true;
-		case eGAtomictype_Uint8           :return false;
-		case eGAtomictype_Int16           :return true;
-		case eGAtomictype_Uint16          :return false;
-		case eGAtomictype_Int32           :return true;
-		case eGAtomictype_Uint32          :return false;
-		// TODO: : ptrdiff_t is signed but nearpointer is not
-		default: 
-			printf("ss: [E] mtGType_IsSigned: Unrecognized atomic type %i∙%s\n",
-				self->atomicbasetype,
-				meGAtomictype_ToStringTable[self->atomicbasetype]
-			);
-			ErfError();
-			return false;
-			break;
-	};
 };
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){

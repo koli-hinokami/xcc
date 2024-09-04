@@ -81,6 +81,7 @@ void SgRegisterstructures(tLxNode* ast){
 			SgRegisterstructureTraverse(ast->returnedtype);
 			break;
 		default:
+			break;
 	};
 };
 void SgResolvestructure(tGType* type){
@@ -514,7 +515,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgFindunresolvedtypes_LxNode);
 			SgRegisterstructureTraverse(type);
 		default:
-				
+			break;
 	};
 };
 void SgFindunresolvedtypes(tGNamespace* name_space);

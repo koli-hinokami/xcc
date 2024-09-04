@@ -244,6 +244,7 @@ enum tTokentype {
 	tSplexem_Lessequal              = 1072, //
 	tSplexem_Logicalnot             = 1073, //
 	tSplexem_Externaldeclaration    = 1074, //
+	tSplexem_Compoundliteral        = 1075, //
 	//tSplexem_                     = ,     //
 	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
@@ -1379,7 +1380,7 @@ char *TokenidtoName[]={
 	"tSplexem_Lessequal          ",// 1072
 	"tSplexem_Logicalnot         ",// 1073
 	"tSplexem_Externaldeclaration",// 1074
-	"tSplexem_Undefined          ",// 1075
+	"tSplexem_Compoundliteral    ",// 1075
 	"tSplexem_Undefined          ",// 1076
 	"tSplexem_Undefined          ",// 1077
 	"tSplexem_Undefined          ",// 1078

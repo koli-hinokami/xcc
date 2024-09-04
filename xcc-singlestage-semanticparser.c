@@ -5,6 +5,7 @@ tSpNode /* `for/switch;` */ * SpCurrentbreak;
 
 // -------------------------- Forward declarations --------------------------
 tSpNode* SpInsertimpliedrvaluecast(tSpNode* self);
+tSpNode* SpParse(tLxNode* self);
 
 // ------------------------------- Functions -------------------------------
 tSpNode* mtSpNode_Create(void){
@@ -399,6 +400,126 @@ void SpArithmeticpromotion(tSpNode* *left, tSpNode* *right){
 	printf("SP: [W] SpArithmeticpromotion: Unimplemented code hit!\n");
 	ErfWarning();
 };
+tSpNode* SpCompileinitializer(tGType* type, tLxNode* self){
+	// Decide between scalar, array and structunion initialization
+	if(mtGType_IsScalar(type)){
+		// Scalar type initialization
+		{	// Typeset cppreference page just for lulz
+			// -
+			// ___________________________________
+			// \ C / C language / Initialization /
+			//  '''''''''''''''''''''''''''''''''
+			//   Scalar initialization
+			// ''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''''
+			// 
+			// When initializing an object of scalar type, the initializer must
+			// be a single expression
+			// 
+			// The initializer for a scalar (an object of integer type including
+			// booleans and enumerated types, floating type including complex 
+			// and imaginary, and pointer type including pointer to function) 
+			// must be a single expression, optionally enclosed in braces, or an
+			// empty initializer(since C23):
+			// ---------------------------------------
+			//   = expression         (1)
+			// ---------------------------------------
+			//   = { expression }     (2)
+			// ---------------------------------------
+			//   = { }                (3)  (since C23)
+			// ---------------------------------------
+			// 1,2)  The expression is evaluated, and its value, after conversion
+			//      as if by assignment to the type of the object, becomes the
+			//      initial value of the object being initialized.
+			//   3)  The object is empty-initialized, i.e. initialized to numeric
+			//      zero for an object of an arithmetic or enumeration type, or 
+			//      null pointer value for an object of a pointer type.
+			//
+			//   Notes
+			// 
+			// Because of the rules that apply to conversions as if by 
+			// assignment, const and volatile qualifiers on the declared type 
+			// are ignored when determining which type to convert the 
+			// expression to.
+			// 
+			// See initialization for the rules that apply when no initializer
+			// is used.
+			// 
+			// As with all other initializations, expression must be a constant
+			// expression when initializing objects of static or thread-local
+			// storage duration.
+			// 
+			// The expression cannot be a comma operator (unless parenthesized)
+			// because the comma at the top level would be interpreted as the
+			// beginning of the next declarator.
+			// 
+			// When initializing objects of floating-point type, all
+			// computations for the objects with automatic storage duration are
+			// done as-if at execution time and are affected by the current
+			// rounding; floating-point errors are reported as specified in
+			// math_errhandling. For objects of static and thread-local storage
+			// duration, computations are done as-if at compile time, and no
+			// exceptions are raised:
+			// ┌────────────────────────────────────────────────────────────┐
+			// │ void f(void)                                               │
+			// │ {                                                          │
+			// │ #pragma STDC FENV_ACCESS ON                                │
+			// │     static float v = 1.1e75; // does not raise exceptions: │
+			// │                              // static init                │
+			// │                                                            │
+			// │     float u[] = { 1.1e75 }; // raises FE_INEXACT           │
+			// │     float w = 1.1e75;       // raises FE_INEXACT           │
+			// │                                                            │
+			// │     double x = 1.1e75; // may raise FE_INEXACT (depends    │
+			// │                        // on FLT_EVAL_METHOD)              │
+			// │     float y = 1.1e75f; // may raise FE_INEXACT (depends    │
+			// │                        // on FLT_EVAL_METHOD)              │
+			// │                                                            │
+			// │     long double z = 1.1e75; // does not raise exceptions   │
+			// │                             // (conversion is exact)       │
+			// │ }                                                          │
+			// └────────────────────────────────────────────────────────────┘
+			// 
+			//    Example
+			// 
+			// ┌────────────────────────────────────────────────────────────┐
+			// │ #include <stdbool.h>                                       │
+			// │ int main(void)                                             │
+			// │ {                                                          │
+			// │     bool b = true;                                         │
+			// │     const double d = 3.14;                                 │
+			// │     int k = 3.15; // conversion from double to int         │
+			// │     int n = {12}, // optional braces                       │
+			// │        *p = &n,   // non-constant expression OK for        │
+			// │                   // automatic variable                    │
+			// │        (*fp)(void) = main;                                 │
+			// │     enum {RED, BLUE} e = RED; // enumerations are scalar   │
+			// │                               // types as well             │
+			// │ }                                                          │
+			// └────────────────────────────────────────────────────────────┘
+		};
+		return mtSpNode_Promote(SpInsertimpliedrvaluecast(SpParse(self)),type);
+	}else{
+		// Unrecognized type category
+		fprintf(
+			stderr,
+			"SP: [E] SpCompileinitializer: "
+			"Initializing unrecognized type %i•%s (%s)\n",
+			type->atomicbasetype,
+			meGAtomictype_ToStringTable[type->atomicbasetype],
+			mtGType_ToString(type)
+		);
+		fprintf(
+			stdout,
+			"SP: [E] SpCompileinitializer: "
+			"Initializing unrecognized type %i•%s (%s)\n",
+			type->atomicbasetype,
+			meGAtomictype_ToStringTable[type->atomicbasetype],
+			mtGType_ToString(type)
+		);
+		ErfError();
+		return nullptr;
+	};
+};
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
 		printf("SP: [W] SpParse: Nullpointer\n");
@@ -527,13 +648,11 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						name,
 						mtGSymbol_eType_Pointer
 					);
-					// Update symbol's type
-					//symbol->type=SppForceresolvetype(
-					//	symbol->type,self->name_space);
+					// Update type
 					type=symbol->type;
 					// Allocate storage
 					if(SpCurrentfunction){
-						// Allocate local var
+						// Allocate local variable storage
 						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocatelocalvarstorage(
 							SpCurrentfunction->fextinfo,
@@ -547,23 +666,26 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							)
 						);
 					}else{
-						// Allocate global var
-						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
-						symbol->allocatedstorage=SpAllocateglobalvarstorage(
-							mtGType_Sizeof(
-								mtGType_SetValuecategory(
-									mtGType_Deepclone(
-										symbol->type
-									),
-									eGValuecategory_Rightvalue
-								)
-							)
-						);
+						// Allocating global variable storage is done in 
+						// IR Generator
+						symbol->allocatedstorage=nullptr;
+						//assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
+						//symbol->allocatedstorage=SpAllocateglobalvarstorage(
+						//	mtGType_Sizeof(
+						//		mtGType_SetValuecategory(
+						//			mtGType_Deepclone(
+						//				symbol->type
+						//			),
+						//			eGValuecategory_Rightvalue
+						//		)
+						//	)
+						//);
 					};
-					// Massage right node's type
-					tSpNode* right = SpInsertimpliedrvaluecast(
-						SpParse(self->right));
-					if(right) right=mtSpNode_Promote(right,type);
+					// Compile initializer
+					tSpNode* right = 
+						self->right
+						?SpCompileinitializer(type, self->right)
+						:nullptr;
 					// Return node
 					retval = mtSpNode_Clone(
 						&(tSpNode){
@@ -845,26 +967,28 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				);
 				ErfLeave();
 				return retval;
-			case tLexem_Identifier:
-				tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
-					self->name_space,
-					self->identifier,
-					mtGSymbol_eType_Pointer
-				);
-				if(!symbol){
-					fprintf(stderr,"SP: [E] SpParse: Undefined symbol \"%s\"\n",
-						self->identifier);
-					printf("SP: [E] SpParse: Undefined symbol \"%s\"\n",
-						self->identifier);
-					ErfError();
+			case tLexem_Identifier: 
+				{
+					tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
+						self->name_space,
+						self->identifier,
+						mtGSymbol_eType_Pointer
+					);
+					if(!symbol){
+						fprintf(stderr,"SP: [E] SpParse: Undefined symbol \"%s\"\n",
+							self->identifier);
+						printf("SP: [E] SpParse: Undefined symbol \"%s\"\n",
+							self->identifier);
+						ErfError();
+					};
+					retval = mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Symbol,
+							.returnedtype=symbol->type,
+							.symbol=symbol,
+						}
+					);
 				};
-				retval = mtSpNode_Clone(
-					&(tSpNode){
-						.type=tSplexem_Symbol,
-						.returnedtype=symbol->type,
-						.symbol=symbol,
-					}
-				);
 				ErfLeave();
 				return retval;
 		};
@@ -1328,6 +1452,29 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				ErfLeave();
 				return retval;
 			};
+			case tLexem_Compoundliteral: {
+				assert(self->left->type == tLexem_Typeexpression);
+				tGType* type = SppForceresolvetype(
+					SppGeneratetype(
+						self->left->returnedtype,
+						self->left->left,
+						null
+					),
+					self->name_space
+				);
+				retval = mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Compoundliteral,
+						.returnedtype=type,
+						.left=SpCompileinitializer(
+							type,
+							self->right
+						),
+					}
+				);
+				ErfLeave();
+				return retval;
+			};	break;
 		};
 		{	// Expressions - arithmetic operators
 			case tLexem_Negation: {
@@ -1885,6 +2032,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 	assert(self);
 	{	// Init
+		
 	};
 	{	// Recurse
 		if(self->initializer) self->initializer = SpOptimize(self->initializer);
