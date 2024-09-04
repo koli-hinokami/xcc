@@ -82,14 +82,27 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			case tLexem_Variabledeclaration:
 				// Do I even need to handle those?
 				//  Well, I think so, so those will live for now
+				//  Crap, initialization. Locals *must* live but
+				//   I'll need to do something with globals
 
 				//return nullptr;
-				//return mtSpNode_Clone(
-				//	&(tSpNode){
-				//		.type=tSplexem_Variabledeclaration,
-				//		.symbol=mtGNamespace_Findsymbol_NameKind(GRootnamespace,SppGeneratetype_GetName(self->left))
-				//	}
-				//);
+				{
+					char* name;
+					tGType* type = SppGeneratetype(
+						self->returnedtype,
+						self->left,
+						&name
+					);
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Variabledeclaration,
+							.returnedtype=type,
+							//.identifier=name,
+							.symbol=mtGNamespace_Findsymbol_NameKind(self->name_space,name,mtGSymbol_eType_Pointer)
+						}
+					);
+				};
+				//return nullptr;
 				break;
 			//case tLexem_Nullexpression:
 			//	return mtSpNode_Clone(

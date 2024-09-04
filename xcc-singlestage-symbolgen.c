@@ -212,10 +212,16 @@ void SgParse(tLxNode* ast){
 			SgParse(ast->left);
 			SgParse(ast->right);
 		};
+		case tLexem_Returnstatement:
+		case tLexem_Expressionstatement:
+			// Skip both
+			break;
 		case tLexem_Functiondeclaration: {
 			char* name = nullptr;
-			tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
-			mtGNamespace_Add(
+			tGType* type = SgGeneratetype(
+				ast->returnedtype,ast->left,&name
+			);
+			mtGNamespace_Add( // Register function itself
 				ast->name_space,
 				mtGSymbol_CreatePointer(
 					name,
@@ -223,7 +229,8 @@ void SgParse(tLxNode* ast){
 					nullptr
 				)
 			);
-			mtGNamespace_Add(
+			mtGNamespace_Add( // And it's namespace... you need to
+			                  // take care of locals, after all...
 				ast->name_space,
 				mtGSymbol_CreateNamespace(
 					name,
@@ -237,8 +244,8 @@ void SgParse(tLxNode* ast){
 			printf("SG: [T] SgParse: Variable declaration \n");
 #endif
 			// Variable initialized decls, possibly with initializer
-			// Traverse declaration list
 			SgRegisterstructureTraverse(ast->returnedtype);
+			// Traverse declaration list
 			if(!ast->left){
 				printf("SG: [E] SgParse: Variable declaration: Invalid type expression, ignoring \n");
 			}else{
@@ -249,16 +256,16 @@ void SgParse(tLxNode* ast){
 					// Handle a declaration
 					char* name = nullptr;
 					tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
-					if(ast->right){
-						mtGNamespace_Add(
-							ast->name_space,
-							mtGSymbol_CreateDeferred(
-								name,
-								type,
-								ast->right
-							)
-						);
-					}else{
+					//if(ast->right){
+					//	mtGNamespace_Add(
+					//		ast->name_space,
+					//		mtGSymbol_CreateDeferred(
+					//			name,
+					//			type,
+					//			ast->right
+					//		)
+					//	);
+					//}else{
 						// Uninitialized
 						mtGNamespace_Add(
 							ast->name_space,
@@ -268,7 +275,7 @@ void SgParse(tLxNode* ast){
 								nullptr
 							)
 						);
-					};
+					//};
 				};
 			};
 		};	break;
@@ -321,6 +328,9 @@ void SgFindunresolvedtypes_Type(tGType* type){
 		case eGAtomictype_Array:
 			SgFindunresolvedtypes_Type(type->complexbasetype);
 			break;
+		case eGAtomictype_Structure: // I still need to compile structures
+		case eGAtomictype_Union:     
+			//SgRegistercompilablestructure(type);
 		default:
 	};
 };
@@ -388,4 +398,8 @@ void SgResolveunresolvedtypes(){
 	mtList_Foreach(SgUnresolvedtypes,(void(*)(void*))SgResolveunresolvedtypes_Resolvetype);
 	// Additionally resolve structs
 	SgResolvestructures();
+};
+void SgCompilestructures(){
+	printf("SP: [D] SgCompilestructures: entered \n");
+	mtList_Foreach(SgCompilablestructures,SppCompilestructure);
 };

@@ -39,6 +39,19 @@ Timestamps:
 	                            rewrite.
 	30apr2024 02:00 UTC+5       Publicrelease 7 Interim 4. Straight from hell of
 	                            major refactoring.
+	01may2024                   Development seems to slow down. I may go more into
+	                            documenting things rather than to actually implement 
+				    them.
+C Grammar deviations:
+
+	• Logical AND/OR operators `&&` and `||` are lower priority compared to 
+	  assignments.
+	   So on their C++ locations.
+	• No Lexer hack. 
+	   In reality it means when you're declaring a variable
+	   of a typedef'd type you need to write out implied `auto` storage
+	   duration specifier, elseways Lexer will treat it as calling the
+	   type as a function.
 
 Stages:
 	¤ Embedder
@@ -52,11 +65,20 @@ Stages:
 		Convers preprocessed code into list of tokens.
 	¤ Lexer
 		Generates Primary AST. Doesn't resolves types or symbols.
+	¤ Lexicalpostparser
+		Postprocessing Primary AST to the shape used later on
+	¤ Semanticpreparser
+		Mostly functions for working with Primary AST. Has a stub for
+		SppParse which is the Preparser itself but not really used
 	¤ Symbol list generator
-		Generates list of symbols by traversing Primary AST.
-		(should be) double pass - so forward-referencing types
-		inside type definition works. First stages compiles definition 
-		list, second stage resolves types inside type definitons.
+		.Generates list of symbols by traversing Primary AST.
+		|(should be) double pass - so forward-referencing types
+		|inside type definition works. First stages compiles definition 
+		'list, second stage resolves types inside type definitons.
+		It's substages:
+		• Registering symbols and structures
+		• Compiling structures
+		• Resolving structures used as `struct identifier`
 	¤ Semantic parser
 		Converts Primary AST into Secondary AST which was all the type 
 		information present + some structures converted into 
@@ -65,6 +87,9 @@ Stages:
 		Generates Intermediate representation from Secondary AST, eased
 		by all the type annotations provided by Semantic parser.
 	¤ (absent/platform-dependent) IR Optimizer
+		Likely to actually be Optimizing IR Generator.
+		(Although 'optimizing' may be too much - the heavyweight 
+		optimization has to be provided as Semanticpostparser.)
 	¤ IR Compiler
 		Compiles IR into assembly. Has all the heavy-weight stuff 
 		needed to do so - register allocators and optimizers of all kind.

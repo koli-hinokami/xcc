@@ -182,6 +182,7 @@ enum tTokentype {
 	tSplexem_Blockstatement		= 1028,		//
 	tSplexem_Functiondeclaration	= 1029,		//
 	tSplexem_Returnstatement	= 1030,		//
+	tSplexem_Variabledeclaration	= 1031,		//
 	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
@@ -1009,6 +1010,10 @@ char *TokenidtoName[]={
 	"tCharlexem_Undefined        ",// 807
 	"tCharlexem_Undefined        ",// 808
 	"tCharlexem_Undefined        ",// 809
+	"tCharlexem_Undefined        ",// 810
+	"tCharlexem_Undefined        ",// 811
+	"tCharlexem_Undefined        ",// 812
+	"tCharlexem_Undefined        ",// 813
 	"tCharlexem_Undefined        ",// 814
 	"tCharlexem_Undefined        ",// 815
 	"tCharlexem_Undefined        ",// 816
@@ -1226,7 +1231,7 @@ char *TokenidtoName[]={
 	"tSplexem_Blockstatement     ",// 1028
 	"tSplexem_Functiondeclaration",// 1029
 	"tSplexem_Returnstatement    ",// 1030
-	"tSplexem_Undefined          ",// 1031
+	"tSplexem_Variabledeclaration",// 1031
 	"tSplexem_Undefined          ",// 1032
 	"tSplexem_Undefined          ",// 1033
 	"tSplexem_Undefined          ",// 1034
@@ -1802,8 +1807,10 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 };
 // Target types
 typedef uint16_t tGTargetNearpointer;
+typedef uint16_t tGTargetSizet;
 typedef uint8_t  tGTargetSegment;
 typedef uint32_t tGTargetUintmax;
+
 // XCC types
 typedef struct tToken {
 	short type;
@@ -2000,6 +2007,7 @@ typedef struct tGType {
 	eGTypequalifiers typequalifiers;
 	tListnode /* <tGType> */ * functionarguments;
 	tListnode /* <tGType> */ * templatemodifiers;
+	tGTargetSizet structsize;
 } tGType;
 typedef struct tGNamespace {
 	struct tGNamespace * parentnamespace;
@@ -2041,8 +2049,20 @@ typedef struct tLxNode {
 	tGType* returnedtype;
 } tLxNode;
 
-//typedef struct tSpPrenode {
-//} tSpPrenode;
+typedef struct tSppNode {
+	eTokentype type;
+	struct tSppNode* initializer;
+	struct tSppNode* condition;
+	struct tSppNode* left;
+	struct tSppNode* right;
+
+	struct tSppNode* parent;
+	tGTargetUintmax constant;
+	tGNamespace* name_space;
+	tGNamespace* symbol;
+	tGType* returnedtype;
+	char* identifier;
+} tSppNode;
 
 typedef struct tSpFunctionextinfo {
 } tSpFunctionextinfo;

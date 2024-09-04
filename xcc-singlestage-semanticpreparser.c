@@ -3,6 +3,11 @@
 //tListnode* SppParsefunctionarguments(tLxNode* expr){
 //	return nullptr;
 //};
+tSppNode* mtSppNode_Create(){
+	return calloc(sizeof(tSppNode),1);
+};
+
+
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name);
 tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
@@ -139,7 +144,7 @@ tGType* SppTransformrawvariabledeclarations(tGType* self){
 	cloned->precompiledstructure=mtList_Transform(cloned->precompiledstructure,(void*(*)(void*))SppPreparse_Lambda);
 	return cloned;
 };
-tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){
+tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	if(self==nullptr)return nullptr;
 #ifdef qvGTrace
 	//printf("SPP:[T] SppPreparse(tLxNode* self %10p,tLxNode* parentnode %10p): Entered with node %i•%s\n",self,parentnode,self->type,TokenidtoName[self->type]);
@@ -246,6 +251,274 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){
 	node->right=SppPreparse(self->right,node);
 	return node;
 };
+tSppNode* SppParse(tLxNode /* From SppPreparse! */ * self, tSppNode* parent){ // Semanticpreparser
+	// Semanticpreparser. Mostly deep clone so I could have a tree of tSppNode,
+	// but there also are some changes for Variabledeclarations and 
+	// Typedeclarations - those are kinda like inside Symbolgen and Semanticparser.
+	
+	// Deepclone struct
+	tSppNode* node = mtSppNode_Create();
+	node->type         = self->type;
+	node->initializer  = SppParse(self->initializer,node);
+	node->condition    = SppParse(self->condition,node);
+	node->left         = SppParse(self->right,node);
+	node->right        = SppParse(self->right,node);
 
+	node->constant     = self->constant;
+	node->name_space   = self->name_space;
+	node->parent       = parent;
+	node->returnedtype = self->returnedtype;
+	node->symbol       = nullptr;
+	node->identifier   = self->identifier;
+	// Convert Variabledefinitions
+	if(node->type==tLexem_Variabledeclaration){
+		node->returnedtype=SppGeneratetype(
+			self->returnedtype,
+			self->left,
+			&(node->identifier)
+		);
+	};
+	// Return
+	return node;	
+};
 
+tGTargetSizet mtGType_Sizeof(tGType* self){
+	assert(self);
+	switch(self->atomicbasetype){
+		case eGAtomictype_Void:
+			return 0;
+		case eGAtomictype_Structure:
+			return self->structsize;
+		case eGAtomictype_Enumeration:
+			// TODO: Enumeration with base type other that `int`
+			return 2;
+		case eGAtomictype_Unresolved:
+			assert(false);
+		// Internal types
+		case eGAtomictype_Union: // Temporary type - gets converted to struct later on
+			return self->structsize;
+		case eGAtomictype_Pointer:
+			return 2;
+		case eGAtomictype_Array:
+			return mtGType_Sizeof(self->complexbasetype);
+		case eGAtomictype_Function:
+			assert(false);
+		// IR-side types (and optionally C-side)
+		case eGAtomictype_Int8:
+			return 1;
+		case eGAtomictype_Uint8:
+			return 1;
+		case eGAtomictype_Int16:
+			return 2;
+		case eGAtomictype_Uint16:
+			return 2;
+		case eGAtomictype_Int32:
+			return 4;
+		case eGAtomictype_Uint32:
+			return 4;
+		case eGAtomictype_Int64:
+			return 8;
+		case eGAtomictype_Uint64:
+			return 8;
+		case eGAtomictype_Int80:
+			return 10;
+		case eGAtomictype_Uint80:
+			return 10;
+		case eGAtomictype_Float32:
+			return 4;
+		case eGAtomictype_Float64:
+			return 8;
+		case eGAtomictype_Float80:
+			return 10;
+		// C-side types
+		case eGAtomictype_Char:
+			return 1;
+		case eGAtomictype_Signedchar:
+			return 1;
+		case eGAtomictype_Unsignedchar:
+			return 1;
+		case eGAtomictype_Short:
+			return 2;
+		case eGAtomictype_Unsignedshort:
+			return 2;
+		case eGAtomictype_Int:
+			return 2;
+		case eGAtomictype_Unsigned:
+			return 2;
+		case eGAtomictype_Long:
+			return 4;
+		case eGAtomictype_Unsignedlong:
+			return 4;
+		case eGAtomictype_Longlong:
+			return 8;
+		case eGAtomictype_Unsignedlonglong:
+			return 8;
+		case eGAtomictype_Boolean:
+			return 1;
+		case eGAtomictype_Float:
+			return 4;
+		case eGAtomictype_Double:
+			return 8;
+		case eGAtomictype_Longdouble:
+			return 10;
+		default:
+			assert(false);
+	};
+};
+void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespace* name_space){
+	assert(self);
+	if(self->atomicbasetype==eGAtomictype_Structure){
+		for(
+			tListnode /* <tLxNode> */ * i = self->precompiledstructure->first;
+			i;
+			i=i->next
+		){
+			tLxNode* node = i->item;
+			char* name = nullptr;
+			assert(node->type==tLexem_Variabledeclaration);
+			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+			if(name){ // If we actually got a symbol
+				// Create symbol
+				mtGNamespace_Add(
+					name_space,
+					mtGSymbol_CreatePointer(
+						name,
+						type,
+						mtGTargetPointer_Clone(
+							&(tGTargetPointer){
+								.nonconstant=false,
+								.segment=meGSegment_Relative,
+								.offset=*offset
+							}
+						)
+					)
+				);
+				*offset+=mtGType_Sizeof(type);
+			}else{
+				// Anonymous structunion
+				SppCompileanonymousstructure(type,offset,self->structure);
+			};
+			// Advance position
+		};
+		//self->structsize=offset;
+	}else if(self->atomicbasetype==eGAtomictype_Union){
+		tGTargetSizet unionsize;
+		for(
+			tListnode /* <tLxNode> */ * i = self->precompiledstructure->first;
+			i;
+			i=i->next
+		){
+			tLxNode* node = i->item;
+			char* name = nullptr;
+			assert(node->type==tLexem_Variabledeclaration);
+			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+			if(name){ // If we actually got a symbol
+				// Create symbol
+				mtGNamespace_Add(
+					name_space,
+					mtGSymbol_CreatePointer(
+						name,
+						type,
+						mtGTargetPointer_Clone(
+							&(tGTargetPointer){
+								.nonconstant=false,
+								.segment=meGSegment_Relative,
+								.offset=*offset
+							}
+						)
+					)
+				);
+				if(mtGType_Sizeof(type)>unionsize)unionsize=mtGType_Sizeof(type);
+			}else{
+				// Anonymous structunion
+				SppCompileanonymousstructure(type,offset,self->structure);
+			};
+			// Advance position
+		};
+		*offset+=unionsize;
+		//self->structsize=offset;
+	}else{
+		assert(false);	
+	};
 
+};
+tGType* SppCompilestructure(tGType* self){
+	assert(self);
+	if(self->atomicbasetype==eGAtomictype_Structure){
+		tGTargetNearpointer offset=0;
+		self->structure = mtGNamespace_Create();
+		for(
+			tListnode /* <tLxNode> */ * i = self->precompiledstructure->first;
+			i;
+			i=i->next
+		){
+			tLxNode* node = i->item;
+			char* name = nullptr;
+			assert(node->type==tLexem_Variabledeclaration);
+			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+			if(name){ // If we actually got a symbol
+				// Create symbol
+				mtGNamespace_Add(
+					self->structure,
+					mtGSymbol_CreatePointer(
+						name,
+						type,
+						mtGTargetPointer_Clone(
+							&(tGTargetPointer){
+								.nonconstant=false,
+								.segment=meGSegment_Relative,
+								.offset=offset
+							}
+						)
+					)
+				);
+				// Advance position
+				offset+=mtGType_Sizeof(type);
+			}else{
+				// Anonymous structunion
+				SppCompileanonymousstructure(type,&offset,self->structure);
+
+			};
+		};
+		self->structsize=offset;
+	}else if(self->atomicbasetype==eGAtomictype_Union){
+		tGTargetNearpointer offset=0;
+		self->structure = mtGNamespace_Create();
+		for(
+			tListnode /* <tLxNode> */ * i = self->precompiledstructure->first;
+			i;
+			i=i->next
+		){
+			tLxNode* node = i->item;
+			char* name = nullptr;
+			assert(node->type==tLexem_Variabledeclaration);
+			tGType* type = SppGeneratetype(node->returnedtype,node->left,&name);
+			if(name){ // If we actually got a symbol
+				// Create symbol
+				mtGNamespace_Add(
+					self->structure,
+					mtGSymbol_CreatePointer(
+						name,
+						type,
+						mtGTargetPointer_Clone(
+							&(tGTargetPointer){
+								.nonconstant=false,
+								.segment=meGSegment_Relative,
+								.offset=offset
+							}
+						)
+					)
+				);
+				// Recalculate union size
+				if(mtGType_Sizeof(type)>offset)offset=mtGType_Sizeof(type);
+			}else{
+				// Anonymous structunion
+				SppCompileanonymousstructure(type,&offset,self->structure);
+			};
+		};
+		self->structsize=offset;
+	}else{
+		assert(false);	
+	};
+	return self;
+};

@@ -17,12 +17,50 @@ tGType* LxParseBasetype(tLxFetcher* fetcher);
 tLxNode* LxParseExpression(tLxFetcher*);
 tLxNode* LxParseBlockstatement(tLxFetcher* fetcher);
 
+tLxNode* LxParseExpressionstatement(tLxFetcher* fetcher){
+//#ifdef qvGDebug
+//	printf("LX: [T] LxParseStatement: Expression statement \n");
+//#endif
+	tLxFetcher localfetcher = *mtLxFetcher_FetchuntilParenthesized(
+		fetcher,tToken_Semicolon
+	);
+	mtLxFetcher_Advance(fetcher); // skip semicolon
+	return mtLxNode_Clone(
+		&(tLxNode){
+			.type=tLexem_Expressionstatement,
+			.left=LxParseExpression(&localfetcher)
+		}
+	);
+};
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher){
 	tLxNode* temp;
 	tLxFetcher localfetcher = *fetcher;
-	if(temp=LxParseExpression(fetcher)){
-		return temp;
+	// Bypass for `type(*localvariable)();` - `auto` or `static` keyword
+	if(
+		  (mtLxFetcher_Peek(fetcher)->type==tToken_Keywordauto)
+		||(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordstatic)
+	){
+		return LxParseDeclaration(fetcher);
 	};
+	// . If we have a type that's not an identifier cuz that's confusable
+	// | with something like calling a function, parse as declaration, 
+	// | elseways expression.
+	// | If you wonder how to declare local variable with type `printf`, 
+	// | that's what the bypass is for - trigger by manually specifying 
+	// | storage duration - `auto` for stackframe locals, `static` for 
+	// ' static locals.
+	{
+		tGType* basetype = LxParseBasetype(&localfetcher);
+		tLxFetcher localfetcher = *fetcher;
+		if(
+			  basetype 
+			&&basetype->atomicbasetype!=eGAtomictype_Unresolved
+		){
+			return LxParseDeclaration(fetcher);
+		}else{
+			return LxParseExpressionstatement(fetcher);
+		};
+	}
 };
 tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 #ifdef qvGTrace
@@ -247,25 +285,10 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 				);
 			};	break;
 			default:
-				//if(declaration=LxParseDeclaration(fetcher)){
-				//	return declaration;
-				//}else
-				{
 #ifdef qvGDebug
-					printf("LX: [T] LxParseStatement: Expression statement \n");
+				printf("LX: [T] LxParseStatement: Tailcalling to LxParseDeclarationorstatement \n");
 #endif
-					// Expression statement
-					localfetcher = *mtLxFetcher_FetchuntilParenthesized(
-						fetcher,tToken_Semicolon
-					);
-					mtLxFetcher_Advance(fetcher); // skip semicolon
-					return mtLxNode_Clone(
-						&(tLxNode){
-							.type=tLexem_Expressionstatement,
-							.left=LxParseExpression(&localfetcher)
-						}
-					);
-				};
+				return LxParseDeclarationorstatement(fetcher);
 				break;
 		}
 	};

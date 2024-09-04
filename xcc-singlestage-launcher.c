@@ -71,13 +71,15 @@ void LnCompile(char* file){
 	// Symbol generation - includes structs
 	SgUnresolvedtypes = mtList_Create();
 	SgUnresolvedstructures = mtList_Create();
+	SgCompilablestructures = mtList_Create();
 	GStructuretypes = mtGNamespace_Create();
 	SgParse(GLexed);
 	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen second pass
-	SgUnresolvedtypes = mtList_Create();
+	//SgUnresolvedtypes = mtList_Create();
 	SgFindunresolvedtypes(GRootnamespace);
 	SgResolveunresolvedtypes();
+	SgCompilestructures();
 	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen struct registration
 	//  not done separately anymore!

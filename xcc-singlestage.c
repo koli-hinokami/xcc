@@ -75,7 +75,7 @@ void LfUnindent(char* string){
 char* mtGType_ToString_Embeddable(tGType *);
 void LfiPrint_LxNode(char* pr,tLxNode* self);
 void LfiPrint_GType(char* pr, tGType* self){
-	LfWriteline(mtString_Join("Lf: [M] t: • type \"",mtString_Join(mtGType_ToString_Embeddable(self),"\"\n")));
+	LfWriteline(mtString_Join("Lf: [M] • t: ¤ type \"",mtString_Join(mtGType_ToString_Embeddable(self),"\"\n")));
 	return;
 	char buffer[512];
 	sprintf(buffer,"Lf: [M] %2s ¤ Type: \n",pr);
@@ -300,6 +300,19 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			}
 			mtString_Append(&s1," )");
 		};
+		if(self->structure){
+			//mtString_Append(&s1," { ... }");
+			mtString_Append(&s1," { ");
+			mtString_Append(&s1,"/*");
+			mtString_Append(&s1,
+				mtString_FromInteger(
+					self->structsize
+				)
+			);
+			mtString_Append(&s1," bytes */ ");
+			// No display of member locations right now
+			mtString_Append(&s1," }");
+		};
 		//if(!self->unresolvedsymbol){
 		//	// Occasionally structures are defined only by their fields
 		//	return mtString_Clone("struct");
@@ -404,25 +417,36 @@ void LfPrint_SpNode(tSpNode* self){
 	LfiPrint_SpNode("",self);
 	//exit(4);
 };
+void LfPrint_GNamespace(tGNamespace* self);
 void LfPrint_GSymbol(tGSymbol* self){
 	// TODO: Rewrite to use dynamic buffers instead of static 
 	//  cuz I already got one buffer overflow and don't want any more
 	char buffer[4096];
 	if(self==nullptr){
 		snprintf(buffer,4096,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		LfWriteline(buffer);
+	}else if(self->symbolkind==mtGSymbol_eType_Namespace){
+		snprintf(buffer,4096,"Lf: [M] ¤ Childnamespace %p:%s\n",self,self->name);
+		LfWriteline(buffer);
+		LfPrint_GNamespace(self->name_space);
+		return;
 	}else{
 		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		LfWriteline(buffer);
 	};
-	LfWriteline(buffer);
 };
 void LfPrint_GNamespace(tGNamespace* self){
 	char buffer[512];
-	sprintf(buffer,"Lf: [M] ¤ Namespace %p\n",self);
-	LfIndent(buffer);
-	// Print stuff
-	mtList_Foreach(&(self->symbols),(void(*)(void*))(&LfPrint_GSymbol));
-	// Finalize
-	LfUnindent("Lf: [M]   \n");
+	if(self){
+		sprintf(buffer,"Lf: [M] ¤ Namespace %p:%s\n",self,self->name);
+		LfIndent(buffer);
+		// Print stuff
+		mtList_Foreach(&(self->symbols),(void(*)(void*))(&LfPrint_GSymbol));
+		// Finalize
+		LfUnindent("Lf: [M]   \n");
+	}else{
+		LfWriteline("Lf: [M] • ¤ Nullnamespace \n");
+	}
 };
 
 bool mtToken_HasString(tToken* self){
@@ -628,6 +652,9 @@ tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
 	temp->type = type;
 	temp->symbolkind = mtGSymbol_eType_Typedef;
 	return temp;
+};
+tGTargetPointer* mtGTargetPointer_Clone(tGTargetPointer* self){
+	return memcpy(malloc(sizeof(tGTargetPointer)),self,sizeof(tGTargetPointer));
 };
 // --------------------- Tokenizer ---------------------
 #include "xcc-singlestage-tokenizer.c"
