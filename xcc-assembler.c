@@ -1172,44 +1172,49 @@ int main(int argc, char** argv){
 		0
 	);
 	// Open archdef
-	FILE* archdeffile = fopen(
-		mtString_Join(
-			AsmConfigdir?:"/etc/xcc/",
+	if(!AsmArchitecturename){
+		printf("ASM:[F] No architecture provided!"); 
+		ErfError();
+	}else{
+		FILE* archdeffile = fopen(
 			mtString_Join(
-				AsmArchitecturename,
-				".asm"
-			)
-		),
-		"r"
-	);
-	if(!archdeffile){
-		printf(
-			"ASM:[F] Unable to open archdef for arch \"%s\": Error %i·%s\n",
-			AsmArchitecturename,
-			errno,
-			strerror(errno)
+				AsmConfigdir?:"/etc/xcc/",
+				mtString_Join(
+					AsmArchitecturename,
+					".asm"
+				)
+			),
+			"r"
 		);
-		exit(1);
-	};
-	// Read archdef
-	AsmReadinstructiondefinitions(archdeffile);
-	// Dump archdep
-	if(0){
-		printf("ASM:[D] . Dumping instructions defined \n");
-		for(tListnode * i = AsmInstructionsdefined.first;i;i=i->next){
-			tAsmInstructiondefinition * j = i->item;
-			printf("ASM:[T] | Opcode %s : ",j->opcode);
-			for(tListnode * k = j->operands->first;k;k=k->next){
-				printf("%s ",mtAsmToken_ToString(k->item));
-			};
-			printf("|");
-			for(tListnode * k = j->expansion->first;k;k=k->next){
-				printf("%s ",mtAsmBinarytoken_ToString(k->item));
-			};
-			printf("\n");
+		if(!archdeffile){
+			printf(
+				"ASM:[F] Unable to open archdef for arch \"%s\": Error %i·%s\n",
+				AsmArchitecturename,
+				errno,
+				strerror(errno)
+			);
+			exit(1);
 		};
-		printf("ASM:[D] ' \n");
-	}
+		// Read archdef
+		AsmReadinstructiondefinitions(archdeffile);
+		// Dump archdep
+		if(0){
+			printf("ASM:[D] . Dumping instructions defined \n");
+			for(tListnode * i = AsmInstructionsdefined.first;i;i=i->next){
+				tAsmInstructiondefinition * j = i->item;
+				printf("ASM:[T] | Opcode %s : ",j->opcode);
+				for(tListnode * k = j->operands->first;k;k=k->next){
+					printf("%s ",mtAsmToken_ToString(k->item));
+				};
+				printf("|");
+				for(tListnode * k = j->expansion->first;k;k=k->next){
+					printf("%s ",mtAsmBinarytoken_ToString(k->item));
+				};
+				printf("\n");
+			};
+			printf("ASM:[D] ' \n");
+		}
+	};
 	// Open source/dest files
 	AsmSourcestream = fopen(AsmSourcefilename,"r");
 	if(!AsmSourcestream){

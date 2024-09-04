@@ -667,7 +667,16 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		s1 = mtString_Join(self->unresolvedsymbol,">");
 		s2 = mtString_Join("unresolved<",s1);
 		free(s1);
-		return s2;
+		s1 = mtString_Join(
+			 self->valuecategory==eGValuecategory_Leftvalue?"lvalue "
+			:self->valuecategory==eGValuecategory_Farleftvalue?"farlvalue "
+			:self->valuecategory==eGValuecategory_Rightvalue?"rvalue "
+			:self->valuecategory==eGValuecategory_Novalue?"novalue "
+			:"unkvalue ",
+			s2
+		);
+		free(s2);
+		return s1;
 	}else if(self->atomicbasetype==eGAtomictype_Enumeration){ 
 		// Enumeration
 		assert(self->unresolvedsymbol);
