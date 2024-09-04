@@ -228,7 +228,7 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 	};
 };
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
-	printf("LD: [D] Exporting label %s:%i\n",name,position);
+	printf("LD: [D] Exporting label %-25s:%.4x (%i)\n",name,position,position);
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
 	self->name = name;
@@ -323,6 +323,18 @@ void LdReadlinkerscript(FILE* archdeffile){
 			tok = mtLdToken_Fetch(archdeffile);
 			assert(tok->type == eLdTokenkind_Number);
 			self->segnumber = tok->number;
+		}else if(strcmp(tok->str,"align")==0){
+			// align val
+			self->type = eLdLinkerscriptentrykind_Align;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Number);
+			self->offset = tok->number;
+		}else if(strcmp(tok->str,"pad")==0){
+			// pad position
+			self->type = eLdLinkerscriptentrykind_Pad;
+			tok = mtLdToken_Fetch(archdeffile);
+			assert(tok->type == eLdTokenkind_Number);
+			self->offset = tok->number;
 		}else if(strcmp(tok->str,"org")==0){
 			// org position
 			self->type = eLdLinkerscriptentrykind_Org;
@@ -355,7 +367,7 @@ void LdReadlinkerscript(FILE* archdeffile){
 // -- First pass --
 
 void LdFirstpassfile(int currentsegment, FILE* srcfile){
-	printf("LD: [T] LdFirstpassfile: Entered\n");
+	//printf("LD: [T] LdFirstpassfile: Entered\n");
 	int i = 0;
 	while(fpeekc(srcfile)!=EOF){
 		//printf("LD: [T] LdFirstpassfile: Module %p entry %i\n",srcfile,i++);
@@ -450,9 +462,8 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 };
 
 void LdFirstpass(tLdLinkerscriptentry* self){
-	printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
-		mtLdLinkerscriptentry_ToString(self)
-	);
+	//printf("LD: [T] LdFirstpass(linkerscriptentry <%s>): Entered\n",
+	//	mtLdLinkerscriptentry_ToString(self));
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Parse segment and generate exported symbols' position 
@@ -465,6 +476,24 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 					LdFirstpassfile(self->segnumber,j->item);
 					rewind(j->item);
 				};
+			};
+			break;
+		case eLdLinkerscriptentrykind_Align:
+			// Align to address with zeros.
+			while(LdCurrentposition % self->offset != 0){
+				LdCurrentposition            += 1;
+				LdCurrentalternativeposition += 1;
+			};
+			break;
+		case eLdLinkerscriptentrykind_Pad:
+			// Pad to address with zeros.
+			if(LdCurrentposition>self->offset){
+				printf("LD: [T] LdFirstpass: `pad %x (%i)`: Unable to pad: Already over target address\n",self->offset,self->offset);
+				ErfError();
+			}else{
+				unsigned offset = self->offset - LdCurrentposition;
+				LdCurrentposition            += offset;
+				LdCurrentalternativeposition += offset;
 			};
 			break;
 		case eLdLinkerscriptentrykind_Org:
@@ -496,7 +525,7 @@ void LdFirstpass(tLdLinkerscriptentry* self){
 // -- Second pass --
 
 void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
-	printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
+	//printf("LD: [T] LdSecondpassfile(int currentsegment %i, FILE* src %p, FILE* dst %p): Entered\n",currentsegment,srcfile,dstfile);
 	int i = 0;
 	//ErfEnter_String("LdSecondpassfile");
 	while(fpeekc(srcfile)!=EOF){
@@ -612,9 +641,8 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 };
 
 void LdSecondpass(tLdLinkerscriptentry* self){
-	printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
-		mtLdLinkerscriptentry_ToString(self)
-	);
+	//printf("LD: [T] LdSecondpass(linkerscriptentry <%s>): Entered\n",
+	//	mtLdLinkerscriptentry_ToString(self));
 	switch(self->type){
 		case eLdLinkerscriptentrykind_Segment:
 			// Emit a segment while applying relocations
@@ -630,6 +658,27 @@ void LdSecondpass(tLdLinkerscriptentry* self){
 					LdSecondpassfile(self->segnumber,j->item, LdTargetfile);
 					rewind(j->item);
 				};
+			};
+			break;
+		case eLdLinkerscriptentrykind_Align:
+			// Align to address with zeros.
+			while(LdCurrentposition % self->offset){
+				fputc(0,LdTargetfile);
+				LdCurrentposition            += 1;
+				LdCurrentalternativeposition += 1;
+			};
+			break;
+		case eLdLinkerscriptentrykind_Pad:
+			// Pad to address with zeros.
+			if(LdCurrentposition>self->offset){
+				printf("LD: [T] LdSecondpass: `pad %x (%i)`: Unable to pad: Already over target address\n",self->offset,self->offset);
+				ErfError();
+			}else{
+				unsigned offset = self->offset - LdCurrentposition;
+				for(unsigned i=offset;--i;)
+					fputc(0,LdTargetfile);
+				LdCurrentposition            += offset;
+				LdCurrentalternativeposition += offset;
 			};
 			break;
 		case eLdLinkerscriptentrykind_Org:
@@ -818,7 +867,6 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				}else{
 					mtList_Append(&LdSourcefiles,file);
 				};
-				mtList_Append(&LdSourcefiles,file);
 				// Load crt0
 				fname = mtString_Join(
 					"/etc/xcc/",
