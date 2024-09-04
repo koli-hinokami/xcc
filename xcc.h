@@ -174,12 +174,12 @@ enum tTokentype {
 	//tToken_	        	= 1024,		//	Second AST lexems
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//tToken_	        	= 1536,		//	IR instructions
-	tIrinstruction_Nop		= 1536+1,	//No operation
-	tIrinstruction_Jumptrue		= 1536+2,	//Jump if true
-	tIrinstruction_Jumpfalse	= 1536+3,	//Jump if false
-	tIrinstruction_Debugbreak	= 1536+4,	//Break into debugger
-	tIrinstruction_Allocatestorage	= 1536+5,	//To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
-	tIrinstruction_Systemcall	= 1536+6,	//System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
+	tInstruction_Nop		= 1536+1,	//No operation
+	tInstruction_Jumptrue		= 1536+2,	//Jump if true
+	tInstruction_Jumpfalse		= 1536+3,	//Jump if false
+	tInstruction_Debugbreak		= 1536+4,	//Break into debugger
+	tInstruction_Allocatestorage	= 1536+5,	//To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
+	tInstruction_Systemcall		= 1536+6,	//System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_			= 1792,		//	To be not used
@@ -1135,6 +1135,7 @@ typedef enum eGSegment {
 	meGSegment_Stackframe,	//frame == ss:fp(/ss:sp?)
 			       // When referenced casted stackframe 
 	                       // (fp-relative) -> stack (ss-relative)
+	meGSegment_Far,		// program-defined bank/segment
 	meGSegment_Count
 } eGSegment;
 typedef enum eGAtomictype {
@@ -1219,16 +1220,16 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Longdouble                , "long double" },
 	{ 0, 0 }
 };
-typedef struct tGIrOpcode { 
+typedef struct tGOpcode { 
 	short opcode;
 	enum eGAtomictype instructionsize;
-} tGIrOpcode;
-typedef struct tGIrInstruction {
-	tGIrOpcode opcode; 
-	struct tGIrInstruction* next;
-	struct tGIrInstruction* jumptarget;
+} tGOpcode;
+typedef struct tGInstruction {
+	tGOpcode opcode; 
+	struct tGInstruction* next;
+	struct tGInstruction* jumptarget;
 	tGTargetUintmax immediate;
-} tGIrInstruction;
+} tGInstruction;
 typedef struct { // tGTargetPointer
 	bool nonconstant;
 	// Constant pointer - segment-offset:
@@ -1236,7 +1237,7 @@ typedef struct { // tGTargetPointer
 	tGTargetSegment bank;
 	tGTargetNearpointer offset;
 	// Dynamic pointer - tGInstructon*:
-	tGIrInstruction* dynamicpointer;
+	tGInstruction* dynamicpointer;
 } tGTargetPointer;
 /* // Some details about types written forever ago
  *	struct tGType {
@@ -1312,7 +1313,8 @@ enum mtGSymbol_eType {
 	mtGSymbol_eType_Constant,
 	mtGSymbol_eType_Namespace,
 	mtGSymbol_eType_Pointer,
-	mtGSymbol_eType_Deferredevaulation
+	mtGSymbol_eType_Deferredevaulation,
+	mtGSymbol_eType_Typedef
 };
 typedef struct tGSymbol {
 	char* name;
@@ -1333,7 +1335,7 @@ typedef struct tLxNode {
 	struct tLxNode * left;
 	struct tLxNode * right;
 	char* identifier;
-	tGIrInstruction * codepointer; // for storage pointers, like variables
+	tGInstruction * codepointer; // for storage pointers, like variables
 	tGTargetUintmax constant;
 	struct tLxNode * parentnode;
 	//tGType* basetype; //for declarations

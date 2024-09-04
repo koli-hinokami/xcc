@@ -156,11 +156,13 @@ void LfPrint_LxNode(tLxNode* self){
 	LfiPrint_LxNode("",self);
 	//exit(4);
 };
-char* mtGType_ToString_Embeddable(tGType* self){
+char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
 	char *s2;
 	char *s3;
-	if(self->atomicbasetype==eGAtomictype_Unresolved){
+	if(self==nullptr){
+		return mtString_Clone("totally_invalid");
+	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
 		// Unresolved
 		//sprintf(buffer,"unresolved<%s> ",self->unresolvedsymbol);
 		//return self->unresolvedsymbol;
@@ -185,23 +187,23 @@ char* mtGType_ToString_Embeddable(tGType* self){
 	}else if(self->atomicbasetype==eGAtomictype_Pointer){ 
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
-			"* "
+			"*"
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Array){ 
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
-			"[] "
+			"[]"
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Function){ 
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
-			"() "
+			"()"
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Void){ 
-		return mtString_Clone("void ");
+		return mtString_Clone("void");
 		printf("void ",self->unresolvedsymbol);
 		//LfPrint_GNamespace(self->structure);
 	}else{
@@ -224,7 +226,11 @@ char* mtGType_ToString_Embeddable(tGType* self){
 };
 void LfPrint_GSymbol(tGSymbol* self){
 	char buffer[512];
-	sprintf(buffer,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+	if(self==nullptr){
+		sprintf(buffer,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+	}else{
+		sprintf(buffer,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+	};
 	LfWriteline(buffer);
 };
 void LfPrint_GNamespace(tGNamespace* self){
@@ -308,14 +314,20 @@ tGSymbol* mtGNamespace_FindsymbolNoparent_NameKind(tGNamespace* self, char* name
 #endif
 	// Empty namespace
 	if(self==nullptr)return nullptr;
+	// No string
+	if(name==nullptr)return nullptr;
 	// Search in list
 	if(self->symbols.first==nullptr){
 		// Not going to find anything in an empty list
 	}else{
 		for(tListnode* ptr=self->symbols.first;ptr!=nullptr;ptr=ptr->next){
 			tGSymbol* symbol = ptr->item;
-			if(symbol->symbolkind==kind){
-				if(strcmp(symbol->name,name)==0){
+			if(symbol==nullptr){
+				printf("ss: [W] mtGNamespace_FindsymbolNoparent_NameKind: `(tGSymbol*)nullptr` sneaked it's way into namespace somehow \n");
+			}else if(symbol->symbolkind==kind){
+				if(symbol->name==nullptr){
+					printf("ss: [W] mtGNamespace_FindsymbolNoparent_NameKind: null string inside symbol \n");
+				}else if(strcmp(symbol->name,name)==0){
 					return symbol;
 				};
 			};
@@ -333,13 +345,18 @@ void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 		printf("ss: [E] mtGNamespace_Add: symbol==nullptr \n");
 		return;
 	};
+	// Check for no string
+	if(symbol->name==nullptr){
+		printf("ss: [E] mtGNamespace_Add: symbol->name==nullptr \n");
+		return;
+	};
 	// Check for duplicate symbol
 	if(
 		mtGNamespace_FindsymbolNoparent_NameKind(
 			namespace,symbol->name,symbol->symbolkind
 		)!=nullptr
 	){
-		// TODO: add line number
+		// TODO: add line numbers
 		printf(
 			"ss: [W] mGNamespace_Add: Adding duplicate symbol %i∙%s \n",
 			symbol->symbolkind,
@@ -379,6 +396,14 @@ tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
 	// TODO: Far pointers
 	return temp;
 };
+tGSymbol* mtGSymbol_CreatePointer(char* name, tGType* type, tGTargetPointer* ptr){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = type;
+	temp->symbolkind = mtGSymbol_eType_Pointer;
+	temp->allocatedstorage = ptr;
+	return temp;
+};
 tGSymbol* mtGSymbol_CreateDeferred(char* name, tGType* type, tLxNode* expr){
 	tGSymbol* temp = mtGSymbol_Create();
 	temp->name = name;
@@ -386,8 +411,6 @@ tGSymbol* mtGSymbol_CreateDeferred(char* name, tGType* type, tLxNode* expr){
 	temp->symbolkind = mtGSymbol_eType_Deferredevaulation;
 	temp->deferredexpression = expr;
 	return temp;
-	fprintf(stderr,"ss: [F] mtGSymbol_CreateDeferred: Unfinished code hit! \n");
-	return nullptr;
 };
 #include "xcc-singlestage-symbolgen.c"
 #include "xcc-singlestage-launcher.c"

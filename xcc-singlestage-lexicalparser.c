@@ -571,6 +571,8 @@ bool LxiParseExpression_Checkparenthesation(tLxFetcher* fetcher){
 tLxNode* LxParseExpression(tLxFetcher* fetcher){
 #ifdef qvGTrace
 	printf("LX: [T] LxParseExpression: entered \n");
+#endif
+#ifdef qvGTraceexpressions
 	mtLxFetcher_Print(fetcher);
 #endif
 	tListnode* splitpoint = nullptr;

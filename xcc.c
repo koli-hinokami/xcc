@@ -128,6 +128,7 @@ void compile(char* file){
 }
 
 int main (int argc,char* argv[]) {
+	setvbuf(stdout,null,_IONBF,0);
 	//printf("\n\n");
 	printf("Ln: [M] XCC Retargetable C Compiler\n");
 	printf("Ln:     The frontend\n");
