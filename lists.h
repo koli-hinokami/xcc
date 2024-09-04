@@ -166,6 +166,10 @@ void mtList_Foreach_Lvalue(ptList self, void(*lambda)(void**)){
 };
 void mtList_Destroy(ptList self){ // Doesn't destroys items in list!! 
                                   // Only list itself!!
+	if(!self){
+		printf("ul: [W] lists.h: mtList_Destroy: self==nullptr \n");
+		return;
+	};
 	tListnode* ptr=self->first;
 	tListnode* j;
 	while(ptr){

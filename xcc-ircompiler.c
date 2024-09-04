@@ -17,6 +17,7 @@ typedef struct {
 
 typedef enum eIrcTokentype {
 	eIrcTokentype_Charater,
+	eIrcTokentype_Argument,
 	eIrcTokentype_Newline,
 	eIrcTokentype_Argumenttoken,
 	eIrcTokentype_StringedtokensStart,
@@ -175,7 +176,14 @@ tIrcToken* mtIrcToken_Get(FILE* src){ // Constructor
 #endif
 	errno=0;
 	switch(fpeekc(src)){
-		case EOF:
+		case EOF: // If errno==0 quietly return nullptr elseways yell at the user that we gone bad
+			//if(errno==0)return nullptr;
+			// But now that I think of the special cases like reading arguments while encountering EOF...
+			return mtIrcToken_Clone(
+				&(tIrcToken){
+					.type = eIrcTokentype_Newline,
+				}
+			);
 			printf("IRC:[E] mtIrcToken_Get(FILE* %p): Error %i•\"%s\" while fetching charater\n",src,errno,strerror(errno));
 			ErfError();
 			return nullptr;
@@ -183,13 +191,25 @@ tIrcToken* mtIrcToken_Get(FILE* src){ // Constructor
 #ifdef qvGTrace
 			printf("IRC:[T] mtIrcToken_Get: Comment - recursing tailcall \n");
 #endif
-			while(fgetc(src)!='\n');
+			while(fpeekc(src)!='\n')fgetc(src);
 			return mtIrcToken_Get(src);
 		case '\n':
 			fgetc(src);
 			return mtIrcToken_Clone(
 				&(tIrcToken){
 					.type = eIrcTokentype_Newline,
+				}
+			);
+			break;
+		case '#':
+#ifdef qvGTrace
+			printf("IRC:[T] mtIrcToken_Get: Argument \n");
+#endif
+			fgetc(src);
+			return mtIrcToken_Clone(
+				&(tIrcToken){
+					.type = eIrcTokentype_Argument,
+					.ch = fgetc(src)
 				}
 			);
 			break;
@@ -247,6 +267,16 @@ tIrcToken* mtIrcToken_Get(FILE* src){ // Constructor
 	};
 	return nullptr;
 };
+char* mtIrcToken_ToString(tIrcToken* self){
+	return mtString_Clone(
+		 self->type==eIrcTokentype_Identifier ?self->string
+		:self->type==eIrcTokentype_Newline    ?"\\n"
+		:self->type==eIrcTokentype_Charater   ?(char[2]){self->ch,0}
+		:self->type==eIrcTokentype_Argument   ?(char[3]){'#',self->ch,0}
+		:"(unknein)"
+	);
+}
+
 void mtIrcToken_Emit(tIrcToken* self,FILE* dst){
 	switch(self->type){
 		case eIrcTokentype_Identifier:
@@ -267,6 +297,8 @@ void mtIrcToken_Emit(tIrcToken* self,FILE* dst){
 	};
 };
 bool mtIrcToken_Equals(tIrcToken* self,tIrcToken* tok){
+	assert(self);
+	assert(tok);
 	if(self->type!=tok->type)return false;
 	if(self->type==eIrcTokentype_Identifier)
 		if(strcmp(self->string,tok->string)!=0)return false;
@@ -352,8 +384,14 @@ void IrcReadinstructiondefinition(FILE* src){
 				// Get opcode
 				token = mtIrcToken_Get(src);
 				if(token->type!=eIrcTokentype_Identifier){
-					printf("IRC:[F] IrcReadinstructiondefinition: Unrecoginzed token "
-						   "when fetching instruction definition\n");
+					printf("IRC:[F] IrcReadinstructiondefinition: Unrecoginzed token ");
+					printf("%s ",
+						 token->type==eIrcTokentype_Identifier ?token->string
+						:token->type==eIrcTokentype_Newline    ?"\\n"
+						:token->type==eIrcTokentype_Charater   ?(char[2]){token->ch,0}
+						:"(unknein)"
+					);
+					printf(" when fetching instruction definition's opcode\n");
 					ErfFatal();
 				};
 				// Allocate instruction
@@ -382,6 +420,9 @@ void IrcReadinstructiondefinition(FILE* src){
 				while(
 					(token=mtIrcToken_Get(src))->type!=eIrcTokentype_Newline
 				){
+#ifdef qvGTrace
+					printf("IRC:[F] IrcReadinstructiondefinition: Fetched expansion token <%s> \n",mtIrcToken_ToString(token));
+#endif
 					if(
 						  (token->type==eIrcTokentype_Charater)
 						&&(token->ch=='|')
@@ -395,17 +436,36 @@ void IrcReadinstructiondefinition(FILE* src){
 				// Register instruction
 				mtList_Append(&IrcInstructionsdefined,instruction);
 			}else{
-				printf("IRC:[F] IrcReadinstructiondefinition: Unrecoginzed token"
-					   "when fetching instruction definition\n");
+				printf("IRC:[F] IrcReadinstructiondefinition: Unrecoginzed identifier ");
+				printf("<%s>",
+					 token->type==eIrcTokentype_Identifier ?token->string
+					:token->type==eIrcTokentype_Newline    ?"\\n"
+					:token->type==eIrcTokentype_Charater   ?(char[2]){token->ch,0}
+					:"(unknein)"
+				);
+				printf(" while fetching instruction definition, excepted <opcode>\n");
 				ErfFatal();
 			};
+		}else if(token->type==eIrcTokentype_Newline){
+			return;
 		}else{
 			printf("IRC:[F] IrcReadinstructiondefinition: Unrecoginzed token"
-				   "when fetching instruction definition\n");
+			       " when fetching \n");
+			printf("IRC:[F]                               instruction definition class - \n");
+			printf("IRC:[F]                               got ");
+			printf("<%s>",
+				 token->type==eIrcTokentype_Identifier ?token->string
+				:token->type==eIrcTokentype_Newline    ?"\\n"
+				:token->type==eIrcTokentype_Charater   ?(char[2]){token->ch,0}
+				:"(unknein)"
+			);
+			printf(" while excepted an identifier \n");
 			ErfFatal();
 		};
 		mtIrcToken_Destroy(token);
 	}else{
+		printf("IRC:[F] IrcReadinstructiondefinition: Unable to fetch token from archdef \n");
+		ErfError();
 		return;
 	};
 };
@@ -426,6 +486,19 @@ bool IrcInstructionfinderclojure(
 	} * clojureargs,
 	tIrcInstructiondefinition * item
 ){
+#ifdef qvGTrace
+	assert((void*)clojureargs->opcode>=(void*)0x100);
+	assert((void*)item->opcode>=(void*)0x100);
+	printf(
+		"IRC:[T] IrcInstructionfinderclojure[%s %p](%s %p %p %p): Entered \n",
+		clojureargs?clojureargs->opcode?:"":"",
+		clojureargs?clojureargs->args:0,
+		item?item->opcode?:"":"",
+		item?item->operands:0,
+		item?item->expansion:0,
+		item
+	);
+#endif
 	// Check opcode
 	if(strcmp(item->opcode,clojureargs->opcode)!=0)return false;
 	// Try to match arguments
@@ -433,49 +506,85 @@ bool IrcInstructionfinderclojure(
 		tListnode /* <tIrcToken> */ 
 			*i=item->operands->first,
 			*j=clojureargs->args->first;
-		;
-		
+		i&&j;
+		i=i->next,j=j->next
 	){
+#ifdef qvGTrace
+		printf("IRC:[T] IrcInstructionfinderclojure: Iteration on tokens <%s> and <%s> \n",mtIrcToken_ToString(i->item),mtIrcToken_ToString(j->item));
+#endif
 		tIrcToken* sourcetok = i->item;
 		tIrcToken* desttok = j->item;
-		if(
-			  (sourcetok->type==eIrcTokentype_Charater)
-			&&(sourcetok->ch=='#')
-		){
+		if(sourcetok->type==eIrcTokentype_Argument){
 			// Argument that would need to be matched into the array
 			// of bound args
-			i=i->next;
-			if(((tIrcToken*)i->item)->type!=eIrcTokentype_Charater){
-				printf("IRC:[F] Invalid instruction definition: `#` not followed by charater \n");
+			int argindex = ((tIrcToken*)i->item)->ch-'0';
+			if(argindex<0 || argindex >= 10){
+				printf("IRC:[F] IrcInstructionfinderclojure: Invalid instruction definition: \n");
+				printf("IRC:[F]                              argindex out of range \n");
+				printf("IRC:[F]                              got token ");
+				printf("<%s>",
+					 ((tIrcToken*)i->item)->type==eIrcTokentype_Identifier ?((tIrcToken*)i->item)->string
+					:((tIrcToken*)i->item)->type==eIrcTokentype_Newline    ?"\\n"
+					:((tIrcToken*)i->item)->type==eIrcTokentype_Charater   ?(char[2]){((tIrcToken*)i->item)->ch,0}
+					:((tIrcToken*)i->item)->type==eIrcTokentype_Argument   ?(char[3]){'#',((tIrcToken*)i->item)->ch,0}
+					:"(unknein)"
+				);
+				printf(", excepted <#1> \n");
 				ErfFatal();
 			};
-			int argindex = ((tIrcToken*)i->item)->ch-'0';
 			assert(argindex>=0);
 			assert(argindex<10);
 			i=i->next;
+			assert(i);
 			tIrcToken* matchtoken = i->item;
+			assert(matchtoken);
 			tList /* <tIrcToken* owned> */ * list = mtList_Create();
+			assert(list);
 			IrcBoundparameters[argindex]=list;
+#ifdef qvGTrace
+			printf("IRC:[T] IrcInstructionfinderclojure: . Fetching argument %i until token <%s> \n",
+				argindex,
+				 ((tIrcToken*)i->item)->type==eIrcTokentype_Identifier ?((tIrcToken*)i->item)->string
+				:((tIrcToken*)i->item)->type==eIrcTokentype_Newline    ?"\\n"
+				:((tIrcToken*)i->item)->type==eIrcTokentype_Charater   ?(char[2]){((tIrcToken*)i->item)->ch,0}
+				:((tIrcToken*)i->item)->type==eIrcTokentype_Argument   ?(char[3]){'#',((tIrcToken*)i->item)->ch,0}
+				:"(unknein)"
+			);
+#endif
 			while(!mtIrcToken_Equals(matchtoken,j->item)){
+				printf("IRC:[T] IrcInstructionfinderclojure: | Token <%s> against <%s> \n",
+					mtIrcToken_ToString(matchtoken),
+					mtIrcToken_ToString(j->item)
+				);
 				mtList_Append(list,mtIrcToken_Clone(j->item));
 				j=j->next;
+				assert(j);
 			};
+#ifdef qvGTrace
+			printf("IRC:[T] IrcInstructionfinderclojure: ' Done \n");
+#endif
 		}else{
 			// Ordinary token
 			if(!mtIrcToken_Equals(sourcetok,desttok))return false;
 		};
 	};
 	// Found it.
+#ifdef qvGTrace
+	printf("IRC:[T] IrcInstructionfinderclojure:   Found instrdef \n");
+#endif
 	return true;
 };
 void IrcParseline(FILE* src,FILE* dst){
 #ifdef qvGTrace
 	printf("IRC:[T] IrcParseline: Entered \n");
 #endif
+	// Init bound arguments
+	for(int i=0;i<10;i++)IrcBoundparameters[i]=0;
 	// Read instruction
 	tList /* <tIrcToken> */ * arguments = mtList_Create();
-	tIrcToken* tok = mtIrcToken_Get(dst);
+	tIrcToken* tok = mtIrcToken_Get(src);
 	if(!tok)return;
+	if(tok->type==eIrcTokentype_Newline)return;
 	if(tok->type==eIrcTokentype_Label){
 		fprintf(dst,"%s:\n",tok->string);
 		mtIrcToken_Destroy(tok);
@@ -483,14 +592,23 @@ void IrcParseline(FILE* src,FILE* dst){
 	};
 	if(tok->type!=eIrcTokentype_Identifier){
 		printf("IRC:[F] IrcParseline: Unrecognized token while parsing instruction opcode \n");
+		printf("IRC:[F]               got <%s>, excepted identifier \n",
+			 tok->type==eIrcTokentype_Identifier ?tok->string
+			:tok->type==eIrcTokentype_Newline    ?"\\n"
+			:tok->type==eIrcTokentype_Charater   ?(char[2]){tok->ch,0}
+			:tok->type==eIrcTokentype_Argument   ?(char[3]){'#',tok->ch,0}
+			:"(unknein)"
+		);
+		ErfFatal();
 	};
 	char* opcode = tok->string;
 	for(
-		tok = mtIrcToken_Get(dst);
+		tok = mtIrcToken_Get(src);
 		tok->type!=eIrcTokentype_Newline;
 		tok=mtIrcToken_Get(src)
 	)
 		mtList_Append(arguments,tok);
+	mtList_Append(arguments,tok); // The newline as well	
 	// Find expansion
 	tIrcInstructiondefinition * instrdef = mtList_Find_Clojure(
 		&IrcInstructionsdefined,
@@ -505,25 +623,45 @@ void IrcParseline(FILE* src,FILE* dst){
 			.args=arguments,
 		}
 	);
+	if(!instrdef){
+		printf("IRC:[E] IrcParseline: Undefined instruction < ");
+		printf("%s | ", opcode);
+		for(tListnode* i = arguments->first;i;i=i->next){tIrcToken* j = i->item;
+			printf("%s ",
+				 j->type==eIrcTokentype_Identifier?j->string
+				:j->type==eIrcTokentype_Newline?"\\n"
+				:j->type==eIrcTokentype_Charater?(char[2]){j->ch,0}
+				:"(unknein)"
+			);
+		};
+		printf("> \n");
+		ErfError();
+		return;
+	};
+	assert(instrdef);
 	// Emit expansion
+	fputc('\t',dst);
 	for(tListnode /* <tIrcToken> */ * i = instrdef->expansion->first;i;i=i->next){
 		tIrcToken* tok = i->item;
-		if(
-			(tok->type==eIrcTokentype_Charater)
-			&&(tok->ch=='#')
-		){
+#ifdef qvGTrace
+		printf("IRC: IrcParseline:  Emitting expansion for token <%s> \n",mtIrcToken_ToString(tok));
+#endif
+		if(tok->type==eIrcTokentype_Argument){
 			for(
-				tListnode /* <tIrcToken> */ * j = IrcBoundparameters[
-					((tIrcToken*)i->next->item)->ch-'0']->first;
+				tListnode /* <tIrcToken> */ * j = IrcBoundparameters[tok->ch-'0']->first;
 				j;
 				j=j->next
 			){
 				mtIrcToken_Emit(j->item,dst);
 			}
-		}
+		}else{
+			mtIrcToken_Emit(tok,dst);
+			if(tok->type==eIrcTokentype_Newline)fputc('\t',dst);
+		};
 	};
+	fputc('\n',dst);
 	// Destroy bound arguments
-	for(int i=0;i<10;i++){
+	for(int i=0;i<10;i++)if(IrcBoundparameters[i]){
 		mtList_Foreach(IrcBoundparameters[i],(void(*)(void*))mtIrcToken_Destroy);
 		mtList_Destroy(IrcBoundparameters[i]);
 	};

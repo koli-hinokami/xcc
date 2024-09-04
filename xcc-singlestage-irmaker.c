@@ -265,16 +265,63 @@ void IgDumpir(tGInstruction** code, FILE* file){
 	fprintf(
 		file,
 		"; --- XCC Retargetable C Crosscompiler - Intermediate representation dump ---\n"
-		"; --------------------------- CAsm format on Jam-1 --------------------------\n"
-		"\t.architecture 8BitPipeline-xcc-ir\n"
-		"\t.include lib\\ircompiler.inc\n"
-		"\t.include lib\\libc.inc\n"
-		//"\tircompiler_pre\n"
+		"; --------------------- Forth-like IR for xcc-ircompiler --------------------\n"
+		"\tirc.programprologue\n"
 	);
 	for(int i=0;i<meGSegment_Count;i++){
 		if(i!=meGSegment_Relative){
-			fprintf(file,"\t.segment %s\n",meGSegment_ToStringTable[i]);
+			fprintf(file,"\tirc.segment %s\n",meGSegment_ToStringTable[i]);
 			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){
+				if( // Argumentless commands
+					  (j->opcode.opr==tInstruction_Cnop)
+					||(j->opcode.opr==tInstruction_Nop)
+					||(j->opcode.opr==tInstruction_Debugbreak)
+					||(j->opcode.opr==tInstruction_Return)
+					||(j->opcode.opr==tInstruction_Leaveframe)
+					||(j->opcode.opr==tInstruction_Prereturn)
+					||(j->opcode.opr==tInstruction_Loadindirect)
+					||(j->opcode.opr==tInstruction_Pushleft)
+					||(j->opcode.opr==tInstruction_Popright)
+					||(j->opcode.opr==tInstruction_Add)
+					||(j->opcode.opr==tInstruction_Substract)
+				){
+					fprintf(
+						file,
+						"l_%p:\tv.%s.%s.%s \n",
+						j,
+						TokenidtoName_Compact[j->opcode.opr],
+						meGSegment_ToStringTable[j->opcode.segment],
+						meGAtomictype_ToStringTable[j->opcode.isize]
+					);
+				}else if(	// Instruction that need a label
+					  (j->opcode.opr==tInstruction_Jump)
+					||(j->opcode.opr==tInstruction_Jumptrue)
+					||(j->opcode.opr==tInstruction_Jumpfalse)
+					||(j->opcode.opr==tInstruction_Loadaddress)
+				){
+					fprintf(
+						file,
+						"l_%p:\tv.%s.%s.%s l_%p \n",
+						j,
+						TokenidtoName_Compact[j->opcode.opr],
+						meGSegment_ToStringTable[j->opcode.segment],
+						meGAtomictype_ToStringTable[j->opcode.isize],
+						j->jumptarget
+					);
+				}else if( // Immediate-operand commands
+					  (j->opcode.opr==tInstruction_Constant)
+					||(j->opcode.opr==tInstruction_Enterframe) // It needs the size of stackframe
+				){
+					fprintf(
+						file,
+						"l_%p:\tv.%s.%s.%s %i \n",
+						j,
+						TokenidtoName_Compact[j->opcode.opr],
+						meGSegment_ToStringTable[j->opcode.segment],
+						meGAtomictype_ToStringTable[j->opcode.isize],
+						j->immediate
+					);
+				}else // Default format for unrecognized ones
 				fprintf(
 					file,
 					"l_%p:\tv.%s.%s.%s %i,l_%p \n",
@@ -288,6 +335,6 @@ void IgDumpir(tGInstruction** code, FILE* file){
 			};
 		};
 	};
-	//fprintf(file,"\tircompiler_post\n");
+	fprintf(file,"\tirc.programepilogue\n");
 };
 
