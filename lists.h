@@ -52,6 +52,7 @@ void mtList_Removefirst(ptList self){
 	if(self->last == nullptr){ // List empty
 		return;
 	}else if(self->first == self->last){ // List contains one item
+		free(self->first);
 		self->last = nullptr;
 		self->first = nullptr;
 	}else{ // List normal - two or more items
