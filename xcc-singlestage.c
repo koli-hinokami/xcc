@@ -1350,14 +1350,32 @@ tGInstruction* mtGInstruction_SetLabel(tGInstruction* self,char* /* takeown */ n
 	return self;
 };
 tGInstruction* mtGInstruction_GetLast(tGInstruction* self){
+#ifdef qvGTrace
+	printf("ss: [T] mtGInstruction_GetLast(%p): Entered\n",self);
+#endif
 	// Normally I'd use a forloop `for(T i = self;i;i=i->next);` but I'm
 	// lazy here so recursion it is.
 	assert(self);
-	if(self->next==nullptr){
-		return self;
-	}else{
-		return mtGInstruction_GetLast(self->next);
-	}
+	//if(self->next==nullptr){
+	//	return self;
+	//}else{
+	//	return mtGInstruction_GetLast(self->next);
+	//}
+	for(tGInstruction* i = self; i; i=i->next) {
+		tList* visited = mtList_Create();
+		if(!i->next) {
+			mtList_Destroy(visited);
+			printf("ss: [T] mtGInstruction_GetLast(%p): Leaving: Found base\n",self);
+			return i;
+		};
+		if(mtList_Find(visited,i)){
+			printf("ss: [T] mtGInstruction_GetLast(%p): %p: Cycle found\n",self,i);
+			ErfError();
+		};
+		mtList_Append(visited,i);
+	};
+	printf("ss: [T] mtGInstruction_GetLast(%p): Leaving: Weird case\n",self);
+	return self;
 };
 tGInstruction* mtGInstruction_Join_Modify(tGInstruction /* modifies */ * self, tGInstruction* /* takeowns */ val){
 	if(!self)return val;
@@ -1413,11 +1431,11 @@ void GInitializePerfile(){
 void GError(){
 	fprintf(stderr,"SS: [E] Error occured, terminating \n");
 	ErfError();
-	exit(1);
+	//exit(1);
 };
 void GFatal(){
 	ErfFatal();
-	exit(1);
+	//exit(1);
 };
 void GFinalize(){
 };

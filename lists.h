@@ -182,6 +182,22 @@ void mtList_Destroy(ptList self){ // Doesn't destroys items in list!!
 		ptr=j;
 	};
 };
+void* mtList_Find(ptList self, void* item){
+	if(self->last == nullptr){ // List empty
+		return nullptr;
+	}else if(self->first == self->last){ // List contains one item
+		if(self->first->item==item){
+			return self->first->item;
+		}else{
+			return nullptr;
+		};
+	}else { // List normal - two or more items
+		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+			if(ptr->item==item)return ptr->item;
+		};
+		return nullptr;
+	};
+};
 void* mtList_Find_Lambda(ptList self, bool(*lambda)(void* item)){
 	if(self->last == nullptr){ // List empty
 		return nullptr;

@@ -32,6 +32,7 @@ enum eAsmRelocationentrykind {
 	eAsmRelocationentrykind_Terminator   = 0,
 	eAsmRelocationentrykind_Segmentstart = 1,
 	eAsmRelocationentrykind_Label        = 2,
+	eAsmRelocationentrykind_Position     = 3,
 };
 
 typedef struct {
@@ -250,6 +251,11 @@ void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer positio
 };
 // -- class tLdRelocation --
 
+tLdRelocation* mtLdRelocation_CreatePosition(){
+	tLdRelocation* self = malloc(sizeof(tLdRelocation));
+	self->kind = eAsmRelocationentrykind_Position;
+	return self;
+};
 tLdRelocation* mtLdRelocation_CreateSegmentstart(int segment){
 	tLdRelocation* self = malloc(sizeof(tLdRelocation));
 	self->kind = eAsmRelocationentrykind_Segmentstart;
@@ -268,6 +274,9 @@ tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
 	tGTargetNearpointer retval;
 	assert(self);
 	switch(self->kind){
+		case eAsmRelocationentrykind_Position:
+			retval = LdCurrentposition;
+			break;
 		case eAsmRelocationentrykind_Segmentstart:
 			assert(self->segment<qiLdMaxsegments);
 			retval = LdSegmentstarts[0][self->segment];
@@ -408,6 +417,13 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 						// wat
 						assert(false);
 						break;
+					case eAsmRelocationentrykind_Position:
+						// Relative to current position in file
+						mtList_Append(
+							&relocs,
+							mtLdRelocation_CreatePosition()
+						);
+						break;
 					case eAsmRelocationentrykind_Segmentstart:
 						// Relative to start of segment
 						mtList_Append(
@@ -433,7 +449,9 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 						break;
 					default:
 						// Something unrecognized
-						assert(false);
+						ErfError_String2(
+							"LD: [E] LdFirstpassfile: Unrecognized relocation\n"
+						);
 						break;
 				};
 			// Verify that we get terminator
@@ -576,6 +594,13 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 					case eAsmRelocationentrykind_Terminator:
 						// wat
 						assert(false);
+						break;
+					case eAsmRelocationentrykind_Position:
+						// Relative to current position in file
+						mtList_Append(
+							&relocs,
+							mtLdRelocation_CreatePosition()
+						);
 						break;
 					case eAsmRelocationentrykind_Segmentstart:
 						// Relative to start of segment

@@ -30,15 +30,15 @@ char* LnTrimextension(char* file){
 
 
 void LnInterrupthandler(int signum){
-	fprintf(stderr,"Ln: [M] Interrupted \n");
+	fprintf(stderr,"L:  [M] Interrupted \n");
 	ErfFatal();
 };
 void LnFailedassertionhandler(int signum){
-	fprintf(stderr,"Ln: [F] Failed assertion catched! \n");
+	fprintf(stderr,"L:  [F] Failed assertion catched! \n");
 	ErfFatal();
 };
 void LnNullpointerhandler(int signum){
-	fprintf(stderr,"Ln: [F] Segfault catched! \n");
+	fprintf(stderr,"L:  [F] Segfault catched! \n");
 	ErfFatal();
 };
 void LnCompile(char* file){
@@ -154,7 +154,7 @@ void LnCompile(char* file){
 	GSecondaryast = SpOptimize(GSecondaryast);
 	// Compile
 	fprintf(stderr,"L:  [M] IR Generator\n");
-	Ig2Parse(GSecondaryast);
+	IgParse(GSecondaryast);
 	//fprintf(stderr,"L:  [M] Printing IR\n");
 	//printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
 	//printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
@@ -162,9 +162,16 @@ void LnCompile(char* file){
 	//printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
 	//fprintf(stderr,"L:  [M] Done printing IR\n");
 	fprintf(stderr,"L:  [M] Emitting IR\n");
-	FILE* dstfile = fopen(mtString_Join(LnTrimextension(file),".ir2"),"w");
-	Ig2Dumpir(GCompiled, dstfile);
+	FILE* dstfile = fopen(mtString_Join(LnTrimextension(file),".ir"),"w");
+	IgDumpir(GCompiled, dstfile);
 	fprintf(stderr,"L:  [M] Done emitting IR\n");
+	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
+	fprintf(stderr,"L:  [M] Secondary IR Generator\n");
+	Ig2Parse(GSecondaryast);
+	fprintf(stderr,"L:  [M] Emitting Secondary IR\n");
+	dstfile = fopen(mtString_Join(LnTrimextension(file),".ir2"),"w");
+	Ig2Dumpir(GCompiled, dstfile);
+	fprintf(stderr,"L:  [M] Done emitting Secondary IR\n");
 	fclose(dstfile);
 	fprintf(stderr,"L:  [M] Codegen\n");
 	// Write object file

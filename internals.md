@@ -84,17 +84,11 @@ Excepted something else here?
 ### Operands
 
  * `cstack` - in this case source/dest is pushed/popped from calculation stack
- * `acc` - source/dest is the accumulator. That is to allow doing
-   ```
-   v2.mov.i16   acc,    data:2*frame.-2[]UTestarray
-   v2.add.i16   acc, ,  data:2*frame.-2[2]UTestarray
-   v2.add.i16   acc, ,  data:2*frame.-2[4]UTestarray
-   v2.add.i16   data:[]UTestarray_Sum, acc, data:2*frame.-2[6]UTestarray
-   ```
- * aforementioned `<segment>:<deref>@<index>[<displacement>]<base>` -
-   will be described later on.
-   *<deref> is optional here.*
-
+ * `acc` - source/dest is the accumulator. Currently questioned.
+ * `const <value>`, in which case it's a constant
+ * aforementioned `<segment>:<deref>@<index>[<displacement>]<base>`,
+   in which case it's a lvalue pointing to variable. No register shenanigans
+   here.
 
  * <segment> is segment to access a variable in
  * <deref> is an optional tag for inserting a dereference before using a
@@ -270,11 +264,20 @@ relocations.
 For now, list of actions linker should do.
 
 Actions that are intented to be present are:
- • `segment` - Emit a segment into the output file.
-               Iterates over all files, emitting the segment from modules
-               one by one.
- • `align`   - Pad output file to closest address that's multiple of alignment.
- • `pad`     - Pad output file to the given address. Not align.
+ • `segment`    - Emit a segment into the output file.
+                  Iterates over all files, emitting the segment from modules
+                  one by one.
+ • `align`      - Pad output file to closest address that's multiple of alignment.
+ • `pad`        - Pad output file to the given address. Not align.
+ • `symbol`     - Create a symbol at current location
+ • `loadsymbol` - Same, but with alternate location counter that commonly is
+                  reserved for position in file.
+ • `org`        - Set current position to value given.
+                  Used for things like kernel Linkerscripts that have to
+                  position some segments at a given virtual address.
+ • `loadorg`    - Set current alternate position to value given.
+                  Still have to figure out the usage of it.
+                  Also I don't remember whether or not it's implemented.
 
 # Common between Linker and Assembler
 

@@ -19,6 +19,7 @@ enum eAsmRelocationentrykind {
 	eAsmRelocationentrykind_Terminator   = 0,
 	eAsmRelocationentrykind_Segmentstart = 1,
 	eAsmRelocationentrykind_Label        = 2,
+	eAsmRelocationentrykind_Position     = 3,
 };
 
 // -- Preprocessor constants --
@@ -154,6 +155,9 @@ void ObjdDumpfile(FILE* dstfile, char* srcfilename, FILE* srcfile){
 						fprintf(dstfile," +");
 						while(fpeekc(srcfile)!='\0') fprintf(dstfile,"%c",fgetc(srcfile));
 						fgetc(srcfile); // consume the terminator
+						break;
+					case eAsmRelocationentrykind_Position:
+						fprintf(dstfile," +$");
 						break;
 					default:
 						assert(false);

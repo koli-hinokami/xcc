@@ -16,8 +16,15 @@ tGInstruction* Ig2CompileStatement(tSpNode* self){
 	if(!self){
 		ErfError_String2("IG2:[E] Ig2CompileStatement: Nullpointer as `self`\n");
 	}else{
+		ErfUpdate_String(
+			mtString_Format(
+				"Ig2CompileStatement: %i•%s",
+				(int)self->type,
+				TokenidtoName[self->type]
+			)
+		);
 		switch(self->type){
-			case tLexem_Blockstatement:
+			case tSplexem_Blockstatement:
 				retval = mtGInstruction_Join_Modify(
 					self->left?Ig2CompileStatement(self->left):nullptr,
 					self->right?Ig2CompileStatement(self->right):nullptr
@@ -35,7 +42,6 @@ tGInstruction* Ig2CompileStatement(tSpNode* self){
 	};
 	ErfLeave();
 	return retval;
-
 };
 tGInstruction* Ig2CompileVariable(tSpNode* self){
 	ErfEnter_String("Ig2CompileVariable");
@@ -58,6 +64,7 @@ tGInstruction* Ig2CompileVariable(tSpNode* self){
 tGInstruction* Ig2CompileFunction(tSpNode* self){
 	assert(self);
 	assert(self->fextinfo);
+	assert(self->returnedtype);
 	assert(  self->returnedtype->atomicbasetype==eGAtomictype_Nearfunction
 	       ||self->returnedtype->atomicbasetype==eGAtomictype_Farfunction);
 	ErfEnter_String("Ig2CompileFunction: root");
@@ -115,19 +122,26 @@ tGInstruction* Ig2CompileFunction(tSpNode* self){
 void Ig2Parse(tSpNode* self){
 	assert(self);
 #ifdef qvGTrace
-	printf("IG2:[T] Entered with node %i•%s \n",self->type,TokenidtoName[self->type]);
+	printf("IG2:[T] Ig2Parse: Entered with node %i•%s \n",self->type,TokenidtoName[self->type]);
 #endif
 	switch(self->type){
 		case tSplexem_Nulldeclaration:
 			break;
 		case tSplexem_Declarationlist:
-			if(self->left)Ig2Parse(self->left);
-			if(self->right)return Ig2Parse(self->right);
-			return;
+			for(tSpNode* i = self;i;i=i->right){
+				if(i->type==tSplexem_Declarationlist){
+					if(i->left)Ig2Parse(i->left);
+				}else{
+					Ig2Parse(i);
+					break;
+				};
+			};
 			break;
 		case tSplexem_Functiondeclaration:
+			printf("IG2:[T] Ig2Parse: Function\n");
 			assert(mtGInstruction_GetLast(GCompiled[meGSegment_Code]));
-			mtGInstruction_GetLast(GCompiled[meGSegment_Code])->next=Ig2CompileFunction(self);
+			mtGInstruction_GetLast(GCompiled[meGSegment_Code])->next=
+				Ig2CompileFunction(self);
 			break;
 		case tSplexem_Variabledeclaration:
 			ErfEnter_String("Ig2Parse: tSplexem_Variabledeclaration");

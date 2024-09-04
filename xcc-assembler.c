@@ -76,6 +76,7 @@ enum eAsmRelocationentrykind {
 	eAsmRelocationentrykind_Terminator   = 0,
 	eAsmRelocationentrykind_Segmentstart = 1,
 	eAsmRelocationentrykind_Label        = 2,
+	eAsmRelocationentrykind_Position     = 3,
 };
 typedef struct { // Relocationentry
 	enum eAsmRelocationentrykind kind;
@@ -843,7 +844,12 @@ bool mtAsmToken_Equals(tAsmToken* self,tAsmToken* tok){
 
 // -- class tAsmRelocationentry --
 
-tAsmRelocationentry* mtAsmRelocationentry_CreatePosition(){assert(false); };
+tAsmRelocationentry* mtAsmRelocationentry_CreatePosition(){
+	tAsmRelocationentry* self = calloc(1,sizeof(tAsmRelocationentry));
+	self->kind = eAsmRelocationentrykind_Position;
+	return self;
+
+};
 tAsmRelocationentry* mtAsmRelocationentry_CreateSegmentstart(int segment){
 	tAsmRelocationentry* self = calloc(1,sizeof(tAsmRelocationentry));
 	self->kind = eAsmRelocationentrykind_Segmentstart;
@@ -859,6 +865,9 @@ tAsmRelocationentry* mtAsmRelocationentry_CreateLabel(char* label){
 
 void mtAsmRelocationentry_Emit(tAsmRelocationentry* self, FILE* dstfile){
 	switch(self->kind){
+		case eAsmRelocationentrykind_Position:
+			fputc(self->kind,dstfile);
+			break;
 		case eAsmRelocationentrykind_Segmentstart:
 			fputc(self->kind,dstfile);
 			fputc(self->segment,dstfile);
