@@ -18,6 +18,9 @@ tLnFlagdefinition tLfFlags[] = {
 
 char* szLnOutputfile = "";
 char* szLnRundirectory = "";
+char* szLnConfigdir;
+char* szLnArchitecture;
+char* szLnOutfile;
 
 intptr_t tLnArgsGetflag(char* flag){
 	//printf("DBG:tLnArgsGetflag(\"%s\")\n",flag);
@@ -113,6 +116,26 @@ char * /* dynamic */ trimextension(char* /* borrows */ file){
 	*(str+len)=0;
 	return str;
 }
+void parsefile2(char* program, char* filename, char* ext1, char* ext2, char* args){
+	// For the tools that actually properly parse arguments
+	char* argv[12];
+	fflush(stdout);
+	
+	argv[0]=mtString_Join(szLnRundirectory,program);
+	argv[1]="-a";
+	argv[2]=szLnArchitecture;
+	argv[3]="-o";
+	argv[4]=mtString_Join(filename,ext2);
+	argv[5]=mtString_Join(filename,ext1);
+	argv[6]=szLnConfigdir?"-c":0;
+	argv[7]=szLnConfigdir?:0;
+	argv[8]=0;
+	argv[9]=0;
+	runprogram(mtString_Join(szLnRundirectory,program),(char**)(&argv));
+	free(argv[4]);
+	free(argv[5]);
+	fflush(stdout);
+};
 void parsefile(char* program, char* filename, char* ext1, char* ext2, char* args){
 	char* argv[5];
 	fflush(stdout);
@@ -148,9 +171,9 @@ void compile(char* file){
 	}
 	// IR Compiler and assembler currently are used by Singlestage compiler
 	// as well
-	parsefile("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
-	parsefile("xcc-asm"        ,filename,".asm",".obj",0);
-	parsefile("xcc-ld"        ,filename,".obj",".exe",0);
+	parsefile2("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
+	parsefile2("xcc-assembler"  ,filename,".asm",".obj",0);
+	parsefile("xcc-ld"         ,filename,".obj",".exe",0);
 	
 	free(filename);
 	
@@ -161,7 +184,7 @@ int main (int argc,char* argv[]) {
 	//printf("\n\n");
 	printf("Ln: [M] XCC Retargetable C Compiler\n");
 	printf("Ln:     The frontend\n");
-	printf("Ln:     Version 0.9.12.0.universal.jam1-ir\n");
+	printf("Ln:     Version 0.9.13.0.universal.jam1-ir\n");
 	// ^ if you are not defining the directives in your Makefile: 
 	//printf("Ln: Version 1.0.1.0.undefined.homelab.160101-0800\n");
 	printf("Ln:     ----------------------------------------------------\n");
@@ -189,6 +212,29 @@ int main (int argc,char* argv[]) {
 	//                                 might need to be changed for other
 	//                                 targets
 	int aindex=1;
+	// Help and usage
+	if(strcmp(argv[1],"--help")==0){
+		printf("Ln: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
+		printf("Ln: [M]   \n");
+		printf("Ln: [M]  Options:\n");
+		printf("Ln: [M]   -a=archname            Architecture to compile for - what did \n");
+		printf("Ln: [M]                           you except from a crosscompiler? \n");
+		printf("Ln: [M]   -o=outfile             Output file. Ignored for now.\n");
+		printf("Ln: [M]   -c=configdir           Directory with configuration files.\n");
+		printf("Ln: [M]                           Default isn't specified here but should be \n");
+		printf("Ln: [M]                           /etc/xcc/. \n");
+		printf("Ln: [M]  \n");
+	}else if(strcmp(argv[1],"--usage")==0){
+		printf("Ln: [M]  Usage:   xcc -a archname -o outfile sourcefile \n");
+		printf("Ln: [M]   \n");
+		printf("Ln: [M]  Options:\n");
+		printf("Ln: [M]   -a=archname            Architecture to compile for - what did \n");
+		printf("Ln: [M]                           you except from a crosscompiler? \n");
+		printf("Ln: [M]   -o=outfile             Output file. Ignored for now.\n");
+		printf("Ln: [M]   -c=configdir           Directory with configuration files.\n");
+		printf("Ln: [M]                           Default isn't specified here but should be \n");
+		printf("Ln: [M]                           /etc/xcc. \n");
+	};
 	//Command-line options
 	printf("Ln: [T] Program name is: %s\n", argv[0]);
 	szLnRundirectory = mtString_Clone(argv[0]);
@@ -202,7 +248,13 @@ int main (int argc,char* argv[]) {
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
 		printf("Ln: [T]    %s \n",argv[aindex]);
-		if(argv[aindex][1]!='-'){
+		if(argv[aindex][1]=='c'){       // Configdir
+			szLnConfigdir = argv[++aindex];
+		}else if(argv[aindex][1]=='a'){ // Architecture
+			szLnArchitecture = argv[++aindex];
+		}else if(argv[aindex][1]=='o'){ // Outfile
+			szLnOutfile = argv[++aindex];
+		}else if(argv[aindex][1]!='-'){ // Others
 			//Single charater flag
 			for(int i=1;argv[aindex][i]!=0;i++){
 				if(argv[aindex][i]=='!'){ // Force flag negation
@@ -213,12 +265,15 @@ int main (int argc,char* argv[]) {
 				}else{
 					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),true);
 				}
-				
 			};
 		}else{
 			//Multicharater flag
 			tLnArgsSetflag(argv[aindex]+2,true);
 		}
+	};
+	if(!szLnArchitecture){
+		printf("Ln: [F] No architecture specified! \n");
+		exit(1);
 	};
 	//Files for compilation
 	printf("Ln: [M] Compiling:\n");

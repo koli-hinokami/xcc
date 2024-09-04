@@ -101,7 +101,7 @@ void ErfFatal(){
 };
 void* ErfCatchnullptr(void* self){
 	if(!self){
-		fprintf(stderr,"erf:[F] ErfCatchnullptr: Nullpointer dereference caught!\n");
+		fprintf(stderr,"erf:[F] ErfCatchnullptr: Nullpointer caught!\n");
 		ErfFatal();
 	};
 	return self;

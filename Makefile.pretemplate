@@ -1,0 +1,21 @@
+# Makefile for xcc Retargetable C Crosscompiler - Pretemplate
+
+CC = gcc
+CCFLAGS = -rdynamic -g -O0 -Wall -Wno-char-subscripts -Wno-unused-function \
+ -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
+ -DqszGVersion=\"1.0.1.0\" \
+ -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
+#-D__buildlab__=\"$(USER)\"
+CCPOSTFLAGS = 
+TIMESTAMP = `date +%y%m%d-%H%M`
+DEPS = \
+	hyperheader.h \
+	xcc.h \
+	xcc-bigtables.h \
+	softpipe.h \
+	cstrings.h \
+	lists.h \
+	errorreportingfacilities.h \
+	Makefile
+
+

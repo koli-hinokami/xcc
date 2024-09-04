@@ -7,6 +7,8 @@
 #include "lists.h"
 typedef char* tString;
 
+char* mtString_Create(void){return calloc(sizeof(char),1);};
+void mtString_Destroy(char* self){free(self);};
 int mtString_Length(char* str){
 	//I know there is <string.h>::strlen(char*){}.
 	//But what about recompiling the CC to some new platform
@@ -49,7 +51,15 @@ char* mtString_FindcharFirst_Lambda(char* src, bool(*lambda)(char)){
 	}
 	return 0;
 }
+char* mtString_FindcharFirst_Clojure(char* src, bool(*lambda)(void* clojureargs,char ch),void* clojureargs){
+	for(char* ptr=src;*ptr;ptr++){
+		if(lambda(clojureargs,*ptr))return ptr;
+	}
+	return 0;
+}
 char* mtString_Join(char* s1,char* s2){
+	assert(s1);
+	assert(s2);
 	//Gives you ownership of dynamic memory
 	char* str=malloc(mtString_Length(s1)+mtString_Length(s2)+1);
 	assert(str);
@@ -65,7 +75,16 @@ void mtString_Append(char** s1,char* s2){
 	//s1->: Pointer to variable: takeown's and frees residing string
 	//s1<-                       creates new string and gives you ownership of
 	//s2:   String:              borrows
+	assert(s1);
+	assert(*s1);
+	assert(s2);
 	char* str=mtString_Join(*s1,s2);
+	free(*s1);
+	*s1=str;
+};
+void mtString_Appendchar(char** s1,char s2){
+	char s3[2] = {s2,0};
+	char* str=mtString_Join(*s1,s3);
 	free(*s1);
 	*s1=str;
 };
@@ -108,6 +127,13 @@ bool mtString_Contains_Lambda(char* str, bool(*lambda)(char)){
 	for(int i=0;str[i];i++)if(lambda(str[i]))return true;
 	return false;
 };
+void mtString_Foreach_Clojure2_Precasttoint(
+	char* str, 
+	void(*clojure)(int ch, void* args), 
+	void* args
+){
+	for(int i=0;str[i];i++)clojure((int)str[i],args);
+};
 // ------------ Higher-level routines ---------------
 char* mtString_Trimtrailingspace(char* str){ // Modifies `str`
 	while(isspace(mtString_Getlast(str)))mtString_Trimlast(str);
@@ -143,4 +169,8 @@ char* mtString_FromInteger(int self){
 	char buffer[512];
 	sprintf(buffer,"%i",self);
 	return mtString_Clone(buffer);
+};
+// -- class char --
+bool mtChar_IsKind_Libcgatewayclojure(void* /* int(*)(int) */ args, char self){
+    return (*(int(*)(int))(args))(self);
 };

@@ -160,13 +160,13 @@ int main(int argc,char* argv[]) {
 	signal(SIGSEGV,LnNullpointerhandler);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
-	printf("L:      Version 0.9.12.0.universal.jam1-ir\n");
+	printf("L:      Version 0.9.13.0.universal.jam1-ir\n");
 	printf("L:      ----------------------------------------------------\n");
 	int aindex=1; //Command-line options
 	printf("L:  [T] Options:\n");
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
-		printf("L:   [T]   %s\n",argv[aindex]);
+		printf("L:  [T]   %s\n",argv[aindex]);
 	};
 	//Files for compilation
 	printf("L:  [M] Compiling:\n");

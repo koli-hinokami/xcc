@@ -397,6 +397,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};	break;
 			case tLexem_Expressionstatement: {
 				// TODO: Unallocate 'free-after-use' subexpressions
+				//  '- Resolved: as a sideeffect, moved onto IR Generator.
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Expressionstatement,

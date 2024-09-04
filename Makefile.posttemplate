@@ -1,0 +1,49 @@
+# Makefile for xcc Retargetable C Crosscompiler - Posttemplate
+
+.PHONY: clean rebuild
+build: xcc-all
+rebuild: clean build
+clean: 
+	rm -f xcc
+	rm -f xcc-singlestage
+	rm -f xcc-embedder
+	rm -f xcc-preprocess
+	rm -f xcc-tokenizer
+	rm -f xcc-lexer
+	rm -f xcc-ircompiler
+	rm -f xcc-assembler
+run: build
+#	cpp ./xcc-singlestage.c -o ./xcc-singlestage.cpr
+	./xcc -a jam1 ./helloworld.c
+#	./xcc -m ./xcc-singlestage.c
+#	./xcc-singlestage ./xcc-singlestage.cpr
+debug: build
+	gdb ./xcc-singlestage ./xcc-singlestage.c
+
+xcc-test: xcc-all
+	./xcc xcc-singlestage.c
+
+xcc-all: xcc \
+	xcc-singlestage \
+	xcc-embedder \
+	xcc-preprocess \
+	xcc-tokenizer \
+	xcc-ircompiler \
+	xcc-assembler
+
+xcc-singlestage: \
+	xcc-singlestage.c \
+	xcc-singlestage-tokenizer.c \
+	xcc-singlestage-lexicalparser.c \
+	xcc-singlestage-semanticpreparser.c \
+	xcc-singlestage-symbolgen.c \
+	xcc-singlestage-semanticparser.c \
+	xcc-singlestage-irmaker.c \
+	xcc-singlestage-fetcher.c \
+	xcc-singlestage-launcher.c
+
+%: %.c $(DEPS)
+	$(CC) $(CCFLAGS) -o $@ $< $(CCPOSTFLAGS)
+
+
+
