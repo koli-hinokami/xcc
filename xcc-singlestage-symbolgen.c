@@ -474,7 +474,7 @@ void SgFindunresolvedtypes(tGNamespace* name_space){
 	printf("SG: [T] SgFindunresolvedtypes: entered \n");
 #endif	
 	// Traverse and register
-	mtList_Foreach(&name_space->symbols,(void(*)())SgFindunresolvedtypes_Symbol);
+	mtList_Foreach(&name_space->symbols,(void(*)(void*))SgFindunresolvedtypes_Symbol);
 };
 tGType* SgResolvetype(tGNamespace* name_space, char* name){
 	if(!name){

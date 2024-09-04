@@ -34,6 +34,7 @@ bool mtLxFetcher_Eof(tLxFetcher* self){
 	}
 };
 tToken* mtLxFetcher_Peek(tLxFetcher* self){
+	if(mtLxFetcher_Eof(self))return nullptr;
 	return self->fetchfrom->item;
 }
 tToken* mtLxFetcher_Peeklast(tLxFetcher* self){
@@ -137,7 +138,7 @@ void mtLxFetcher_Print(tLxFetcher* self){
 			j,
 			t->type,
 			TokenidtoName[t->type],
-			t->type==tToken_Identifier?t->string:"(nil)"
+			t->type==tToken_Identifier?t->string:TokenidtoName_Compact[t->type]
 		);
 		j++;
 	};

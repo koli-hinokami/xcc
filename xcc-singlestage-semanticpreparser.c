@@ -116,9 +116,11 @@ tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
 			//	break;
 			case tLexem_Identifier:
 				if(name)*name=i->identifier;
+				mtGType_Transform(temptype);
 				return temptype;
 			case tLexem_Nullexpression:
 				if(name)*name=nullptr;
+				mtGType_Transform(temptype);
 				return temptype;
 			default:
 				printf("SPP:[E] SppGeneratetype: Internal inconsistency: unexcepted lexem %i:%s while parsing a type\n",i->type,TokenidtoName[i->type]);
@@ -329,9 +331,12 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 		// Internal types
 		case eGAtomictype_Union: // Temporary type - gets converted to struct later on
 			return self->structsize;
-		case eGAtomictype_Pointer:
+		case eGAtomictype_Nearpointer:
 			return 2;
-		case eGAtomictype_Array:
+		case eGAtomictype_Farpointer:
+			return 4;
+		case eGAtomictype_Neararray:
+		case eGAtomictype_Fararray:
 			return mtGType_Sizeof(self->complexbasetype);
 		case eGAtomictype_Function:
 			assert(false);
@@ -363,39 +368,47 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 		case eGAtomictype_Float80:
 			return 10;
 		// C-side types
-		case eGAtomictype_Char:
-			return 1;
-		case eGAtomictype_Signedchar:
-			return 1;
-		case eGAtomictype_Unsignedchar:
-			return 1;
-		case eGAtomictype_Short:
-			return 2;
-		case eGAtomictype_Unsignedshort:
-			return 2;
-		case eGAtomictype_Int:
-			return 2;
-		case eGAtomictype_Unsigned:
-			return 2;
-		case eGAtomictype_Long:
-			return 4;
-		case eGAtomictype_Unsignedlong:
-			return 4;
-		case eGAtomictype_Longlong:
-			return 8;
-		case eGAtomictype_Unsignedlonglong:
-			return 8;
-		case eGAtomictype_Boolean:
-			return 1;
-		case eGAtomictype_Float:
-			return 4;
-		case eGAtomictype_Double:
-			return 8;
-		case eGAtomictype_Longdouble:
-			return 10;
-		default:
-			assert(false);
+		case eGAtomictype_Char:             //return 1;
+		case eGAtomictype_Signedchar:       //return 1;
+		case eGAtomictype_Unsignedchar:     //return 1;
+		case eGAtomictype_Short:            //return 2;
+		case eGAtomictype_Unsignedshort:    //return 2;
+		case eGAtomictype_Int:              //return 2;
+		case eGAtomictype_Unsigned:         //return 2;
+		case eGAtomictype_Long:             //return 4;
+		case eGAtomictype_Unsignedlong:     //return 4;
+		case eGAtomictype_Longlong:         //return 8;
+		case eGAtomictype_Unsignedlonglong: //return 8;
+		case eGAtomictype_Boolean:          //return 1;
+		case eGAtomictype_Float:            //return 4;
+		case eGAtomictype_Double:           //return 8;
+		case eGAtomictype_Longdouble:       //return 10;
+			printf("spp:[F] mtGType_Sizeof: Calculating size of an C-side type \n");
+			// You're supposed to have all types transformed into target types by now
+			GFatal();
+		default: {
+				// Resolve atomic type to string
+				char* str = "unknown";
+				for(
+					GAtomictypetostring_Entry * ptr = GAtomictypetostring;
+					ptr->str;
+					ptr++
+				){
+					if(ptr->atomictype==self->atomicbasetype){
+						str = ptr->str;
+						break;
+					};
+				};
+				printf("spp:[F] mtGType_Sizeof: Unrecognized atomic type %i•%s \n",
+					self->atomicbasetype,str
+				);
+				assert(false);
+			};
+			break;
 	};
+	printf("spp:[F] mtGType_Sizeof: Absolutely incomprehensible control flow occured \n");
+	assert(false);
+	return 9999;
 };
 void SppCompileanonymousstructure(tGType* self, tGTargetSizet *offset, tGNamespace* name_space){
 	assert(self);

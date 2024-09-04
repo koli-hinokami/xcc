@@ -11,6 +11,7 @@ int mtString_Length(char* str){
 	//I know there is <string.h>::strlen(char*){}.
 	//But what about recompiling the CC to some new platform
 	//without libc present?
+	if(!str)return 0;// -1 maybe?
 	char* ptr=str;
 	for(ptr=str;(*ptr)!=0;ptr++){;};
 	return (int)(ptr-str);
@@ -23,6 +24,8 @@ char* mtString_Clone(char* src){
 	if(src==nullptr)return nullptr;
 	int len=mtString_Fulllength(src);
 	char* dst = malloc(len);
+	assert(dst);
+	//if(!dst)return nullptr;
 	memcpy(dst,src,len);
 	return dst;
 };
@@ -50,6 +53,7 @@ char* mtString_FindcharFirst_Lambda(char* src, bool(*lambda)(char)){
 char* mtString_Join(char* s1,char* s2){
 	//Gives you ownership of dynamic memory
 	char* str=malloc(mtString_Length(s1)+mtString_Length(s2)+1);
+	assert(str);
 	// libc way:
 	//strcpy(str,s1);
 	//strcat(str,s2);

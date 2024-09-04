@@ -164,6 +164,9 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		default:
 			assert(false);
 	};
+	printf("IG: [F] IgCompileExpression: Absolutely incomprehensible control flow occured \n");
+	assert(false);
+	return nullptr;
 };
 tGInstruction* IgCompileStatement(tSpNode* self){
 #ifdef qvGTrace
@@ -201,6 +204,9 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 		default:
 			assert(false);
 	};
+	printf("IG: [F] IgCompileStatement: Absolutely incomprehensible control flow occured \n");
+	assert(false);
+	return nullptr;
 };
 tGInstruction* IgCompileFunction(tSpNode* self){
 #ifdef qvGTrace

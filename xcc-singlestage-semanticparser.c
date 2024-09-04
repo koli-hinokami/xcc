@@ -144,6 +144,7 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 		if(newtype->atomicbasetype==eGAtomictype_Array){
 			// lvalue T[] -> rvalue T*
 			newtype->atomicbasetype=eGAtomictype_Pointer;
+			mtGType_Transform(newtype);
 			return mtSpNode_Clone(
 				&(tSpNode){
 					.type=tSplexem_Cast,
@@ -152,10 +153,12 @@ tSpNode* SpInsertimpliedrvaluecast(tSpNode* self){
 				}
 			);
 		}else if(newtype->atomicbasetype==eGAtomictype_Function){
+			assert(false);
+		}else if(newtype->atomicbasetype==eGAtomictype_Nearfunction){
 			return mtSpNode_Clone(
 				&(tSpNode){
 					.type=tSplexem_Cast,
-					.returnedtype=mtGType_CreatePointer(newtype),
+					.returnedtype=mtGType_CreateNearpointer(newtype),
 					.left=self,
 				}
 			);
@@ -333,6 +336,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				);
 			};	break;
 			case tLexem_Expressionstatement: {
+				// TODO: Unallocate 'free-after-use' subexpressions
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Expressionstatement,
@@ -558,8 +562,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};
 			case tLexem_Functioncall: {
 				tSpNode* left = SpInsertimpliedrvaluecast(SpParse(self->left));
-				assert(left->returnedtype->atomicbasetype==eGAtomictype_Pointer);
-				assert(left->returnedtype->complexbasetype->atomicbasetype==eGAtomictype_Function);
+				if(left->returnedtype->atomicbasetype!=eGAtomictype_Nearpointer){
+					printf("SP: [F] Unexcepted type when calling a function: %i instead of %i\n",
+						left->returnedtype->atomicbasetype,
+						eGAtomictype_Nearpointer
+					);
+					assert(false);
+				}
+				assert(left->returnedtype->atomicbasetype==eGAtomictype_Nearpointer);
+				assert(left->returnedtype->complexbasetype->atomicbasetype==eGAtomictype_Nearfunction);
 				tSpNode* right = SpParsefunctionarguments(SpParse(self->right),left->returnedtype->complexbasetype->functionarguments);
 				
 				return mtSpNode_Clone(
@@ -607,6 +618,28 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					}
 				);
 				assert(false);
+			};
+			case tLexem_Sizeof: {
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Integerconstant,
+						.returnedtype=mtGType_Transform(
+							mtGType_SetValuecategory(
+								mtGType_CreateAtomic(
+									eGAtomictype_Sizet
+								),
+								eGValuecategory_Rightvalue
+							)
+						),
+						.constant=mtGType_Sizeof(
+							SppGeneratetype(
+								self->left->returnedtype,
+								self->left->left,
+								nullptr
+							)
+						)
+					}
+				);
 			};
 		};
 		{	// Expressions - arithmetic operators

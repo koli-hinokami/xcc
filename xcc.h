@@ -1,252 +1,253 @@
 //	Header file for XCC Retargetable C Compiler
 enum tTokentype {			
-	tToken_Null			= 0 ,		//	Stringless tokens
-	tToken_Memberbypointer		= 1 ,		//->
-	tToken_Namespace		= 2 ,		//::
-	tToken_Increment		= 3 ,		//++
-	tToken_Decrement		= 4 ,		//--
-	tToken_Openparentheses		= 5 ,		//(
-	tToken_Closeparentheses		= 6 ,		//)
-	tToken_Openbrackets		= 7 ,		//[
-	tToken_Closebrackets		= 8 ,		//]
-	tToken_Opencurlybraces		= 9 ,		//{
-	tToken_Closecurlybraces		= 10,		//}
-	tToken_Dot			= 11,		//.
-	tToken_Logicalnot		= 12,		//!
-	tToken_Bitwisenot		= 13,		//~
-	tToken_Bitwiseand		= 14,		//&
-	tToken_Plus			= 15,		//+
-	tToken_Minus			= 16,		//-
-	tToken_Multiply			= 17,		//*
-	tToken_Divide			= 18,		///
-	tToken_Modulo			= 19,		//%
-	tToken_Shiftleft		= 20,		//<<
-	tToken_Shiftright		= 21,		//>>
-	tToken_Lessthan			= 22,		//<
-	tToken_Greaterthan		= 23,		//>
-	tToken_Lessequal		= 24,		//<=
-	tToken_Greaterequal		= 25,		//>=
-	tToken_Threewaycomparison	= 26,		//<=>
-	tToken_Assign			= 27,		//=
-	tToken_Equals			= 28,		//==
-	tToken_Notequal			= 29,		//!=
-	tToken_Bitwisexor		= 30,		//^
-	tToken_Bitwiseor		= 31,		//|
-	tToken_Logicaland		= 32,		//&&
-	tToken_Logicalor		= 33,		//||
-	tToken_Expressionif		= 34,		//?
-	tToken_Colon			= 35,		//:
-	tToken_Addassign		= 36,		//+=
-	tToken_Substractassign		= 37,		//-=
-	tToken_Multiplyassign		= 38,		//*=
-	tToken_Divideassign		= 39,		///=
-	tToken_Moduloassign		= 40,		//%=
-	tToken_Shiftleftassign		= 41,		//<<=
-	tToken_Shiftrightassign		= 42,		//>>=
-	tToken_Bitwiseandassign		= 43,		//&=
-	tToken_Bitwisexorassign		= 44,		//^=
-	tToken_Bitwiseorassign		= 45,		//|=
-	tToken_Comma			= 46,		//,
-	tToken_Semicolon		= 47,		//;
-	tToken_Ellipsis			= 48,		//...
-	tToken_Integerconstant		= 96,		//
-	tToken_Whitespace		= 127,		//
-	//tToken_			= 47,		//	Keywords
-	tToken_Keywordalignas		= 128,		//alignas
-	tToken_Keywordalignof		= 129,		//alignof
-	tToken_Keywordauto		= 130,		//auto
-	tToken_Keywordbool		= 131,		//bool
-	tToken_Keywordbreak		= 132,		//break
-	tToken_Keywordcase		= 133,		//case
-	tToken_Keywordchar		= 134,		//char
-	tToken_Keywordconst		= 135,		//const
-	tToken_Keywordconstexpr		= 136,		//constexpr
-	tToken_Keywordcontinue		= 137,		//continue
-	tToken_Keyworddefault		= 138,		//default
-	tToken_Keyworddo		= 139,		//do
-	tToken_Keyworddouble		= 140,		//double
-	tToken_Keywordelse		= 141,		//else
-	tToken_Keywordenum		= 142,		//enum
-	tToken_Keywordextern		= 143,		//extern
-	tToken_Keywordfalse		= 144,		//false
-	tToken_Keywordfloat		= 145,		//float
-	tToken_Keywordfor		= 146,		//for
-	tToken_Keywordgoto		= 147,		//goto
-	tToken_Keywordif		= 148,		//if
-	tToken_Keywordinline		= 149,		//inline
-	tToken_Keywordint		= 150,		//int
-	tToken_Keywordlong		= 151,		//long
-	tToken_Keywordnullptr		= 152,		//nullptr
-	tToken_Keywordregister		= 153,		//register
-	tToken_Keywordrestrict		= 154,		//restrict
-	tToken_Keywordreturn		= 155,		//return
-	tToken_Keywordshort		= 156,		//short
-	tToken_Keywordsigned		= 157,		//signed
-	tToken_Keywordsizeof		= 158,		//sizeof
-	tToken_Keywordstatic		= 159,		//static
-	tToken_Keywordstatic_assert	= 160,		//static_assert
-	tToken_Keywordstruct		= 161,		//struct
-	tToken_Keywordswitch		= 162,		//switch
-	tToken_Keywordthread_local	= 163,		//thread_local
-	tToken_Keywordtrue		= 164,		//true
-	tToken_Keywordtypedef		= 165,		//typedef
-	tToken_Keywordtypeof		= 166,		//typeof
-	tToken_Keywordtypeof_unqual	= 167,		//typeof_unqual
-	tToken_Keywordunion		= 168,		//union
-	tToken_Keywordunsigned		= 169,		//unsigned
-	tToken_Keywordvoid		= 170,		//void
-	tToken_Keywordvolatile		= 171,		//volatile
-	tToken_Keywordwhile		= 172,		//while
-	tToken_Keywordint8t		= 173,		//int8_t
-        tToken_Keywordint16t		= 174,		//int16_t
-        tToken_Keywordint32t		= 175,		//int32_t
-        tToken_Keywordint64t		= 176,		//int64_t
-	tToken_Keyworduint8t		= 177,		//uint8_t
-        tToken_Keyworduint16t		= 178,		//uint16_t
-        tToken_Keyworduint32t		= 179,		//uint32_t
-        tToken_Keyworduint64t		= 180,		//uint64_t
-	//tToken_			= 256,		//	String tokens
-	tToken_Identifier		= 256,		//Generic identifier
-	tToken_String			= 257,		//String
-	tToken_Charaterconstant		= 258,		//Charater constant
-	//tToken_			= 512,		//	Lexems
-	tLexem_Declarationlist		= 512,		//List of declarations - root of program
-	tLexem_Assign			= 513,		//Assignment statement
-	tLexem_Comma			= 514,		//Comma 'operator' - rather specialpurpose
-	tLexem_Expressionif		= 515,		//
-	tLexem_Logicalor		= 516,		//
-	tLexem_Logicaland		= 517,		//
-	tLexem_Equals			= 518,		//
-	tLexem_Notequal			= 519,		//
-	tLexem_Greaterequal		= 520,		//
-	tLexem_Lessequal		= 521,		//
-	tLexem_Greaterthan		= 522,		//
-	tLexem_Lessthan			= 523,		//
-	tLexem_Bitwiseor		= 524,		//
-	tLexem_Bitwisexor		= 525,		//
-	tLexem_Bitwiseand		= 526,		//
-	tLexem_Shiftleft		= 527,		//
-	tLexem_Shiftright		= 528,		//
-	tLexem_Add			= 529,		//
-	tLexem_Substract		= 530,		//
-	tLexem_Typecast			= 531,		//
-	tLexem_Variabledeclaration	= 532,		//
-	tLexem_Functiondeclaration	= 533,		//
-	tLexem_Blockstatement		= 534,
-	tLexem_Increment		= 535,
-	tLexem_Decrement		= 536,
-	tLexem_Unaryplus		= 537,
-	tLexem_Negation			= 538,
-	tLexem_Logicalnot		= 539,
-	tLexem_Bitwisenot		= 540,
-	tLexem_Dereference		= 541,
-	tLexem_Addressof		= 542,
-	tLexem_Sizeof			= 543,
-	tLexem_Typeexpression		= 544,
-	tLexem_Expressionstatement	= 545,
-	tLexem_Integerconstant		= 546,
-	tLexem_Functioncall		= 547,
-	tLexem_Structuremember		= 548,		//`.`
-	tLexem_Memberbypointer		= 549,		//`->`
-	tLexem_Compoundliteral		= 550,
-	tLexem_Arrayindex		= 551,
-	tLexem_Postincrement		= 552,
-	tLexem_Postdecrement		= 553,
-	tLexem_Identifier		= 554,		//identifier
-	tLexem_Typedefinition	        = 555,		//typedef basetype typeexpr;
-	tLexem_Structdefinition	        = 556,		//struct type
-	tLexem_Returnstatement	        = 557,		//return expr;
-	tLexem_Ifstatement	        = 558,
-	tLexem_Nullpointer	        = 559,
-	tLexem_Booleantrue	        = 560,
-	tLexem_Booleanfalse	        = 561,
-	tLexem_Whilestatement	        = 562,
-	tLexem_Forstatement	        = 563,
-	tLexem_Nulldeclaration	        = 564,
-	tLexem_Nullexpression	        = 565,
-	tLexem_Multiply		        = 566,
-	tLexem_Divide	        	= 567,
-	tLexem_Modulo		        = 568,
-	tLexem_Switchstatement	        = 569,
-	tLexem_Switchcase	        = 570,
-	tLexem_Switchdefault	        = 571,
-	tLexem_Goto		        = 572,
-	tLexem_Breakstatement		= 573,
-	tLexem_Constmodifier	        = 574,
-	tLexem_Volatilemodifier	        = 575,
-	tLexem_Restrictmodifier	        = 576,
-	tLexem_Numericconstant	        = 577,
-	tLexem_Stringconstant	        = 578,
-	tLexem_Rawvariabledeclaration	= 579,
-	tLexem_Namespace		= 580,
-	tLexem_Using			= 581,
-	tLexem_Ellipsis			= 582,
-	//tLexem_	        = 582,
-	//tToken_	        	= 768,		//	String lexems
-	//tToken_	        	= 1024,		//	Second AST lexems
-	tSplexem_Declarationlist	= 1024,		// Same as tLexem_Declaration
-	tSplexem_Integerconstant	= 1025,		// 
-	tSplexem_Symbol			= 1026,		//
-	tSplexem_Nulldeclaration	= 1027,		//
-	tSplexem_Blockstatement		= 1028,		//
-	tSplexem_Functiondeclaration	= 1029,		//
-	tSplexem_Returnstatement	= 1030,		//
-	tSplexem_Variabledeclaration	= 1031,		//
-	tSplexem_Nullexpression		= 1032,		//
-	tSplexem_Arraytopointer		= 1033,		//
-	tSplexem_Addition		= 1034,		//
-	tSplexem_Substraction		= 1035,		//
-	tSplexem_Dereference		= 1036,		//
-	tSplexem_Structuremember	= 1037,		//
-	tSplexem_Identifier		= 1038,		//
-	tSplexem_Cast			= 1039,		//Only casts types by size
-	tSplexem_Expressionstatement	= 1040,		//Only casts types by size
-	tSplexem_Stringconstant		= 1041,		//
-	tSplexem_Comma			= 1042,		//
-	tSplexem_Functioncall		= 1043,		//
-	tSplexem_Multiplication		= 1044,		//
-	tSplexem_Division		= 1045,		//
-	tSplexem_Modulo			= 1046,		//
-	tSplexem_Ifstatement		= 1047,		//
-	tSplexem_Whilestatement		= 1048,		//
-	tSplexem_Forstatement		= 1049,		//
-	tSplexem_Switchstatement	= 1050,		//
-	tSplexem_Breakstatement		= 1051,		//
-	tSplexem_Equality		= 1052,		//
-	tSplexem_Nonequality		= 1053,		//
-	tSplexem_Assign		= 1054,		//
-	//tSplexem_			= ,		//
-	//tToken_	        	= 1280,		//	Second AST string lexems
-	//						//    Actually are deprecated
-	//tToken_	        	= 1536,		//	IR instructions
-	tInstruction_Cnop		= 1536,	//Clash nop - used internally
-	tInstruction_Nop		= 1537,	//No operation
-	tInstruction_Jumptrue		= 1538,	//Jump if true
-	tInstruction_Jumpfalse		= 1539,	//Jump if false
-	tInstruction_Debugbreak		= 1540,	//Break into debugger
-	tInstruction_Allocatestorage	= 1541,	//To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
-	tInstruction_Systemcall		= 1542,	//System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
-	tInstruction_Definevalue	= 1543,	//Just for strings. Use as `definevalue.char 'a'`
-	tInstruction_Enterframe		= 1544,	//Enter stack frame
-	tInstruction_Constant		= 1545,	//Push an immediate to calculation stack
-	tInstruction_Return		= 1546,	//Return from function. Issue after `leave`.
-	tInstruction_Leaveframe		= 1547,	//Leave stack frame
-	tInstruction_Prereturn		= 1548,	//Return value from function. Issue before `leave`.
-	tInstruction_Loadindirect	= 1549,	//Load value by pointer provided on calculation stack.
-	tInstruction_Loadaddress	= 1550,	//Load effective address of an instruction.
-	tInstruction_Indexfp		= 1551,	//Indexes current pointer by frame pointer.
-	tInstruction_Pushleft		= 1552,	// -.- Those two are used to assist codegen for platforms that can't use two stacks like IR excepts to be able to and use machine stack as both stacks.
-	tInstruction_Popright		= 1553,	// -'
-	tInstruction_Add		= 1554,	// -.- Exactly what you would except.
-	tInstruction_Substract		= 1555,	// -' 
-	tInstruction_Drop		= 1556,	//For expression statements. Ignore produced value.
-	tInstruction_Pushargument	= 1557,	//Throw function argument just evaluated to stack.
-	tInstruction_Call		= 1558,	//Call function.
+	tToken_Null                     = 0 ,   //      Stringless tokens
+	tToken_Memberbypointer          = 1 ,   //->
+	tToken_Namespace                = 2 ,   //::
+	tToken_Increment                = 3 ,   //++
+	tToken_Decrement                = 4 ,   //--
+	tToken_Openparentheses          = 5 ,   //(
+	tToken_Closeparentheses         = 6 ,   //)
+	tToken_Openbrackets             = 7 ,   //[
+	tToken_Closebrackets            = 8 ,   //]
+	tToken_Opencurlybraces          = 9 ,   //{
+	tToken_Closecurlybraces         = 10,   //}
+	tToken_Dot                      = 11,   //.
+	tToken_Logicalnot               = 12,   //!
+	tToken_Bitwisenot               = 13,   //~
+	tToken_Bitwiseand               = 14,   //&
+	tToken_Plus                     = 15,   //+
+	tToken_Minus                    = 16,   //-
+	tToken_Multiply                 = 17,   //*
+	tToken_Divide                   = 18,   ///
+	tToken_Modulo                   = 19,   //%
+	tToken_Shiftleft                = 20,   //<<
+	tToken_Shiftright               = 21,   //>>
+	tToken_Lessthan                 = 22,   //<
+	tToken_Greaterthan              = 23,   //>
+	tToken_Lessequal                = 24,   //<=
+	tToken_Greaterequal             = 25,   //>=
+	tToken_Threewaycomparison       = 26,   //<=>
+	tToken_Assign                   = 27,   //=
+	tToken_Equals                   = 28,   //==
+	tToken_Notequal                 = 29,   //!=
+	tToken_Bitwisexor               = 30,   //^
+	tToken_Bitwiseor                = 31,   //|
+	tToken_Logicaland               = 32,   //&&
+	tToken_Logicalor                = 33,   //||
+	tToken_Expressionif             = 34,   //?
+	tToken_Colon                    = 35,   //:
+	tToken_Addassign                = 36,   //+=
+	tToken_Substractassign          = 37,   //-=
+	tToken_Multiplyassign           = 38,   //*=
+	tToken_Divideassign             = 39,   ///=
+	tToken_Moduloassign             = 40,   //%=
+	tToken_Shiftleftassign          = 41,   //<<=
+	tToken_Shiftrightassign         = 42,   //>>=
+	tToken_Bitwiseandassign         = 43,   //&=
+	tToken_Bitwisexorassign         = 44,   //^=
+	tToken_Bitwiseorassign          = 45,   //|=
+	tToken_Comma                    = 46,   //,
+	tToken_Semicolon                = 47,   //;
+	tToken_Ellipsis                 = 48,   //...
+	tToken_Integerconstant          = 96,   //
+	tToken_Whitespace               = 127,  //
+	//tToken_                       = 47,   //      Keywords
+	tToken_Keywordalignas           = 128,  //alignas
+	tToken_Keywordalignof           = 129,  //alignof
+	tToken_Keywordauto              = 130,  //auto
+	tToken_Keywordbool              = 131,  //bool
+	tToken_Keywordbreak             = 132,  //break
+	tToken_Keywordcase              = 133,  //case
+	tToken_Keywordchar              = 134,  //char
+	tToken_Keywordconst             = 135,  //const
+	tToken_Keywordconstexpr         = 136,  //constexpr
+	tToken_Keywordcontinue          = 137,  //continue
+	tToken_Keyworddefault           = 138,  //default
+	tToken_Keyworddo                = 139,  //do
+	tToken_Keyworddouble            = 140,  //double
+	tToken_Keywordelse              = 141,  //else
+	tToken_Keywordenum              = 142,  //enum
+	tToken_Keywordextern            = 143,  //extern
+	tToken_Keywordfalse             = 144,  //false
+	tToken_Keywordfloat             = 145,  //float
+	tToken_Keywordfor               = 146,  //for
+	tToken_Keywordgoto              = 147,  //goto
+	tToken_Keywordif                = 148,  //if
+	tToken_Keywordinline            = 149,  //inline
+	tToken_Keywordint               = 150,  //int
+	tToken_Keywordlong              = 151,  //long
+	tToken_Keywordnullptr           = 152,  //nullptr
+	tToken_Keywordregister          = 153,  //register
+	tToken_Keywordrestrict          = 154,  //restrict
+	tToken_Keywordreturn            = 155,  //return
+	tToken_Keywordshort             = 156,  //short
+	tToken_Keywordsigned            = 157,  //signed
+	tToken_Keywordsizeof            = 158,  //sizeof
+	tToken_Keywordstatic            = 159,  //static
+	tToken_Keywordstatic_assert     = 160,  //static_assert
+	tToken_Keywordstruct            = 161,  //struct
+	tToken_Keywordswitch            = 162,  //switch
+	tToken_Keywordthread_local      = 163,  //thread_local
+	tToken_Keywordtrue              = 164,  //true
+	tToken_Keywordtypedef           = 165,  //typedef
+	tToken_Keywordtypeof            = 166,  //typeof
+	tToken_Keywordtypeof_unqual     = 167,  //typeof_unqual
+	tToken_Keywordunion             = 168,  //union
+	tToken_Keywordunsigned          = 169,  //unsigned
+	tToken_Keywordvoid              = 170,  //void
+	tToken_Keywordvolatile          = 171,  //volatile
+	tToken_Keywordwhile             = 172,  //while
+	tToken_Keywordint8t             = 173,  //int8_t
+	tToken_Keywordint16t            = 174,  //int16_t
+	tToken_Keywordint32t            = 175,  //int32_t
+	tToken_Keywordint64t            = 176,  //int64_t
+	tToken_Keyworduint8t            = 177,  //uint8_t
+	tToken_Keyworduint16t           = 178,  //uint16_t
+	tToken_Keyworduint32t           = 179,  //uint32_t
+	tToken_Keyworduint64t           = 180,  //uint64_t
+	tToken_Keywordsizet             = 181,  //size_t
+	//tToken_                       = 256,  //      String tokens
+	tToken_Identifier               = 256,  //Generic identifier
+	tToken_String                   = 257,  //String
+	tToken_Charaterconstant         = 258,  //Charater constant
+	//tToken_                       = 512,  //      Lexems
+	tLexem_Declarationlist          = 512,  //List of declarations - root of program
+	tLexem_Assign                   = 513,  //Assignment statement
+	tLexem_Comma                    = 514,  //Comma 'operator' - rather specialpurpose
+	tLexem_Expressionif             = 515,  //
+	tLexem_Logicalor                = 516,  //
+	tLexem_Logicaland               = 517,  //
+	tLexem_Equals                   = 518,  //
+	tLexem_Notequal                 = 519,  //
+	tLexem_Greaterequal             = 520,  //
+	tLexem_Lessequal                = 521,  //
+	tLexem_Greaterthan              = 522,  //
+	tLexem_Lessthan                 = 523,  //
+	tLexem_Bitwiseor                = 524,  //
+	tLexem_Bitwisexor               = 525,  //
+	tLexem_Bitwiseand               = 526,  //
+	tLexem_Shiftleft                = 527,  //
+	tLexem_Shiftright               = 528,  //
+	tLexem_Add                      = 529,  //
+	tLexem_Substract                = 530,  //
+	tLexem_Typecast                 = 531,  //
+	tLexem_Variabledeclaration      = 532,  //
+	tLexem_Functiondeclaration      = 533,  //
+	tLexem_Blockstatement           = 534,  //
+	tLexem_Increment                = 535,  //
+	tLexem_Decrement                = 536,  //
+	tLexem_Unaryplus                = 537,  //
+	tLexem_Negation                 = 538,  //
+	tLexem_Logicalnot               = 539,  //
+	tLexem_Bitwisenot               = 540,  //
+	tLexem_Dereference              = 541,  //
+	tLexem_Addressof                = 542,  //
+	tLexem_Sizeof                   = 543,  //
+	tLexem_Typeexpression           = 544,  //
+	tLexem_Expressionstatement      = 545,  //
+	tLexem_Integerconstant          = 546,  //
+	tLexem_Functioncall             = 547,  //
+	tLexem_Structuremember          = 548,  //`.`
+	tLexem_Memberbypointer          = 549,  //`->`
+	tLexem_Compoundliteral          = 550,  //
+	tLexem_Arrayindex               = 551,  //
+	tLexem_Postincrement            = 552,  //
+	tLexem_Postdecrement            = 553,  //
+	tLexem_Identifier               = 554,  //identifier
+	tLexem_Typedefinition           = 555,  //typedef basetype typeexpr;
+	tLexem_Structdefinition         = 556,  //struct type
+	tLexem_Returnstatement          = 557,  //return expr;
+	tLexem_Ifstatement              = 558,  //
+	tLexem_Nullpointer              = 559,  //
+	tLexem_Booleantrue              = 560,  //
+	tLexem_Booleanfalse             = 561,  //
+	tLexem_Whilestatement           = 562,  //
+	tLexem_Forstatement             = 563,  //
+	tLexem_Nulldeclaration          = 564,  //
+	tLexem_Nullexpression           = 565,  //
+	tLexem_Multiply                 = 566,  //
+	tLexem_Divide                   = 567,  //
+	tLexem_Modulo                   = 568,  //
+	tLexem_Switchstatement          = 569,  //
+	tLexem_Switchcase               = 570,  //
+	tLexem_Switchdefault            = 571,  //
+	tLexem_Goto                     = 572,  //
+	tLexem_Breakstatement           = 573,  //
+	tLexem_Constmodifier            = 574,  //
+	tLexem_Volatilemodifier         = 575,  //
+	tLexem_Restrictmodifier         = 576,  //
+	tLexem_Numericconstant          = 577,  //
+	tLexem_Stringconstant           = 578,  //
+	tLexem_Rawvariabledeclaration   = 579,  //
+	tLexem_Namespace                = 580,  //
+	tLexem_Using                    = 581,  //
+	tLexem_Ellipsis                 = 582,  //
+	//tLexem_                       = 582,  //
+	//tToken_                       = 768,  //      String lexems
+	//tToken_                       = 1024, //      Second AST lexems
+	tSplexem_Declarationlist        = 1024, // Same as tLexem_Declaration
+	tSplexem_Integerconstant        = 1025, // 
+	tSplexem_Symbol                 = 1026, //
+	tSplexem_Nulldeclaration        = 1027, //
+	tSplexem_Blockstatement         = 1028, //
+	tSplexem_Functiondeclaration    = 1029, //
+	tSplexem_Returnstatement        = 1030, //
+	tSplexem_Variabledeclaration    = 1031, //
+	tSplexem_Nullexpression         = 1032, //
+	tSplexem_Arraytopointer         = 1033, //
+	tSplexem_Addition               = 1034, //
+	tSplexem_Substraction           = 1035, //
+	tSplexem_Dereference            = 1036, //
+	tSplexem_Structuremember        = 1037, //
+	tSplexem_Identifier             = 1038, //
+	tSplexem_Cast                   = 1039, //Only casts types by size
+	tSplexem_Expressionstatement    = 1040, //Only casts types by size
+	tSplexem_Stringconstant         = 1041, //
+	tSplexem_Comma                  = 1042, //
+	tSplexem_Functioncall           = 1043, //
+	tSplexem_Multiplication         = 1044, //
+	tSplexem_Division               = 1045, //
+	tSplexem_Modulo                 = 1046, //
+	tSplexem_Ifstatement            = 1047, //
+	tSplexem_Whilestatement         = 1048, //
+	tSplexem_Forstatement           = 1049, //
+	tSplexem_Switchstatement        = 1050, //
+	tSplexem_Breakstatement         = 1051, //
+	tSplexem_Equality               = 1052, //
+	tSplexem_Nonequality            = 1053, //
+	tSplexem_Assign                 = 1054, //
+	//tSplexem_                     = ,     //
+	//tToken_                       = 1280, //      Second AST string lexems
+	//                                      //        Actually are deprecated
+	//tToken_                       = 1536, //      IR instructions
+	tInstruction_Cnop               = 1536, //Clash nop - used internally
+	tInstruction_Nop                = 1537, //No operation
+	tInstruction_Jumptrue           = 1538, //Jump if true
+	tInstruction_Jumpfalse          = 1539, //Jump if false
+	tInstruction_Debugbreak         = 1540, //Break into debugger
+	tInstruction_Allocatestorage    = 1541, //To be used like `variable uint32_t pointer_localstorage testarray: times 5 allocatestorage.uint32` (looks awesome though, might wanna make smth like that in flatassembler)
+	tInstruction_Systemcall         = 1542, //System call. Still have to figure out how to call into kernel if code is compiled with calculation stack but syscall excepts registers. Might be just RTL call.
+	tInstruction_Definevalue        = 1543, //Just for strings. Use as `definevalue.char 'a'`
+	tInstruction_Enterframe         = 1544, //Enter stack frame
+	tInstruction_Constant           = 1545, //Push an immediate to calculation stack
+	tInstruction_Return             = 1546, //Return from function. Issue after `leave`.
+	tInstruction_Leaveframe         = 1547, //Leave stack frame
+	tInstruction_Prereturn          = 1548, //Return value from function. Issue before `leave`.
+	tInstruction_Loadindirect       = 1549, //Load value by pointer provided on calculation stack.
+	tInstruction_Loadaddress        = 1550, //Load effective address of an instruction.
+	tInstruction_Indexfp            = 1551, //Indexes current pointer by frame pointer.
+	tInstruction_Pushleft           = 1552, // -.- Those two are used to assist codegen for platforms that can't use two stacks like IR excepts to be able to and use machine stack as both stacks.
+	tInstruction_Popright           = 1553, // -'
+	tInstruction_Add                = 1554, // -.- Exactly what you would except.
+	tInstruction_Substract          = 1555, // -' 
+	tInstruction_Drop               = 1556, //For expression statements. Ignore produced value.
+	tInstruction_Pushargument       = 1557, //Throw function argument just evaluated to stack.
+	tInstruction_Call               = 1558, //Call function.
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
-	//tToken_			= 1792,		//	To be not used
-	//tToken_			= 2048,		//	Machine instructions?
-};				
+	//tToken_                       = 1792,         //      To be not used
+	//tToken_                       = 2048,         //      Machine instructions?
+};
 typedef short eTokentype,tTokentype;
 char *TokenidtoName[]={
 	"tToken_Null                 ",// 0 ,
@@ -813,10 +814,10 @@ char *TokenidtoName[]={
 	"tLexem_Booleanfalse         ",// 561
 	"tLexem_Whilestatement       ",// 562
 	"tLexem_Forstatement         ",// 563
-	"tLexem_Nulldeclaration	     ",// 564
-	"tLexem_Nullexpression	     ",// 565
+	"tLexem_Nulldeclaration      ",// 564
+	"tLexem_Nullexpression       ",// 565
 	"tLexem_Multiply             ",// 566
-	"tLexem_Divide	             ",// 567
+	"tLexem_Divide               ",// 567
 	"tLexem_Modulo               ",// 568
 	"tLexem_Switchstatement      ",// 569
 	"tLexem_Switchcase           ",// 570
@@ -1839,55 +1840,55 @@ char *TokenidtoName[]={
 	"?"                           ,// 1587
 };
 char *TokenidtoName_Compact[]={
-	"?",// 0 ,
-	"?",// 1 ,
-	"?",// 2 ,
-	"?",// 3 ,
-	"?",// 4 ,
-	"?",// 5 ,
-	"?",// 6 ,
-	"?",// 7 ,
-	"?",// 8 ,
-	"?",// 9 ,
-	"?",// 10,
-	"?",// 11,
-	"?",// 12,
-	"?",// 13,
-	"?",// 14,
-	"?",// 15,
-	"?",// 16,
-	"?",// 17,
-	"?",// 18,
-	"?",// 19,
-	"?",// 20,
-	"?",// 21,
-	"?",// 22,
-	"?",// 23,
-	"?",// 24,
-	"?",// 25,
-	"?",// 26,
-	"?",// 27,
-	"?",// 28,
-	"?",// 29,
-	"?",// 30,
-	"?",// 31,
-	"?",// 32,
-	"?",// 33,
-	"?",// 34,
-	"?",// 35,
-	"?",// 36,
-	"?",// 37,
-	"?",// 38,
-	"?",// 39,
-	"?",// 40,
-	"?",// 41,
-	"?",// 42,
-	"?",// 43,
-	"?",// 44,
-	"?",// 45,
-	"?",// 46,
-	"?",// 47,
-	"?",// 48 
+	"(nil)",// 0 ,
+	"->",// 1 ,
+	"::" ,// 2 ,
+	"++" ,// 3 ,
+	"--" ,// 4 ,
+	"("  ,// 5 ,
+	")"  ,// 6 ,
+	"["  ,// 7 ,
+	"]"  ,// 8 ,
+	"{"  ,// 9 ,
+	"}"  ,// 10,
+	"."  ,// 11,
+	"!"  ,// 12,
+	"~"  ,// 13,
+	"&"  ,// 14,
+	"+"  ,// 15,
+	"-"  ,// 16,
+	"*"  ,// 17,
+	"/"  ,// 18,
+	"%"  ,// 19,
+	"<<" ,// 20,
+	">>" ,// 21,
+	"<"  ,// 22,
+	">"  ,// 23,
+	"<=" ,// 24,
+	">=",// 25,
+	"<=>",// 26,
+	"="  ,// 27,
+	"==" ,// 28,
+	"!=" ,// 29,
+	"^"  ,// 30,
+	"|"  ,// 31,
+	"&&" ,// 32,
+	"||" ,// 33,
+	"?"  ,// 34,
+	":"  ,// 35,
+	"+=" ,// 36,
+	"-=" ,// 37,
+	"*=" ,// 38,
+	"/=" ,// 39,
+	"%=" ,// 40,
+	"<<=",// 41,
+	">>=",// 42,
+	"&=" ,// 43,
+	"^=" ,// 44,
+	"|=" ,// 45,
+	","  ,// 46,
+	";"  ,// 47,
+	"...",// 48 
 	"?",// 49 
 	"?",// 50 
 	"?",// 51 
@@ -1967,59 +1968,59 @@ char *TokenidtoName_Compact[]={
 	"?",// 125
 	"?",// 126
 	"?",// 127
-	"?",// 128
-	"?",// 129
-	"?",// 130
-	"?",// 131
-	"?",// 132
-	"?",// 133
-	"?",// 134
-	"?",// 135
-	"?",// 136
-	"?",// 137
-	"?",// 138
-	"?",// 139
-	"?",// 140
-	"?",// 141
-	"?",// 142
-	"?",// 143
-	"?",// 144
-	"?",// 145
-	"?",// 146
-	"?",// 147
-	"?",// 148
-	"?",// 149
-	"?",// 150
-	"?",// 151
-	"?",// 152
-	"?",// 153
-	"?",// 154
-	"?",// 155
-	"?",// 156
-	"?",// 157
-	"?",// 158
-	"?",// 159
-	"?",// 160
-	"?",// 161
-	"?",// 162
-	"?",// 163
-	"?",// 164
-	"?",// 165
-	"?",// 166
-	"?",// 167
-	"?",// 168
-	"?",// 169
-	"?",// 170
-	"?",// 171
-	"?",// 172
-	"?",// 173
-	"?",// 174
-	"?",// 175
-	"?",// 176
-	"?",// 177
-	"?",// 178
-	"?",// 179
-	"?",// 180
+	"alignas"      ,// 128
+	"alignof"      ,// 129
+	"auto"         ,// 130
+	"bool"         ,// 131
+	"break"        ,// 132
+	"case"         ,// 133
+	"char"         ,// 134
+	"const"        ,// 135
+	"constexpr"    ,// 136
+	"continue"     ,// 137
+	"default"      ,// 138
+	"do"           ,// 139
+	"double"       ,// 140
+	"else"         ,// 141
+	"enum"         ,// 142
+	"extern"       ,// 143
+	"false"        ,// 144
+	"float"        ,// 145
+	"for"          ,// 146
+	"goto"         ,// 147
+	"if"           ,// 148
+	"inline"       ,// 149
+	"int"          ,// 150
+	"long"         ,// 151
+	"nullptr"      ,// 152
+	"register"     ,// 153
+	"restrict"     ,// 154
+	"return"       ,// 155
+	"short"        ,// 156
+	"signed"       ,// 157
+	"sizeof"       ,// 158
+	"static"       ,// 159
+	"static_assert",// 160
+	"struct"       ,// 161
+	"switch"       ,// 162
+	"thread_local" ,// 163
+	"true"         ,// 164
+	"typedef"      ,// 165
+	"typeof"       ,// 166
+	"typeof_unqual",// 167
+	"union"        ,// 168
+	"unsigned"     ,// 169
+	"void"         ,// 170
+	"volatile"     ,// 171
+	"while"        ,// 172
+	"int8_t"       ,// 173
+	"int16_t"      ,// 174
+	"int32_t"      ,// 175
+	"int64_t"      ,// 176
+	"uint8_t"      ,// 177
+	"uint16_t"     ,// 178
+	"uint32_t"     ,// 179
+	"uint64_t"     ,// 180
 	"?",// 181
 	"?",// 182
 	"?",// 183
@@ -3429,62 +3430,63 @@ char *TokenidtoName_Compact[]={
 	"?"                           ,// 1587
 };
 struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
-	{"alignas"		,tToken_Keywordalignas		},
-	{"alignof"		,tToken_Keywordalignof		},
-	{"auto"			,tToken_Keywordauto		},
-	{"bool"			,tToken_Keywordbool		},
-	{"break"		,tToken_Keywordbreak		},
-	{"case"			,tToken_Keywordcase		},
-	{"char"			,tToken_Keywordchar		},
-	{"const"		,tToken_Keywordconst		},
-	{"constexpr"		,tToken_Keywordconstexpr	},
-	{"continue"		,tToken_Keywordcontinue		},
-	{"default"		,tToken_Keyworddefault		},
-	{"do"			,tToken_Keyworddo		},
-	{"double"		,tToken_Keyworddouble		},
-	{"else"			,tToken_Keywordelse		},
-	{"enum"			,tToken_Keywordenum		},
-	{"extern"		,tToken_Keywordextern		},
-	{"false"		,tToken_Keywordfalse		},
-	{"float"		,tToken_Keywordfloat		},
-	{"for"			,tToken_Keywordfor		},
-	{"goto"			,tToken_Keywordgoto		},
-	{"if"			,tToken_Keywordif		},
-	{"int8_t"		,tToken_Keywordint8t		},
-	{"int16_t"		,tToken_Keywordint16t		},
-	{"int32_t"		,tToken_Keywordint32t		},
-	{"int64_t"		,tToken_Keywordint64t		},
-	{"inline"		,tToken_Keywordinline		},
-	{"int"			,tToken_Keywordint		},
-	{"long"			,tToken_Keywordlong		},
-	{"nullptr"		,tToken_Keywordnullptr		},
-//	{"namespace"		,tToken_Keywordnamespace	},
-	{"register"		,tToken_Keywordregister		},
-	{"restrict"		,tToken_Keywordrestrict		},
-	{"return"		,tToken_Keywordreturn		},
-	{"short"		,tToken_Keywordshort		},
-	{"signed"		,tToken_Keywordsigned		},
-	{"sizeof"		,tToken_Keywordsizeof		},
-	{"static"		,tToken_Keywordstatic		},
-	{"static_assert"	,tToken_Keywordstatic_assert	},
-	{"struct"		,tToken_Keywordstruct		},
-	{"switch"		,tToken_Keywordswitch		},
-	{"thread_local"		,tToken_Keywordthread_local	},
-	{"true"			,tToken_Keywordtrue		},
-	{"typedef"		,tToken_Keywordtypedef		},
-	{"typeof"		,tToken_Keywordtypeof		},
-	{"typeof_unqual"	,tToken_Keywordtypeof_unqual	},
-	{"uint8_t"		,tToken_Keyworduint8t		},
-	{"uint16_t"		,tToken_Keyworduint16t		},
-	{"uint32_t"		,tToken_Keyworduint32t		},
-	{"uint64_t"		,tToken_Keyworduint64t		},
-	{"union"		,tToken_Keywordunion		},
-	{"unsigned"		,tToken_Keywordunsigned		},
-	{"void"			,tToken_Keywordvoid		},
-	{"volatile"		,tToken_Keywordvolatile		},
-	{"while"		,tToken_Keywordwhile		},
-	{""			,0				},
-	{(char*)0		,0				},
+	{"alignas"      ,tToken_Keywordalignas          },
+	{"alignof"      ,tToken_Keywordalignof          },
+	{"auto"         ,tToken_Keywordauto             },
+	{"bool"         ,tToken_Keywordbool             },
+	{"break"        ,tToken_Keywordbreak            },
+	{"case"         ,tToken_Keywordcase             },
+	{"char"         ,tToken_Keywordchar             },
+	{"const"        ,tToken_Keywordconst            },
+	{"constexpr"    ,tToken_Keywordconstexpr        },
+	{"continue"     ,tToken_Keywordcontinue         },
+	{"default"      ,tToken_Keyworddefault          },
+	{"do"           ,tToken_Keyworddo               },
+	{"double"       ,tToken_Keyworddouble           },
+	{"else"         ,tToken_Keywordelse             },
+	{"enum"         ,tToken_Keywordenum             },
+	{"extern"       ,tToken_Keywordextern           },
+	{"false"        ,tToken_Keywordfalse            },
+	{"float"        ,tToken_Keywordfloat            },
+	{"for"          ,tToken_Keywordfor              },
+	{"goto"         ,tToken_Keywordgoto             },
+	{"if"           ,tToken_Keywordif               },
+	{"int8_t"       ,tToken_Keywordint8t            },
+	{"int16_t"      ,tToken_Keywordint16t           },
+	{"int32_t"      ,tToken_Keywordint32t           },
+	{"int64_t"      ,tToken_Keywordint64t           },
+	{"inline"       ,tToken_Keywordinline           },
+	{"int"          ,tToken_Keywordint              },
+	{"long"         ,tToken_Keywordlong             },
+	{"nullptr"      ,tToken_Keywordnullptr          },
+//	{"namespace"    ,tToken_Keywordnamespace        },
+	{"register"     ,tToken_Keywordregister         },
+	{"restrict"     ,tToken_Keywordrestrict         },
+	{"return"       ,tToken_Keywordreturn           },
+	{"short"        ,tToken_Keywordshort            },
+	{"signed"       ,tToken_Keywordsigned           },
+	{"sizeof"       ,tToken_Keywordsizeof           },
+	{"size_t"       ,tToken_Keywordsizet            },
+	{"static"       ,tToken_Keywordstatic           },
+	{"static_assert",tToken_Keywordstatic_assert    },
+	{"struct"       ,tToken_Keywordstruct           },
+	{"switch"       ,tToken_Keywordswitch           },
+	{"thread_local" ,tToken_Keywordthread_local     },
+	{"true"         ,tToken_Keywordtrue             },
+	{"typedef"      ,tToken_Keywordtypedef          },
+	{"typeof"       ,tToken_Keywordtypeof           },
+	{"typeof_unqual",tToken_Keywordtypeof_unqual    },
+	{"uint8_t"      ,tToken_Keyworduint8t           },
+	{"uint16_t"     ,tToken_Keyworduint16t          },
+	{"uint32_t"     ,tToken_Keyworduint32t          },
+	{"uint64_t"     ,tToken_Keyworduint64t          },
+	{"union"        ,tToken_Keywordunion            },
+	{"unsigned"     ,tToken_Keywordunsigned         },
+	{"void"         ,tToken_Keywordvoid             },
+	{"volatile"     ,tToken_Keywordvolatile         },
+	{"while"        ,tToken_Keywordwhile            },
+	{""             ,0                              },
+	{(char*)0       ,0                              },
 };
 // Target types
 typedef uint16_t tGTargetNearpointer;
@@ -3525,52 +3527,60 @@ typedef enum eGSegment {
 	meGSegment_Count
 } eGSegment;
 typedef enum eGAtomictype {
-	eGAtomictype_Void = 0,
-	eGAtomictype_Structure = 1,
-	eGAtomictype_Enumeration = 2,
-	eGAtomictype_Unresolved = 3,
+	eGAtomictype_Void             = 0,
+	eGAtomictype_Structure        = 1,
+	eGAtomictype_Enumeration      = 2,
+	eGAtomictype_Unresolved       = 3,
 	// Internal types
-	eGAtomictype_Union = 4, // Temporary type - gets converted to struct later on
-	eGAtomictype_Pointer = 5,
-	eGAtomictype_Array = 6,
-	eGAtomictype_Function = 7,
-	eGAtomictype_Farpointer = 40,
-	eGAtomictype_Fararray = 41,
-	eGAtomictype_Farfunction = 42,
+	eGAtomictype_Union            = 4, // Temporary type - gets converted to struct later on
+	eGAtomictype_Pointer          = 5,
+	eGAtomictype_Array            = 6,
+	eGAtomictype_Function         = 7,
+	eGAtomictype_Nearpointer      = 8,
+	eGAtomictype_Neararray        = 9,
+	eGAtomictype_Nearfunction     = 10,
+	eGAtomictype_Farpointer       = 11,
+	eGAtomictype_Fararray         = 12,
+	eGAtomictype_Farfunction      = 13,
 	// IR-side types (and optionally C-side)
-	eGAtomictype_Int8 = 8,
-	eGAtomictype_Uint8 = 9,
-	eGAtomictype_Int16 = 10,
-	eGAtomictype_Uint16 = 11,
-	//eGAtomictype_Int24 = 12,
-	//eGAtomictype_Uint24 = 13,
-	eGAtomictype_Int32 = 14,
-	eGAtomictype_Uint32 = 15,
-	//eGAtomictype_Int48 = 16,
-	//eGAtomictype_Uint48 = 17,
-	eGAtomictype_Int64 = 18,
-	eGAtomictype_Uint64 = 19,
-	eGAtomictype_Int80 = 20,
-	eGAtomictype_Uint80 = 21,
-	eGAtomictype_Float32 = 22,
-	eGAtomictype_Float64 = 23,
-	eGAtomictype_Float80 = 24,
+	eGAtomictype_Int8             = 14,   
+	eGAtomictype_Uint8            = 15,
+	eGAtomictype_Int16            = 16,
+	eGAtomictype_Uint16           = 17,
+	//eGAtomictype_Int24          = 18,
+	//eGAtomictype_Uint24         = 19,
+	eGAtomictype_Int32            = 20,
+	eGAtomictype_Uint32           = 21,
+	//eGAtomictype_Int48          = 22,
+	//eGAtomictype_Uint48         = 23,
+	eGAtomictype_Int64            = 24,
+	eGAtomictype_Uint64           = 25,
+	eGAtomictype_Int80            = 26,
+	eGAtomictype_Uint80           = 27,
+	eGAtomictype_Float32          = 28,
+	eGAtomictype_Float64          = 29,
+	eGAtomictype_Float80          = 30,
 	// C-side types
-	eGAtomictype_Char = 25,
-	eGAtomictype_Signedchar = 26,
-	eGAtomictype_Unsignedchar = 27,
-	eGAtomictype_Short = 28,
-	eGAtomictype_Unsignedshort = 29,
-	eGAtomictype_Int = 30,
-	eGAtomictype_Unsigned = 31,
-	eGAtomictype_Long = 32,
-	eGAtomictype_Unsignedlong = 33,
-	eGAtomictype_Longlong = 34,
-	eGAtomictype_Unsignedlonglong = 35,
-	eGAtomictype_Boolean = 36,
-	eGAtomictype_Float = 37,
-	eGAtomictype_Double = 38,
-	eGAtomictype_Longdouble = 39
+	eGAtomictype_Char             = 31,  
+	eGAtomictype_Signedchar       = 32,
+	eGAtomictype_Unsignedchar     = 33,
+	eGAtomictype_Short            = 34,
+	eGAtomictype_Unsignedshort    = 35,
+	eGAtomictype_Int              = 36,
+	eGAtomictype_Unsigned         = 37,
+	eGAtomictype_Long             = 38,
+	eGAtomictype_Unsignedlong     = 39,
+	eGAtomictype_Longlong         = 40,
+	eGAtomictype_Unsignedlonglong = 41,
+	eGAtomictype_Boolean          = 42,
+	eGAtomictype_Float            = 43,
+	eGAtomictype_Double           = 44,
+	eGAtomictype_Longdouble       = 45,
+	eGAtomictype_Intptr           = 46,
+	eGAtomictype_Intnearptr       = 47,
+	eGAtomictype_Intfarptr        = 48,
+	// Some specific types
+	eGAtomictype_Sizet            = 49,
 } eGAtomictype;
 typedef struct {eGAtomictype atomictype; char* str;} GAtomictypetostring_Entry;
 GAtomictypetostring_Entry GAtomictypetostring[] = {
@@ -3578,6 +3588,12 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Union                     , "union" },
 	{ eGAtomictype_Enumeration               , "enum" },
 	{ eGAtomictype_Unresolved                , "unresolved" },
+	{ eGAtomictype_Nearpointer               , "nearpointer" },
+	{ eGAtomictype_Neararray                 , "neararray" },
+	{ eGAtomictype_Nearfunction              , "nearfunction" },
+	{ eGAtomictype_Farpointer                , "farpointer" },
+	{ eGAtomictype_Fararray                  , "fararray" },
+	{ eGAtomictype_Farfunction               , "farfunction" },
 	{ eGAtomictype_Pointer                   , "pointer" },
 	{ eGAtomictype_Array                     , "array" },
 	{ eGAtomictype_Function                  , "function" },
@@ -3613,6 +3629,7 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Void                      , "void" },
 	{ 0, 0 }
 };
+
 typedef struct tGOpcode { 
 	short opr;
 	enum eGAtomictype isize;

@@ -510,6 +510,10 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Uint64;
 			break;
+		case tToken_Keywordsizet:
+			mtLxFetcher_Advance(fetcher);
+			type->atomicbasetype = eGAtomictype_Sizet;
+			break;
 		case tToken_Keywordbool:
 			mtLxFetcher_Advance(fetcher);
 			type->atomicbasetype = eGAtomictype_Boolean;
@@ -532,8 +536,16 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 			tList* declarations = nullptr;
 			if(mtLxFetcher_Peek(fetcher)->type==tToken_Opencurlybraces){
 				mtLxFetcher_Advance(fetcher);
+				if(mtLxFetcher_Eof(fetcher)){
+					printf("LX: [E] LxParseBasetype: Structure: No closing curly brace\n");
+					assert(false);
+				};
 				declarations = mtList_Create();
 				while(mtLxFetcher_Peek(fetcher)->type!=tToken_Closecurlybraces){
+					if(mtLxFetcher_Eof(fetcher)){
+						printf("LX: [E] LxParseBasetype: Structure: No closing curly brace\n");
+						assert(false);
+					};
 					//printf("debug123\n");
 					//LfPrint_LxNode(LxParseDeclaration(fetcher));
 					mtList_Append(declarations,LxParseDeclaration(fetcher));
@@ -1941,7 +1953,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 				return mtLxNode_Clone(
 					&(tLxNode){
 						.type=tLexem_Compoundliteral,
-						.left=LxParseExpression(
+						.left=LxParseTypeexpression(
 							&(tLxFetcher){
 								.fetchfrom=fetcher->fetchfrom,
 								.fetchto=splitpoint
@@ -3062,6 +3074,12 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 tLxNode* LxParseProgram(tLxFetcher* fetcher){ // either {eof} or {declaration program}
 #ifdef qvGTrace
 	printf("LX: [T] LxParseProgram(): entered \n");
+	if(!mtLxFetcher_Eof(fetcher)){
+		printf("LX: [T] LxParseProgram(): entered at line %i \n",mtLxFetcher_Peek(fetcher)->linenumber);
+	}else{
+		printf("LX: [T] LxParseProgram(): entered at end of file \n");
+	};
+
 #endif
 	if(mtLxFetcher_Eof(fetcher)){
 		return nullptr; // Program end
@@ -3213,6 +3231,11 @@ void LxPreparse(tListnode /* <tToken> */ * startpoint){
 		.fetchto=nullptr
 	};
 	while(!mtLxFetcher_Eof(fetcher)){
+		if(!mtLxFetcher_Eof(fetcher)){
+			printf("LX: [T] LxPreparse(): parsing at line %i \n",mtLxFetcher_Peek(fetcher)->linenumber);
+		}else{
+			printf("LX: [T] LxPreparse(): parsing at end of file \n");
+		};
 		LxPreparseDeclaration(fetcher);
 	};
 };
