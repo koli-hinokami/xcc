@@ -72,8 +72,11 @@ void LfUnindent(char* string){
 	//);
 };
 
+char* mtGType_ToString_Embeddable(tGType *);
 void LfiPrint_LxNode(char* pr,tLxNode* self);
 void LfiPrint_GType(char* pr, tGType* self){
+	LfWriteline(mtString_Join("Lf: [M] t: • type \"",mtString_Join(mtGType_ToString_Embeddable(self),"\"\n")));
+	return;
 	char buffer[512];
 	sprintf(buffer,"Lf: [M] %2s ¤ Type: \n",pr);
 	LfIndent(buffer);

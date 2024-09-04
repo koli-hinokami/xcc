@@ -61,12 +61,17 @@ void LnCompile(char* file){
 	// Lexical parsing
 	GLexed = LxParse(GTokenized.first);
 	LfPrint_LxNode(GLexed);
-	// Symbol generation - includes structs
+	// Preparse
 	GRootnamespace = mtGNamespace_Create();
+	GLexed->name_space=GRootnamespace;
+	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser 
+	// produces same type of tree that Lexicalparser does
+	LfPrint_LxNode(GLexed);
+	// Symbol generation - includes structs
 	SgUnresolvedtypes = mtList_Create();
 	SgUnresolvedstructures = mtList_Create();
 	GStructuretypes = mtGNamespace_Create();
-	SgParse(GRootnamespace,GLexed);
+	SgParse(GLexed);
 	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen second pass
 	SgUnresolvedtypes = mtList_Create();

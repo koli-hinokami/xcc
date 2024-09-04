@@ -122,52 +122,97 @@ char* SppGeneratetype_GetName(tLxNode* typeexpression){
 	return name;
 };
 
-tLxNode* SppPreparse(tLxNode* self){
+//void SppTransformrawvariabledeclarationsinsidestructurememberlistTraverse(tGType* self){;};
+tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode);
+tLxNode* SppPreparse_Lambda(tLxNode* self){
+	return SppPreparse(self,nullptr);
+};
+tGType* SppTransformrawvariabledeclarations(tGType* self){
+	if(!self)return self;
+	if(
+		  (self->atomicbasetype!=eGAtomictype_Structure)
+		&&(self->atomicbasetype!=eGAtomictype_Union)
+	)return self;
+	if(!self->precompiledstructure)return self;
+	printf("SPP:[T] SppTransformrawvariabledeclarations: Transforming structunion \n");
+	tGType* cloned = mtGType_Clone(self);
+	cloned->precompiledstructure=mtList_Transform(cloned->precompiledstructure,(void*(*)(void*))SppPreparse_Lambda);
+	return cloned;
+};
+tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){
 	if(self==nullptr)return nullptr;
+#ifdef qvGTrace
+	//printf("SPP:[T] SppPreparse(tLxNode* self %10p,tLxNode* parentnode %10p): Entered with node %i•%s\n",self,parentnode,self->type,TokenidtoName[self->type]);
+	printf("SPP:[T] SppPreparse: Entered with node %i•%s\n",self->type,TokenidtoName[self->type]);
+#endif
 	// Propagate namespaces, kill multideclarations
 	// Should be callable before Symbolgen is ran
 	tLxNode* node = mtLxNode_Clone(self);
+	node->parentnode=parentnode;
 	if(	// Create and propagate namespaces for Symbolgen and Semanticparser
 		  (self->type==tLexem_Blockstatement)
 		||(self->type==tLexem_Forstatement)
 	){
-		node->name_space=mtGNamespace_CreateInherit(self->name_space);
+		// New namespace
+		node->name_space=mtGNamespace_CreateInherit(parentnode?parentnode->name_space:GRootnamespace);
 	}else{
-		node->name_space=self->name_space;
+		// Same namespace
+		node->name_space=parentnode?parentnode->name_space:GRootnamespace;
 	};
+	// Transform tLexem_Rawvariabledeclaration inside structs
+	node->returnedtype=SppTransformrawvariabledeclarations(node->returnedtype);
+	//if(self->returnedtype){
+	//	if(
+	//		  (self->returnedtype->atomicbasetype==eGAtomictype_Structure)
+	//		||(self->returnedtype->atomicbasetype==eGAtomictype_Structure)
+	//	){
+	//	};
+	//};
 	// Kill multideclarations that are currently returned by semanticparser
 	if(self->type==tLexem_Rawvariabledeclaration){
+#ifdef qvGTrace
+		printf("SPP:[T] SppPreparse: Rawvariabledeclaration\n");
+#endif
 		// Two types possible -
 		//  • Multideclaration - tLexem_Comma
 		//  • and unparsed initialized declaration - tLexem_Assign
 		if(self->left->type==tLexem_Comma){
+#ifdef qvGTrace
+		printf("SPP:[T] SppPreparse: Rawvariabledeclaration: Split and recurse\n");
+#endif
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
 			node1->type=tLexem_Rawvariabledeclaration; // gotta confirm that it isnt `(declare (assign) ...)`
-			node1->returnedtype=self->returnedtype;
+			node1->returnedtype=node->returnedtype;
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
 			node2->type=tLexem_Rawvariabledeclaration;
-			node2->returnedtype=self->returnedtype;
+			node2->returnedtype=node->returnedtype;
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
-			node->left=SppPreparse(node1);
-			node->right=SppPreparse(node2);
+			node->left=SppPreparse(node1,node);
+			node->right=SppPreparse(node2,node);
 			free(node1);
 			free(node2);
 			return node;
 		}else if(self->left->type==tLexem_Assign){
+#ifdef qvGTrace
+		printf("SPP:[T] SppPreparse: Rawvariabledeclaration: Split initializer\n");
+#endif
 			// Split typeexpr and initializer
 			node->type=tLexem_Variabledeclaration;
-			node->returnedtype=self->returnedtype;
+			//node->returnedtype=node->returnedtype;
 			node->left=self->left->left;
 			node->right=self->left->right;
 			return node;
 		}else {
+#ifdef qvGTrace
+		printf("SPP:[T] SppPreparse: Rawvariabledeclaration: Confirm\n");
+#endif
 			// Confirm being Variabledeclaration
 			node->type=tLexem_Variabledeclaration;
-			node->returnedtype=self->returnedtype;
+			//node->returnedtype=self->returnedtype;
 			node->left=self->left;
 			node->right=nullptr;
 			return node;
@@ -179,26 +224,26 @@ tLxNode* SppPreparse(tLxNode* self){
 			// Split and recurse
 			tLxNode* node1 = mtLxNode_Create();
 			node1->type=tLexem_Typedefinition; 
-			node1->returnedtype=self->returnedtype;
+			node1->returnedtype=node->returnedtype;
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
 			node2->type=tLexem_Rawvariabledeclaration;
-			node2->returnedtype=self->returnedtype;
+			node2->returnedtype=node->returnedtype;
 			node2->left=self->left->right;
 			
 			node->type=tLexem_Declarationlist;
-			node->returnedtype=self->returnedtype;
-			node->left=SppPreparse(node1);
-			node->right=SppPreparse(node2);
+			node->returnedtype=nullptr;
+			node->left=SppPreparse(node1,node);
+			node->right=SppPreparse(node2,node);
 			return node;
 		}else {
-			node->type=tLexem_Typedefinition;
-			node->returnedtype=self->returnedtype;
+			//node->type=tLexem_Typedefinition;
+			//node->returnedtype=self->returnedtype;
 		};
 	};
 	// Return cloned node
-	node->left=SppPreparse(self->left);
-	node->right=SppPreparse(self->left);
+	node->left=SppPreparse(self->left,node);
+	node->right=SppPreparse(self->right,node);
 	return node;
 };
 

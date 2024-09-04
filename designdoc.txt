@@ -35,6 +35,10 @@ Timestamps:
 	29apr2024 01:28 UTC+5       Publicrelease 7 Interim 2. After a rather 
 	                            long break, finally getting Semanticpreparser 
 				    together.
+	29apr2024 17:11 UTC+5       Publicrelease 7 Interim 3. Last before Symbolgen
+	                            rewrite.
+	30apr2024 02:00 UTC+5       Publicrelease 7 Interim 4. Straight from hell of
+	                            major refactoring.
 
 Stages:
 	¤ Embedder

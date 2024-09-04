@@ -64,23 +64,27 @@ void mtList_Prepend(ptList self, void* item){
 		self->first = mtListnode_Cons(item,self->first);
 	};
 };
-void mtList_Append(ptList self, void* item){
+tList* mtList_Append(ptList self, void* item){
 	if(self==nullptr){
 		// who is the idiot who tries to append an item to nowhere
 		printf("ul: [E] lists.h: mtList_Append: who is the idiot who tries to append an item to nowhere \n");
-		return;
+		return self;
 	}else if(self->last == nullptr){ // List empty
 		self->last = mtListnode_Cons(item,nullptr);
 		self->first = self->last;
+		return self;
 	}else if(self->first == self->last){ // List contains one item
 		self->last = mtListnode_Cons(item,nullptr);
 		self->first->next = self->last;
+		return self;
 	}else { // List normal - two or more items
 		self->last->next=/* nullptr -> */ mtListnode_Cons(item,nullptr); 
 		// now list contains one more item and `last` points to next-to-last
 		self->last=self->last->next;
 		// now list is normal
+		return self;
 	};
+	return self;
 }
 unsigned mtList_Count(ptList self){
 	unsigned i=0;
@@ -97,6 +101,23 @@ unsigned mtList_Count(ptList self){
 		return i;
 	};
 };
+/* MmHeapobject */ tList* mtList_Transform(ptList self, void* (*lambda)(void*)){
+	if(!self){
+		printf("ul: [W] lists.h: mtList_Transform: self==nullptr \n");
+		return nullptr;
+	}else if(self->last == nullptr){ // List empty
+		return mtList_Create();
+	}else if(self->first == self->last){ // List contains one item
+		return mtList_Append(mtList_Create(),lambda(self->first->item));	
+		//lambda(self->first->item);
+	}else { // List normal - two or more items
+		tList* list = mtList_Create();
+		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+			mtList_Append(list,lambda(ptr->item));
+		};
+		return list;
+	};
+};
 void mtList_Foreach(ptList self, void(*lambda)(void*)){
 	if(!self){
 		printf("ul: [W] lists.h: mtList_Foreach: self==nullptr \n");
@@ -107,6 +128,19 @@ void mtList_Foreach(ptList self, void(*lambda)(void*)){
 	}else { // List normal - two or more items
 		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
 			lambda(ptr->item);
+		};
+	};
+};
+void mtList_Foreach_Lvalue(ptList self, void(*lambda)(void**)){
+	if(!self){
+		printf("ul: [W] lists.h: mtList_Foreach: self==nullptr \n");
+	}else if(self->last == nullptr){ // List empty
+		return;
+	}else if(self->first == self->last){ // List contains one item
+		lambda(&(self->first->item));
+	}else { // List normal - two or more items
+		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+			lambda(&(ptr->item));
 		};
 	};
 };

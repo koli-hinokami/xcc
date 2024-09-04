@@ -170,7 +170,9 @@ enum tTokentype {
 	tLexem_Numericconstant	        = 577,
 	tLexem_Stringconstant	        = 578,
 	tLexem_Rawvariabledeclaration	= 579,
-	//tLexem_	        = 580,
+	tLexem_Namespace		= 580,
+	tLexem_Using			= 581,
+	//tLexem_	        = 582,
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
 	tSplexem_Declarationlist	= 1024,		// Same as tLexem_Declaration
@@ -777,8 +779,8 @@ char *TokenidtoName[]={
 	"tLexem_Numericconstant      ",// 577
 	"tLexem_Stringconstant       ",// 578
 	"tLexem_Rawvariabledeclarati>",// 579
-	"tLexem_Undefined            ",// 580
-	"tLexem_Undefined            ",// 581
+	"tLexem_Namespace            ",// 580
+	"tLexem_Using                ",// 581
 	"tLexem_Undefined            ",// 582
 	"tLexem_Undefined            ",// 583
 	"tLexem_Undefined            ",// 584
@@ -1007,10 +1009,6 @@ char *TokenidtoName[]={
 	"tCharlexem_Undefined        ",// 807
 	"tCharlexem_Undefined        ",// 808
 	"tCharlexem_Undefined        ",// 809
-	"tCharlexem_Undefined        ",// 810
-	"tCharlexem_Undefined        ",// 811
-	"tCharlexem_Undefined        ",// 812
-	"tCharlexem_Undefined        ",// 813
 	"tCharlexem_Undefined        ",// 814
 	"tCharlexem_Undefined        ",// 815
 	"tCharlexem_Undefined        ",// 816
@@ -1778,6 +1776,7 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"int"			,tToken_Keywordint		},
 	{"long"			,tToken_Keywordlong		},
 	{"nullptr"		,tToken_Keywordnullptr		},
+//	{"namespace"		,tToken_Keywordnamespace	},
 	{"register"		,tToken_Keywordregister		},
 	{"restrict"		,tToken_Keywordrestrict		},
 	{"return"		,tToken_Keywordreturn		},
@@ -1982,7 +1981,7 @@ typedef struct tGPointernessmodifierslist {
 	bool restrictmodifier;
 	bool far; // Far pointer - segment:offset
 	struct tGPointernessmodifierslist * next;
-	tListnode /* <tGType */ * functionargs;
+	tListnode /* <tGType> */ * functionargs;
 } tGPointernessmodifierslist;
 typedef enum eGTypequalifiers {
 	eGTypequalifiers_Null = 0,

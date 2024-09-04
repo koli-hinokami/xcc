@@ -181,7 +181,7 @@ void SgAutoiteratecommas(tLxNode* ast, void(*lambda)(tLxNode* ast)){
 };
 void SgParseTypedefInternal(tLxNode* ast){
 };
-void SgParse(tGNamespace* namespace, tLxNode* ast){
+void SgParse(tLxNode* ast){
 	if(ast==nullptr){
 		printf("SG: [W] SgParse: Null AST protection triggered \n");
 		return;
@@ -190,30 +190,36 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 	printf("SG: [T] SgParse: Entered with node %i∙%s\n",ast->type,TokenidtoName[ast->type]);
 	//LfPrint_LxNode(ast);
 #endif
-	if(namespace==nullptr){
-		printf("SG: [T] SgParse: Null namespace protection triggered \n");
-		return;
-	};
 	switch(ast->type){
 		case tLexem_Nulldeclaration:
 			// Speaks for itself
 			break;
+		//case tLexem_Namespace: // should work for `name_space std { name_space io { ... } }`
+		//	mtGNamespace_Add(
+		//		ast->name_space,
+		//		mtGSymbol_CreateNamespace(
+		//			ast->left->identifier,
+		//			ast->right->name_space
+		//		)
+		//	);
+		//	break;
 		case tLexem_Declarationlist:
 			// Program root, pretty much
-			SgParse(namespace,ast->left);
-			if(ast->right)SgParse(namespace,ast->right);
+			SgParse(ast->left);
+			if(ast->right)SgParse(ast->right);
 			break;
 		case tLexem_Functiondeclaration: {
 			char* name = nullptr;
 			tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
 			mtGNamespace_Add(
-				namespace,
+				ast->name_space,
 				mtGSymbol_CreatePointer(
 					name,
 					type,
 					nullptr
 				)
 			);
+			SgParse(ast->right); // functions and their locals...
 		};	break;
 		case tLexem_Variabledeclaration: {
 #ifdef qvGTrace
@@ -228,77 +234,23 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 				if(ast->left->type==tLexem_Nulldeclaration){
 					// Ignore lol
 					// Not entirely though, you still got to register structure types
-				}else if(ast->left->type==tLexem_Comma){
-					// Handle multiple declarations
-					//printf("SG: [E] SgParse: Variable declaration: Unable to parse declarations with commas \n");
-					tLxNode* i;
-					char* name = nullptr;
-					for(i=ast->left;i->type==tLexem_Comma;i=i->left){
-						if(i->right->type=tLexem_Assign){ // If initializer is valid                  	
-							tGType* type = SgGeneratetype(ast->returnedtype,i->right->left,&name);	
-							mtGNamespace_Add(                                                      	
-								namespace,                                                     	
-								mtGSymbol_CreateDeferred(                                      	
-									name,                                                  	
-									type,                                                  	
-									i->right->right                                       	
-								)                                                              	
-							);                                                                     	
-						}else{                                                                         	
-							tGType* type = SgGeneratetype(ast->returnedtype,i->right,&name);      	
-							// Uninitialized                                                       	
-							mtGNamespace_Add(                                                      	
-								namespace,                                                     	
-								mtGSymbol_CreatePointer(                                       	
-									name,                                                  	
-									type,                                                  	
-									nullptr                                                	
-								)                                                              	
-							);                                                                     	
-						};                                                                             	
-					};
-					name=nullptr;
-					if(i->type=tLexem_Assign){ // If initializer is valid                  	
-						tGType* type = SgGeneratetype(ast->returnedtype,i->left,&name);	
-						mtGNamespace_Add(                                                      	
-							namespace,                                                     	
-							mtGSymbol_CreateDeferred(
-								name,                                                  	
-								type,                                                  	
-								i->right
-							)                                                              	
-						);                                                                     	
-					}else{
-						tGType* type = SgGeneratetype(ast->returnedtype,i,&name);
-						// Uninitialized                                                       	
-						mtGNamespace_Add(                                                      	
-							namespace,                                                     	
-							mtGSymbol_CreatePointer(                                       	
-								name,                                                  	
-								type,                                                  	
-								nullptr                                                	
-							)                                                              	
-						);                                                                     	
-					};                                                                             	
-
 				}else{
 					// Handle a declaration
 					char* name = nullptr;
-					if(ast->left->type==tLexem_Assign){ // If initializer is valid
-						tGType* type = SgGeneratetype(ast->returnedtype,ast->left->left,&name);
+					tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
+					if(ast->right){
 						mtGNamespace_Add(
-							namespace,
+							ast->name_space,
 							mtGSymbol_CreateDeferred(
 								name,
 								type,
-								ast->left->right
+								ast->right
 							)
 						);
 					}else{
-						tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
 						// Uninitialized
 						mtGNamespace_Add(
-							namespace,
+							ast->name_space,
 							mtGSymbol_CreatePointer(
 								name,
 								type,
@@ -320,36 +272,12 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 				printf("SG: [E] SgParse: typedef: Invalid type expression \n");
 			}else if(ast->left->type==tLexem_Nulldeclaration){
 				// Ignore lol
-			}else if(ast->left->type==tLexem_Comma){
-				// Handle multiple declarations
-				//printf("SG: [E] SgParse: typedef: Unable to parse declarations with commas \n");
-				char* name = nullptr;
-				tLxNode* i=nullptr;
-				for(i=ast->left;i->type==tLexem_Comma;i=i->left){
-					tGType* type = SgGeneratetype(ast->returnedtype,i->right,&name);	
-					mtGNamespace_Add(
-						namespace,
-						mtGSymbol_CreateTypedef(
-							name,
-							type
-						)
-					);
-				};
-				name = nullptr;
-				tGType* type = SgGeneratetype(ast->returnedtype,i,&name);	
-				mtGNamespace_Add(
-					namespace,
-					mtGSymbol_CreateTypedef(
-						name,
-						type
-					)
-				);
 			}else{
 				// Handle a declaration
 				char* name = nullptr;
 				tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
 				mtGNamespace_Add(
-					namespace,
+					ast->name_space,
 					mtGSymbol_CreateTypedef(
 						name,
 						type
@@ -385,7 +313,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 		default:
 	};
 };
-void SgFindunresolvedtypes(tGNamespace* namespace);
+void SgFindunresolvedtypes(tGNamespace* name_space);
 void SgFindunresolvedtypes_Symbol(tGSymbol* symbol){
 #ifdef qvGTrace
 	//printf("SG: [T] SgFindunresolvedtypes_Symbol(%p): entered \n",symbol);
@@ -403,20 +331,20 @@ void SgFindunresolvedtypes_Symbol(tGSymbol* symbol){
 			break;
 	};
 };
-void SgFindunresolvedtypes(tGNamespace* namespace){
+void SgFindunresolvedtypes(tGNamespace* name_space){
 #ifdef qvGTrace
 	printf("SG: [T] SgFindunresolvedtypes: entered \n");
 #endif	
 	// Traverse and register
-	mtList_Foreach(&namespace->symbols,(void(*)())SgFindunresolvedtypes_Symbol);
+	mtList_Foreach(&name_space->symbols,(void(*)())SgFindunresolvedtypes_Symbol);
 };
-tGType* SgResolvetype(tGNamespace* namespace, char* name){
+tGType* SgResolvetype(tGNamespace* name_space, char* name){
 	if(!name){
 		// wat
-		printf("SG: [E] SgResolvetype(tGNamespace* `%p`,nullptr): What do you mean 'find type idk which one cuz i didn't provided type's name'?\n",namespace);
+		printf("SG: [E] SgResolvetype(tGNamespace* `%p`,nullptr): What do you mean 'find type idk which one cuz i didn't provided type's name'?\n",name_space);
 		return nullptr;
 	};
-	for(tListnode* i=namespace->symbols.first;i!=nullptr;i=i->next){
+	for(tListnode* i=name_space->symbols.first;i!=nullptr;i=i->next){
 		tGSymbol* symbol = i->item;
 		if(!symbol){
 			// wat
@@ -430,7 +358,7 @@ tGType* SgResolvetype(tGNamespace* namespace, char* name){
 		}
 	};
 	// I was unable to find anything. Try again?
-	printf("SG: [E] SgResolvetype(tGNamespace* `%p`,\"%s\"): Sadly, no such type was found. Try again? \n",namespace,name);
+	printf("SG: [E] SgResolvetype(tGNamespace* `%p`,\"%s\"): Sadly, no such type was found. Try again? \n",name_space,name);
 	return nullptr;
 };
 void SgResolveunresolvedtypes_Resolvetype(tGType* type){
