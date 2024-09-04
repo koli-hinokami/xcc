@@ -10,6 +10,7 @@ Timestamps:
 				    without fatal errors. Still got a long way
 				    to go!
 	09apr2024 00:21 UTC+5       Packaging Interim release 1. Some bugfixes.
+	09apr2024 15:30 UTC+5       Packaging Interim 1b. No changes.
 
 Stages:
 	¤ Embedder

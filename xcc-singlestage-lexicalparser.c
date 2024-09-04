@@ -1642,7 +1642,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 	printf("LX: [T] LxParseExpression: Precedence 1 - postfix operators\n");
 #endif
 	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
-		printf("LX: [T] LxParseExpression: Debug: %i.%i:%s\n",
+		if(0)printf("LX: [T] LxParseExpression: Debug: %i.%i:%s\n",
 			parenthesation,
 			(((tToken*)i->item)->type),
 			TokenidtoName[(((tToken*)i->item)->type)]
@@ -2175,7 +2175,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 	printf("LX: [T] LxParseTypeexpression: Precedence 1 - postfix operators\n");
 #endif
 	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
-		printf("LX: [T] LxParseTypeexpression: Debug: %i.%i:%s\n",
+		if(0)printf("LX: [T] LxParseTypeexpression: Debug: %i.%i:%s\n",
 			parenthesation,
 			(((tToken*)i->item)->type),
 			TokenidtoName[(((tToken*)i->item)->type)]

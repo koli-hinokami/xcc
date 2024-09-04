@@ -405,6 +405,7 @@ tLxFetcher* mtLxFetcher_FetchuntilParenthesized(tLxFetcher* fetcher, tTokentype 
 };
 
 #include "xcc-singlestage-lexicalparser.c"
+#include "xcc-singlestage-symbolgen.c"
 // ------------------ Launcher ------------------
 void LnRunprogram(char* program, char** argv){
 	printf("L:  Running: ");	//a test mid-line comment
@@ -467,8 +468,8 @@ void LnCompile(char* file){
 	fclose(srcfile);
 	// Lexical parsing
 	GLexed = LxParse(GTokenized.first);
-	
 	// Symbol generation - includes structs
+	//SgParse(GRootnamespace,GLexed);
 	// Semantic parsing - compiles structs
 	/// The question is where `struct`s go
 	// Compile

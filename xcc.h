@@ -1314,6 +1314,7 @@ typedef struct tGNamespace {
 } tGNamespace;
 typedef struct tGSymbol {
 	char* name;
+	tGType* type;
 	bool isconstant;
 	bool isnamespace;
 	bool ispointer;
