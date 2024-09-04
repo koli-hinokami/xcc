@@ -197,6 +197,7 @@ void mtListnode_Foreach(tListnode* self, void(*lambda)(void*)){
 };
 tListnode* mtListnode_Findlast(tListnode* self){
 	for(tListnode* i=self;i!=nullptr;i=i->next)if(i->next==nullptr)return i;
+	return nullptr;
 };
 tListnode* mtListnode_Merge(tListnode* self, tListnode* arg){
 	mtListnode_Findlast(self)->next=arg;

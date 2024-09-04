@@ -3721,7 +3721,17 @@ typedef struct tGSymbol {
 		struct tLxNode* deferredexpression;
 	//};
 } tGSymbol;
-
+typedef enum eGStoragespecifier {
+	eGStoragespecifier_None = 0,
+	eGStoragespecifier_Auto,
+	eGStoragespecifier_Static,
+	eGStoragespecifier_Extern,
+	eGStoragespecifier_Register,
+	eGStoragespecifier_Threadlocal, // That's a compiler for 8 and 16 bit CPUs
+	                                // on which multithreading makes next to
+									// no sense, but interrups didn't vanish
+									// all of a sudden
+} eGStoragespecifier;
 typedef struct tLxNode {
 	eTokentype type;
 	struct tLxNode * initializer;
@@ -3735,6 +3745,7 @@ typedef struct tLxNode {
 	//tGType* basetype; //for declarations
 	tGNamespace* name_space; // namespace is a keyword
 	tGType* returnedtype;
+	enum eGStoragespecifier storage;
 } tLxNode;
 
 typedef struct tSppNode {

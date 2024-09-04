@@ -75,7 +75,7 @@ void LnCompile(char* file){
 	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser produces 
 	                                      // same type of tree that 
 	                                      // Lexicalparser does
-	if(1){
+	if(0){
 		fprintf(stderr,"L:  [M] Printing Primary AST \n");
 		LfPrint_LxNode(GLexed);
 		fprintf(stderr,"L:  [M] Done printing Primary AST \n");

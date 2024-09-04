@@ -54,6 +54,7 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 		};	break;
 
 	};
+	return 0;
 };
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name){
@@ -237,32 +238,35 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 	};
 	// Also kill multidefinitions for typedefs
 	if(self->type==tLexem_Typedefinition){
-		if(self->left)
-		if(self->left->type==tLexem_Comma){
-			// Split and recurse
-			tLxNode* node1 = mtLxNode_Create();
-			node1->type=tLexem_Typedefinition; 
-			node1->returnedtype=node->returnedtype;
-			node1->left=self->left->left;
-			tLxNode* node2 = mtLxNode_Create();
-			node2->type=tLexem_Typedefinition;
-			node2->returnedtype=node->returnedtype;
-			node2->left=self->left->right;
-			
-			node->type=tLexem_Declarationlist;
-			node->returnedtype=nullptr;
-			node->initializer=SppPreparse(self->initializer,node);
-			node->condition=SppPreparse(self->condition,node);
-			node->left=SppPreparse(node1,node);
-			node->right=SppPreparse(node2,node);
-			return node;
-		}else {
-			//node->type=tLexem_Typedefinition;
-			//node->returnedtype=self->returnedtype;
+		if(self->left!=nullptr){
+			if(self->left->type==tLexem_Comma){
+				// Split and recurse
+				tLxNode* node1 = mtLxNode_Create();
+				node1->type=tLexem_Typedefinition; 
+				node1->returnedtype=node->returnedtype;
+				node1->left=self->left->left;
+				tLxNode* node2 = mtLxNode_Create();
+				node2->type=tLexem_Typedefinition;
+				node2->returnedtype=node->returnedtype;
+				node2->left=self->left->right;
+				
+				node->type=tLexem_Declarationlist;
+				node->returnedtype=nullptr;
+				node->initializer=SppPreparse(self->initializer,node);
+				node->condition=SppPreparse(self->condition,node);
+				node->left=SppPreparse(node1,node);
+				node->right=SppPreparse(node2,node);
+				return node;
+			}else {
+				//node->type=tLexem_Typedefinition;
+				//node->returnedtype=self->returnedtype;
+			};
 		};
 	};
 	// Return cloned node
-	node->initializer=SppPreparse(self->initializer,node);
+	if(	  (node->type!=tLexem_Switchcase)
+		&&(node->type!=tLexem_Switchdefault)
+	) node->initializer=SppPreparse(self->initializer,node);
 	node->condition=SppPreparse(self->condition,node);
 	node->left=SppPreparse(self->left,node);
 	node->right=SppPreparse(self->right,node);

@@ -57,6 +57,14 @@ Timestamps:
 	09may2024 19:59             Publicrelease 9 Interim 1. Changelog lost.
 	10may2024 01:03             Publicrelease 9 Interim 2. Changelog lost.
 	14may2024 00:46             Publicrelease 9 Interim 3. Changelog lost.
+	17may2024 12:48             Publicrelease 9 Interim 4, marked by officially
+	                            ceasing decelopment.
+	20may2024 08:56             Thou shalt never die! Officially development still
+	                            ceased, in reality quietly continuing.
+	20may2024 21:09             Publicrelease 9 Interim 4b.
+	                            Just before I start rewriting `xcc` so it would
+								compile itsef without resoring to Lexicalpreparser.
+
 
 C Grammar deviations:
 

@@ -1,7 +1,8 @@
 # Makefile for XCC Retargetable C Compiler
 
 CC = gcc
-CFLAGS = -g -O0 -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
+CFLAGS = -g -O0 -Wall -Wno-char-subscripts \
+-D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
 -DqszGVersion=\"1.0.1.0\" \
 -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
 #-D__buildlab__=\"$(USER)\"
@@ -35,7 +36,7 @@ debug: build
 xcc-test: xcc-all
 	./xcc -m xcc-singlestage.c
 
-xcc-all: xcc xcc-singlestage xcc-embedder xcc-preprocess xcc-tokenizer xcc-lexer
+xcc-all: xcc xcc-singlestage xcc-embedder xcc-preprocess xcc-tokenizer 
 xcc-singlestage: \
 	xcc-singlestage.c \
 	xcc-singlestage-tokenizer.c \

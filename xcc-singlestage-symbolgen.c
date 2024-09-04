@@ -381,6 +381,26 @@ void SgParse(tLxNode* ast){
 			case tLexem_Nullexpression:
 			case tLexem_Decrement:
 			case tLexem_Postdecrement:
+			case tLexem_Assign:
+			case tLexem_Logicalnot:
+			case tLexem_Notequal:
+			case tLexem_Whilestatement:
+			case tLexem_Functioncall:
+			case tLexem_Postincrement:
+			case tLexem_Greaterequal:
+			case tLexem_Arrayindex:
+			case tLexem_Dereference:
+			case tLexem_Integerconstant:
+			case tLexem_Logicaland:
+			case tLexem_Multiply:
+			case tLexem_Lessthan:
+			case tLexem_Memberbypointer:
+			case tLexem_Switchcase:
+			case tLexem_Logicalor:
+			case tLexem_Switchstatement:
+			case tLexem_Bitwiseand:
+			case tLexem_Lessequal:
+			case tLexem_Greaterthan:
 				break;
 		};
 		default:
@@ -444,6 +464,9 @@ void SgFindunresolvedtypes_Symbol(tGSymbol* symbol){
 		case mtGSymbol_eType_Namespace:
 			SgFindunresolvedtypes(symbol->name_space);
 			break;
+		case mtGSymbol_eType_Null:
+			assert(false);
+			return;
 	};
 };
 void SgFindunresolvedtypes(tGNamespace* name_space){

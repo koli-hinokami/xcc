@@ -174,28 +174,28 @@ void handledirective(){
 	};
 };
 
-void checkeof(FILE* handle){
-	if(feof(handle)){
-		exit;
-	};
-};
-void PrHandleline2(){ // todo
-	// Alternative linepump - reads the string first
-	char buf;
-	char stringbuffer[1024];
-	if(feof(src))return;
-	buf=fetchcharater();
-	if(feof(src))return;
-	if(buf=='\n')return;
-	for(
-		int i=0;
-		(buf!='\n')&&(!feof(src));
-		buf=fetchcharater()
-	){
-		stringbuffer[i]=buf;
-	};
-	
-};
+//void checkeof(FILE* handle){
+//	if(feof(handle)){
+//		exit;
+//	};
+//};
+//void PrHandleline2(){ // todo
+//	// Alternative linepump - reads the string first
+//	char buf;
+//	char stringbuffer[1024];
+//	if(feof(src))return;
+//	buf=fetchcharater();
+//	if(feof(src))return;
+//	if(buf=='\n')return;
+//	for(
+//		int i=0;
+//		(buf!='\n')&&(!feof(src));
+//		buf=fetchcharater()
+//	){
+//		stringbuffer[i]=buf;
+//	};
+//	
+//};
 void PrHandleline(){
 	char buf1;
 	if(feof(src))return;
@@ -339,7 +339,7 @@ int main(int argc, char* argv[], char** envp){
 	while(!feof(src)){
 		
 	};
-finalize:;
+//finalize:;
 	//while((shortbuffer=fgetc(src))!='\n')fputc(shortbuffer,out);
 	//while(!feof(src))fwrite(&buffer,1,fread(&buffer,1,16,src),dst);
 	//Finalize

@@ -96,7 +96,7 @@ char* mtString_Trimfirst(char* str){ //Modifies `str`
 	char* src=str+1;
 	char* dst=str;
 	if(mtString_Length(str)==0)return 0;
-	for(;*dst++=*src++;);
+	for(;(*dst++=*src++););
 	return str;
 };
 bool mtString_Contains(char* str, char ch){ // Doesn't modifies but excepts to not be modified `str`

@@ -9,8 +9,6 @@ tLxNode* mtLxNode_Clone(tLxNode* self){
 	return memcpy(malloc(sizeof(tLxNode)),self,sizeof(tLxNode));
 };
 // ----------------- The Lexer -----------------
-tLxNode* LxParseLexemtable(){};// todo
-// note that lexem tables were abandoned
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher);
 tLxNode* LxParseDeclaration(tLxFetcher* fetcher);
 tGType* LxParseBasetype(tLxFetcher* fetcher);
@@ -33,7 +31,6 @@ tLxNode* LxParseExpressionstatement(tLxFetcher* fetcher){
 	);
 };
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher){
-	tLxNode* temp;
 	tLxFetcher localfetcher = *fetcher;
 	// Bypass for `type(*localvariable)();` - `auto` or `static` keyword
 	if(
@@ -51,7 +48,8 @@ tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher){
 	// ' static locals.
 	{
 		tGType* basetype = LxParseBasetype(&localfetcher);
-		tLxFetcher localfetcher = *fetcher;
+		//tLxFetcher localfetcher = *fetcher; // uncomment when a fetcher
+		                                      // will be needed
 		if(
 			  basetype 
 			&&basetype->atomicbasetype!=eGAtomictype_Unresolved
@@ -65,6 +63,9 @@ tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher){
 tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 #ifdef qvGTrace
 	printf("LX: [T] LxParseStatement: entered \n");
+#endif
+#ifdef qvGTraceexpressions
+	printf("LX: [T] LxParseStatement: printing fetcher \n");
 	mtLxFetcher_Print_Limited(fetcher);
 #endif
 	// Skip semicolons
@@ -84,11 +85,9 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 	}
 	// Fetch to semicolon the statement boundary
 	tLxFetcher localfetcher = *fetcher;
-	tLxFetcher* localfetcher2 = nullptr; // pointer
+	//tLxFetcher* localfetcher2 = nullptr; // pointer
 	//mtLxFetcher_Advance(fetcher); 
 	// Parse everything
-	tGType* basetype;
-	tLxNode* declaration;
 	//if(basetype=LxParseBasetype(&localfetcher)){
 	//	// Declaration actually
 	//	return LxParseDeclaration(fetcher);
@@ -298,7 +297,7 @@ tLxNode* LxParseStatement(tLxFetcher* fetcher){ // Consumes semicolon
 	return nullptr;
 };
 tLxNode* LxParseBlockstatement2(tLxFetcher* fetcher){
-#ifdef qvGDebug
+#ifdef qvGTraceexpressions
 	printf("LX: [D] LxParseBlockstatement2: printing fetcher \n");
 	mtLxFetcher_Print_Limited(fetcher);
 #endif
@@ -805,10 +804,10 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 	};
 	splitpoint=nullptr;
 	// Typeexpressionbypass
-	{
-		tLxNode* typeexpr;
-		//if(typeexpr=LxParseType(fetcher))return typeexpr;
-	};
+	//{
+	//	tLxNode* typeexpr;
+	//	if(typeexpr=LxParseType(fetcher))return typeexpr;
+	//};
 	splitpoint=nullptr;
 	// Precedence 15 - Comma 
 	// Parsed with left-associativity unit
@@ -1685,7 +1684,6 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 		case tToken_Openparentheses: {
 			//Evaulate parenthesation
 			tListnode* i;
-			tListnode* k=fetcher->fetchfrom;
 			int j = 0;
 			for(i=fetcher->fetchfrom->next;j>=0;i=i->next){
 				switch(((tToken*)i->item)->type){
@@ -1698,7 +1696,6 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 					default:
 						break;
 				};
-				k=i;
 			};
 			switch(((tToken*)i->item)->type){
 				// Ignore Pr.1 operators
@@ -1722,11 +1719,11 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 					};
 					tLxNode* type;
 					//mtLxFetcher_Advance(fetcher);
-					if(type=LxParseType(
+					if((type=LxParseType(
 						mtLxFetcher_Trimlast(
 							mtLxFetcher_Trimfirst(&localfetcher)
 						)
-					)){
+					))){
 #ifdef qvGDebug
 						printf("LX: [D] LxParseExpression: Proper type cast \n");
 #endif
@@ -2010,7 +2007,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 			default: {
 				printf("LX: [T] LxParseExpression: Unrecognized constant - passing through to LxParseType\n");
 				tLxNode* typeexpr;
-				if(typeexpr=LxParseType(fetcher)){
+				if((typeexpr=LxParseType(fetcher))){
 					return typeexpr;
 				};
 			};	break;
@@ -2018,7 +2015,7 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 	}else{
 		printf("LX: [T] LxParseExpression: Unrecognized constant - passing through to LxParseType\n");
 		tLxNode* typeexpr;
-		if(typeexpr=LxParseType(fetcher)){
+		if((typeexpr=LxParseType(fetcher))){
 			return typeexpr;
 		};
 
@@ -2036,6 +2033,9 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 tLxNode* LxParseTypeexpression2(tLxFetcher* fetcher){
 #ifdef qvGTrace
 	printf("LX: [T] LxParseTypeexpression2: entered \n");
+#endif
+#ifdef qvGTraceexpressions
+	printf("LX: [T] LxParseTypeexpression2: printing fetcher \n");
 	mtLxFetcher_Print(fetcher);
 #endif
 	tListnode* splitpoint = nullptr;
@@ -2170,10 +2170,10 @@ tLxNode* LxParseTypeexpression2(tLxFetcher* fetcher){
 	// Typeexpressionbypass
 	{
 		tLxNode* typeexpr;
-		if(typeexpr=LxParseType(fetcher))return typeexpr;
+		if((typeexpr=LxParseType(fetcher)))return typeexpr;
 	};
 	// Tailcall
-	LxParseTypeexpression(fetcher);
+	return LxParseTypeexpression(fetcher);
 };
 tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 #ifdef qvGTrace
@@ -2413,7 +2413,6 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 		case tToken_Openparentheses: {
 			//Evaulate parenthesation
 			tListnode* i;
-			tListnode* k=fetcher->fetchfrom;
 			int j = 0;
 			for(i=fetcher->fetchfrom->next;j>=0;i=i->next){
 				switch(((tToken*)i->item)->type){
@@ -2426,7 +2425,6 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 					default:
 						break;
 				};
-				k=i;
 			};
 			// `i` points to first token after matching `)`
 			switch(((tToken*)i->item)->type){
@@ -2451,11 +2449,15 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 					};
 					tLxNode* type;
 					//mtLxFetcher_Advance(fetcher);
-					if(type=LxParseType(
-						mtLxFetcher_Trimlast(
-							mtLxFetcher_Trimfirst(&localfetcher)
+					if(	
+						(	
+							type=LxParseType(
+								mtLxFetcher_Trimlast(
+									mtLxFetcher_Trimfirst(&localfetcher)
+								)
+							)
 						)
-					)){
+					){
 #ifdef qvGDebug
 						printf("LX: [D] LxParseTypeexpression: Proper type cast \n");
 #endif
@@ -2749,7 +2751,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 			default: {
 				printf("LX: [T] LxParseTypeexpression: Unrecognized constant - passing through to LxParseType\n");
 				tLxNode* typeexpr;
-				if(typeexpr=LxParseType(fetcher)){
+				if((typeexpr=LxParseType(fetcher))){
 					return typeexpr;
 				};
 			};	break;
@@ -2757,7 +2759,7 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 	}else{
 		printf("LX: [T] LxParseTypeexpression: Unrecognized constant - passing through to LxParseType\n");
 		tLxNode* typeexpr;
-		if(typeexpr=LxParseType(fetcher)){
+		if((typeexpr=LxParseType(fetcher))){
 			return typeexpr;
 		};
 
@@ -2781,11 +2783,11 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 	 * basetype typeexpr<identifier>{.lastop==functioncall} blockstatement // function declaration
 	 * other atomics like typedef
 	 */
-	tLxFetcher savedfetcher = *fetcher;
+	//tLxFetcher savedfetcher = *fetcher;
 #ifdef qvGTrace
 	printf("LX: [T] LxParseDeclaration(): Entered\n");
 #endif
-#ifdef qvGDebug
+#ifdef qvGTraceexpressions
 	printf("LX: [D] LxParseDeclaration(): Printing fetcher \n");
 	mtLxFetcher_Print_Limited(fetcher);
 #endif
@@ -2823,18 +2825,17 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 			);
 			break;
 		default: {
-			bool isauto = false;
-			bool isstatic = false;
+			enum eGStoragespecifier storage = 0;
 			if(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordauto){
 				mtLxFetcher_Advance(fetcher);
-				isauto=true;
+				storage=eGStoragespecifier_Auto;
 			}else if(mtLxFetcher_Peek(fetcher)->type==tToken_Keywordstatic){
 				mtLxFetcher_Advance(fetcher);
-				isstatic=true;
-				printf("LX: [W] LxParseDeclaration: `static` specifier ignored\n");
+				storage=eGStoragespecifier_Static;
+				//printf("LX: [W] LxParseDeclaration: `static` specifier ignored\n");
 			};
 			tGType* basetype;
-			if(basetype=LxParseBasetype(fetcher)){
+			if((basetype=LxParseBasetype(fetcher))){
 				printf("LX: [T] LxParseDeclaration: Type fetched successfully, trying variable declaration\n");
 				//mtLxFetcher_Print(fetcher);
 				tLxNode* initializer = nullptr;
@@ -2857,7 +2858,7 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 								.type=tLexem_Functiondeclaration,
 								.returnedtype=basetype,
 								.left=LxParseTypeexpression(typeexprfetcher),
-								.right=initializer
+								.right=initializer,
 							}
 						);
 						break;
@@ -2878,7 +2879,8 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 								.type=tLexem_Rawvariabledeclaration,
 								.returnedtype=basetype,
 								.left=LxParseTypeexpression(typeexprfetcher),
-								.right=nullptr
+								.right=nullptr,
+								.storage=storage,
 							}
 						);
 						break;

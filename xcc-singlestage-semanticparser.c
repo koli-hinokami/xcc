@@ -62,17 +62,28 @@ void SpCompilefunctionarguments(
 				)->valuecategory=eGValuecategory_Leftvalue;
 				fextinfo->argumentssize+=mtGType_Sizeof(type);
 			}else if(typeexpr->type==tLexem_Ellipsis){
-				tGType* type = SppGeneratetype(typeexpr->returnedtype,typeexpr->left,&name);
-				mtGNamespace_Findsymbol_NameKind(
+				//tGType* type = SppGeneratetype(typeexpr->returnedtype,typeexpr->left,&name);
+				mtGNamespace_Add(
 					name_space,
-					"__xcc_variadic",
-					mtGSymbol_eType_Pointer
-				)->allocatedstorage=(
-					mtGTargetPointer_CreateStatic(
-						meGSegment_Stackframe,
-						fextinfo->argumentssize
+					mtGSymbol_CreatePointer(
+						"__xcc_variadic",
+						mtGType_CreateAtomic(eGAtomictype_Void),
+						mtGTargetPointer_CreateStatic(
+							meGSegment_Stackframe,
+							fextinfo->argumentssize
+						)
 					)
 				);
+				//mtGNamespace_Findsymbol_NameKind(
+				//	name_space,
+				//	"__xcc_variadic",
+				//	mtGSymbol_eType_Pointer
+				//)->allocatedstorage=(
+				//	mtGTargetPointer_CreateStatic(
+				//		meGSegment_Stackframe,
+				//		fextinfo->argumentssize
+				//	)
+				//);
 			}else{
 				printf("SP: [F] SpCompilefunctionarguments: Unrecognized node %i•%s \n",typeexpr->type,TokenidtoName[typeexpr->type]);
 				LfPrint_LxNode(typeexpr);
@@ -168,7 +179,7 @@ tSpNode* SpParsefunctionarguments(tSpNode* ast, tListnode /* <tGType */ * argume
 #endif
 	assert(argumentslist);
 	tListnode* args = argumentslist;
-	SpiParsefunctionarguments(ast,&args);
+	return SpiParsefunctionarguments(ast,&args);
 };
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(!self){
@@ -539,6 +550,12 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					}
 				);
 			};	break;
+			case tLexem_Assign: {
+				tSpNode* left = SpParse(self->left);
+				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				assert((mtGType_GetBasetype(left->returnedtype)->valuecategory==eGValuecategory_Leftvalue,"SP: [E] Assignment to right value \n"));
+				assert(false);
+			};
 		};
 		{	// Expressions - arithmetic operators
 			case tLexem_Add: {
@@ -637,7 +654,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				//if(mtGType_Sizeof(right->returnedtype)<mtGType_Sizeof(left->returnedtype))
 				//	right=mtSpNode_Promote(right,left->returnedtype);
 				if(!mtGType_Equals(left->returnedtype,right->returnedtype)){
-					printf("SP: [E] SpParse: `%`: Types not equal! %s•%s\n",
+					printf("SP: [E] SpParse: `%%`: Types not equal! %s•%s\n",
 						mtGType_ToString(left->returnedtype),
 						mtGType_ToString(right->returnedtype)
 					);

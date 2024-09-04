@@ -39,6 +39,7 @@ intptr_t tLnArgsGetflag(char* flag){
 			};
 		};
 	};
+	return 0;
 };
 
 bool tLnArgsPassed(char* flag){
@@ -48,6 +49,7 @@ bool tLnArgsPassed(char* flag){
 			return tLfFlags[i].passed;
 		};
 	};
+	return false;
 };
 
 bool tLnArgsSetflag(char* flag, intptr_t value){
@@ -60,6 +62,7 @@ bool tLnArgsSetflag(char* flag, intptr_t value){
 			return true;
 		};
 	};
+	return false;
 };
 
 

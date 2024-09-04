@@ -55,23 +55,25 @@ void PrDefine(char* definition){
 		};
 		//printf("PR: [T] Pointers: %p|%p|%p\n",macroname,arguments,value);
 		// Logging
-		if(0)if(parametrized){
-			printf("PR: [T] Macro definition: \"%.*s[%c]%.*s[%c]%s\"\n",
-				(arguments-macroname)/sizeof(char),
-				macroname,
-				arguments,
-				(value-arguments-1)/sizeof(char),
-				arguments+1,
-				*value,
-				value+1
-			);
-		}else{
-			printf("PR: [T] Macro definition: \"%.*s[%c]%s\"\n",
-				(arguments2-macroname)/sizeof(char),
-				macroname,
-				*arguments2,
-				arguments2+1
-			);
+		if(0){
+			if(parametrized){
+				printf("PR: [T] Macro definition: \"%.*s[%c]%.*s[%c]%s\"\n",
+					(int)((arguments-macroname)/sizeof(char)),
+					macroname,
+					arguments[0],
+					(int)((value-arguments-1)/sizeof(char)),
+					arguments+1,
+					*value,
+					value+1
+				);
+			}else{
+				printf("PR: [T] Macro definition: \"%.*s[%c]%s\"\n",
+					(int)((arguments2-macroname)/sizeof(char)),
+					macroname,
+					*arguments2,
+					arguments2+1
+				);
+			};
 		};
 		// Some adjusting
 		if(parametrized){
@@ -150,18 +152,20 @@ void handledirective(){
 		command[i]=commandbuffer[i];command[i+1]=0;
 	};
 	//printf("PR: [T]  Command \"%s\"\n",command);
-	if(0)if(commandbuffer[i]){
-		printf("PR: [T]  Full string \"%.*s[%c]%s\"\n",
-			i,
-			commandbuffer,
-			commandbuffer[i]!='\n'?commandbuffer[i]:'@',
-			commandbuffer+i+1
-		);
-	}else{
-		printf("PR: [T]  Full string \"%.*s\"\n",
-			i,
-			commandbuffer
-		);
+	if(0){
+		if(commandbuffer[i]){
+			printf("PR: [T]  Full string \"%.*s[%c]%s\"\n",
+				i,
+				commandbuffer,
+				commandbuffer[i]!='\n'?commandbuffer[i]:'@',
+				commandbuffer+i+1
+			);
+		}else{
+			printf("PR: [T]  Full string \"%.*s\"\n",
+				i,
+				commandbuffer
+			);
+		};
 	};
 	// Arguments
 	for(;isspace(commandbuffer[i]);i++);
@@ -175,28 +179,28 @@ void handledirective(){
 	};
 };
 
-void checkeof(FILE* handle){
-	if(feof(handle)){
-		exit;
-	};
-};
-void PrHandleline2(){ // todo
-	// Alternative linepump - reads the string first
-	char buf;
-	char stringbuffer[1024];
-	if(feof(src))return;
-	buf=fetchcharater();
-	if(feof(src))return;
-	if(buf=='\n')return;
-	for(
-		int i=0;
-		(buf!='\n')&&(!feof(src));
-		buf=fetchcharater()
-	){
-		stringbuffer[i]=buf;
-	};
-	
-};
+//void checkeof(FILE* handle){
+//	if(feof(handle)){
+//		exit;
+//	};
+//};
+//void PrHandleline2(){ // todo
+//	// Alternative linepump - reads the string first
+//	char buf;
+//	char stringbuffer[1024];
+//	if(feof(src))return;
+//	buf=fetchcharater();
+//	if(feof(src))return;
+//	if(buf=='\n')return;
+//	for(
+//		int i=0;
+//		(buf!='\n')&&(!feof(src));
+//		buf=fetchcharater()
+//	){
+//		stringbuffer[i]=buf;
+//	};
+//	
+//};
 void PrHandleline(){
 	char buf1;
 	if(feof(src))return;

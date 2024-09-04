@@ -120,7 +120,6 @@ void LfiPrint_GType(char* pr, tGType* self){
 };
 void LfiPrint_LxNode_Commafolding(char* pr,tLxNode* self){
 	char buffer[512];
-	char* bufptr=buffer;
 	if(self==nullptr){
 		//exit(5);
 		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
@@ -137,7 +136,6 @@ void LfiPrint_LxNode_Commafolding(char* pr,tLxNode* self){
 };
 void LfiPrint_LxNode(char* pr,tLxNode* self){
 	char buffer[512];
-	char* bufptr=buffer;
 	if(self==nullptr){
 		//exit(5);
 		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
@@ -243,7 +241,7 @@ char* mtLxNode_ToString(tLxNode* self){
 			);
 			break;
 		case tLexem_Integerconstant:
-			sprintf(buffer,"intconstant(%i)",self->type,TokenidtoName[self->type],self->constant);
+			sprintf(buffer,"intconstant(%i)",self->constant);
 			return mtString_Clone(buffer);
 		case tLexem_Identifier:
 			sprintf(buffer,"identifier\"%s\"",self->identifier);
@@ -293,7 +291,6 @@ char* mtLxNode_ToString(tLxNode* self){
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
 	char *s2;
-	char *s3;
 	if(self==nullptr){
 		return mtString_Clone("totally_invalid");
 	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
@@ -430,7 +427,6 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 };
 void LfiPrint_SpNode(char* pr,tSpNode* self){
 	char buffer[512];
-	char* bufptr=buffer;
 	if(self==nullptr){
 		//exit(6);
 		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
@@ -496,7 +492,7 @@ void LfPrint_GSymbol(tGSymbol* self){
 	//  cuz I already got one buffer overflow and don't want any more
 	char buffer[4096];
 	if(self==nullptr){
-		snprintf(buffer,4096,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		snprintf(buffer,4096,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n");
 		LfWriteline(buffer);
 	}else if(self->symbolkind==mtGSymbol_eType_Namespace){
 		snprintf(buffer,4096,"Lf: [M] ¤ Childnamespace %p:%s\n",self,self->name);

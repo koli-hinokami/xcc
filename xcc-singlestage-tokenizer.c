@@ -1,17 +1,19 @@
 // Tokenizer for `xcc-singlestage` compiler
 unsigned TkLinenumber = 1;
 void TkEmittoken(tToken token){
-	if(0)if(mtToken_HasString(&token)){
-		printf("TK: [T] Emitted token %6hu:%s, string:%s\n",
-			token.type,
-			TokenidtoName[token.type],
-			token.string
-		);
-	}else{
-		printf("TK: [T] Emitted token %6hu:%s \n",
-			token.type,
-			TokenidtoName[token.type]
-		);
+	if(0){
+		if(mtToken_HasString(&token)){
+			printf("TK: [T] Emitted token %6hu:%s, string:%s\n",
+				token.type,
+				TokenidtoName[token.type],
+				token.string
+			);
+		}else{
+			printf("TK: [T] Emitted token %6hu:%s \n",
+				token.type,
+				TokenidtoName[token.type]
+			);
+		};
 	};
 	tToken* heaptoken = mtToken_Clone(&token);
 	heaptoken->linenumber=TkLinenumber;
@@ -191,7 +193,7 @@ void TkTokenize(FILE* srcfile){
 				break;
 			case '\"':	//String incoming!
 				{
-					tString str1,str2;//cuz `char* str1,str2` defines str2 as `char`,not `char*`
+					char* str1;
 					str1=mtString_Clone("");
 					for(bool continuestring=true;continuestring;){
 						switch(buffer2=TkGetc()){

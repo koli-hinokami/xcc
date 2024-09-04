@@ -123,6 +123,7 @@ tLxFetcher* mtLxFetcher_Fetchuntil_Variadic(tLxFetcher* fetcher, int tokenidcoun
 			return targetfetcher;
 		};
 	};
+	return nullptr;
 	printf("DBG:[W] Unimplemented function mtLxFetcher_Fetchuntil_Variadic \n");
 };
 void mtLxFetcher_Print(tLxFetcher* self){
