@@ -23,16 +23,16 @@ tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
 			assert(expr);
 			switch(expr->type){
 				default:
-					fprintf(stderr,"SG: [E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
-					printf("SG: [E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
-					printf("SG: [E] SppParsefunctionarguments: Full ast:\n");
+					fprintf(stderr,"SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
+					printf("SPP:[E] SppParsefunctionarguments: Unrecognized node %i:%s\n",expr->type,TokenidtoName[expr->type]);
+					printf("SPP:[E] SppParsefunctionarguments: Full ast:\n");
 					LfPrint_LxNode(expr);
 					break;
 				case tLexem_Typeexpression:
 					return mtListnode_Cons(SppGeneratetype(expr->returnedtype,expr->left,nullptr),nullptr);
 					break;
 				case tLexem_Nullexpression:
-					printf("SG: [W] SppParsefunctionarguments: Thee probably shouldn't use null expression as function arguments \n");				
+					printf("SPP:[W] SppParsefunctionarguments: Thou probably shouldn't use null expression as function arguments \n");				
 					return nullptr;
 					break;
 			};

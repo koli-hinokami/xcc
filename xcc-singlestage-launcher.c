@@ -64,8 +64,9 @@ void LnCompile(char* file){
 	// Preparse
 	GRootnamespace = mtGNamespace_Create();
 	GLexed->name_space=GRootnamespace;
-	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser 
-	// produces same type of tree that Lexicalparser does
+	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser produces 
+	                                      // same type of tree that 
+					      // Lexicalparser does
 	LfPrint_LxNode(GLexed);
 	// Symbol generation - includes structs
 	SgUnresolvedtypes = mtList_Create();
@@ -94,8 +95,7 @@ int main(int argc,char* argv[]) {
 	printf("L:      Singlestage build - sources to object file\n");
 	printf("L:      Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "0\n");
 	printf("L:      ----------------------------------------------------\n");
-	int aindex=1;
-	//Command-line options
+	int aindex=1; //Command-line options
 	printf("L:  [T] Options:\n");
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;

@@ -598,6 +598,14 @@ tGType* mtGType_CreateArray_Expr(tGType* self, tLxNode* expr){
 	// TODO: Far pointers
 	return temp;
 };
+tGSymbol* mtGSymbol_CreateNamespace(char* name, tGNamespace* name_space){
+	tGSymbol* temp = mtGSymbol_Create();
+	temp->name = name;
+	temp->type = nullptr;
+	temp->symbolkind = mtGSymbol_eType_Namespace;
+	temp->name_space = name_space;
+	return temp;
+};
 tGSymbol* mtGSymbol_CreatePointer(char* name, tGType* type, tGTargetPointer* ptr){
 	tGSymbol* temp = mtGSymbol_Create();
 	temp->name = name;

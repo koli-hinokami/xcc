@@ -208,6 +208,10 @@ void SgParse(tLxNode* ast){
 			SgParse(ast->left);
 			if(ast->right)SgParse(ast->right);
 			break;
+		case tLexem_Blockstatement: {
+			SgParse(ast->left);
+			SgParse(ast->right);
+		};
 		case tLexem_Functiondeclaration: {
 			char* name = nullptr;
 			tGType* type = SgGeneratetype(ast->returnedtype,ast->left,&name);
@@ -217,6 +221,13 @@ void SgParse(tLxNode* ast){
 					name,
 					type,
 					nullptr
+				)
+			);
+			mtGNamespace_Add(
+				ast->name_space,
+				mtGSymbol_CreateNamespace(
+					name,
+					ast->right->name_space
 				)
 			);
 			SgParse(ast->right); // functions and their locals...
