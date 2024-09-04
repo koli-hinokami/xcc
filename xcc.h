@@ -173,6 +173,7 @@ enum tTokentype {
 	//tLexem_	        = 580,
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
+	tSplexem_Declarationlist	= 1024,		// Same as tLexem_Declaration
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//tToken_	        	= 1536,		//	IR instructions
 	tInstruction_Nop		= 1536+1,	//No operation

@@ -53,6 +53,11 @@ void SgRegisterstructureTraverse(tGType* type){
 		case eGAtomictype_Array:
 			SgRegisterstructureTraverse(type->complexbasetype);
 			break;
+		default:
+			printf("SG: [E] SgRegisterstructureTraverse: Unrecognized atomic type %i:%s \n",
+				type->atomicbasetype,mtGType_ToString_Embeddable(type)
+			);
+			break;
 	};
 };
 void SgRegisterstructures(tLxNode* ast){
@@ -312,7 +317,7 @@ void SgParse(tGNamespace* namespace, tLxNode* ast){
 				}else{
 					// Handle a declaration
 					char* name = nullptr;
-					if(ast->left->type=tLexem_Assign){ // If initializer is valid
+					if(ast->left->type==tLexem_Assign){ // If initializer is valid
 						tGType* type = SgGeneratetype(ast->returnedtype,ast->left->left,&name);
 						mtGNamespace_Add(
 							namespace,

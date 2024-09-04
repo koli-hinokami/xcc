@@ -83,7 +83,7 @@ void mtList_Append(ptList self, void* item){
 	};
 }
 unsigned mtList_Count(ptList self){
-	unsigned i;
+	unsigned i=0;
 	if(self==nullptr){
 		return 0; // -1 maybe?
 	}else if(self->last == nullptr){ // List empty

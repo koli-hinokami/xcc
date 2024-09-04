@@ -88,6 +88,9 @@ void LfiPrint_GType(char* pr, tGType* self){
 	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
 		sprintf(buffer,"Lf: [M]      ¤ Structunion \n");
 		LfWriteline(buffer);
+		//for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
+		//	LfiPrint_LxNode("f:",(tLxNode*)i->item);
+		//}
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Void){ 
 		sprintf(buffer,"Lf: [M]      ¤ Atomictype: %i:%s \n",self->atomicbasetype,"void");
@@ -123,11 +126,11 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 		LfiPrint_LxNode("r:",self->right);
 	}else{
 		if(self->type==tLexem_Integerconstant){
-			sprintf(buffer,"Lf: [M] %2s ∙ ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],self->constant);
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],self->constant);
 			LfWriteline(buffer);
 			return;
 		}else if(self->type==tLexem_Identifier){
-			sprintf(buffer,"Lf: [M] %2s ∙ ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],self->identifier);
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],self->identifier);
 			LfWriteline(buffer);
 			return;
 		}else{
@@ -157,6 +160,64 @@ void LfPrint_LxNode(tLxNode* self){
 	LfWriteline("DBG:[M] LfPrint_LxNode: Printing primary AST \n");
 	LfiPrint_LxNode("",self);
 	//exit(4);
+};
+char* mtGType_ToString_Embeddable(tGType *);
+char* mtLxNode_ToString(tLxNode* self){
+	char buffer[512];
+	char* bufptr=buffer;
+	if(self==nullptr){
+		//exit(5);
+		//sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
+		return mtString_Clone("nullptr");
+		//LfWriteline(buffer);
+	}else switch(self->type){
+		case tLexem_Declarationlist:
+			return mtString_Join(
+				mtLxNode_ToString(self->left),
+				mtLxNode_ToString(self->right)
+			);
+			break;
+		case tLexem_Integerconstant:
+			sprintf(buffer," ∙ ¤ Lexem %i:%s:%i",self->type,TokenidtoName[self->type],self->constant);
+			return mtString_Clone(buffer);
+		case tLexem_Identifier:
+			sprintf(buffer,"identifier\"%s\"",self->identifier);
+			return mtString_Clone(buffer);
+		default:
+			sprintf(buffer,"lexem %i:%s",self->type,TokenidtoName[self->type]);
+			//exit(6);
+			bufptr=mtString_Clone(buffer);
+			if(self->returnedtype)mtString_Append(&bufptr,mtGType_ToString_Embeddable(self->returnedtype));
+			if(
+				  (self->type==tLexem_Switchcase)
+				||(self->type==tLexem_Switchdefault)
+			){
+				//LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
+				mtString_Append(&bufptr," (i:boundswitch)");
+			}else if(self->type==tLexem_Breakstatement){
+				//LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
+				mtString_Append(&bufptr," (i:breaktarget)");
+			}else{
+				//LfiPrint_LxNode("i:",self->initializer);
+				mtString_Append(&bufptr," (i:");
+				mtString_Append(&bufptr,mtLxNode_ToString(self->initializer));
+				mtString_Append(&bufptr,")");
+			};
+			//LfiPrint_LxNode("c:",self->condition);
+			//LfiPrint_LxNode("l:",self->left);
+			//LfiPrint_LxNode("r:",self->right);
+			mtString_Append(&bufptr," (c:");
+			mtString_Append(&bufptr,mtLxNode_ToString(self->condition));
+			mtString_Append(&bufptr,")");
+			mtString_Append(&bufptr," (l:");
+			mtString_Append(&bufptr,mtLxNode_ToString(self->left));
+			mtString_Append(&bufptr,")");
+			mtString_Append(&bufptr," (r:");
+			mtString_Append(&bufptr,mtLxNode_ToString(self->right));
+			mtString_Append(&bufptr,")");
+			return bufptr;
+			break;
+	};
 };
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
@@ -189,12 +250,20 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		if(self->precompiledstructure){
 			//mtString_Append(&s1," { ... }");
 			mtString_Append(&s1," ( ");
+			mtString_Append(&s1,"/*");
 			mtString_Append(&s1,
 				mtString_FromInteger(
 					mtList_Count(self->precompiledstructure)
 				)
 			);
-			mtString_Append(&s1," fields )");
+			mtString_Append(&s1," fields */ ");
+
+			// Inlined List.foreach cuz no capturing lambdas *yet*
+			for(tListnode* i=self->precompiledstructure->first;i!=nullptr;i=i->next){
+				mtString_Append(&s1,mtLxNode_ToString((tLxNode*)i->item));
+				mtString_Append(&s1,";");
+			}
+			mtString_Append(&s1," )");
 		};
 		//if(!self->unresolvedsymbol){
 		//	// Occasionally structures are defined only by their fields
@@ -248,11 +317,13 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	};
 };
 void LfPrint_GSymbol(tGSymbol* self){
-	char buffer[512];
+	// TODO: Rewrite to use dynamic buffers instead of static 
+	//  cuz I already got one buffer overflow and don't want any more
+	char buffer[4096];
 	if(self==nullptr){
-		sprintf(buffer,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		snprintf(buffer,4096,"Lf: [M] ¤ `(tGSymbol*)nullptr` found it's way into namespace!\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
 	}else{
-		sprintf(buffer,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
 	};
 	LfWriteline(buffer);
 };
@@ -458,5 +529,6 @@ tGSymbol* mtGSymbol_CreateTypedef(char* name, tGType* type){
 	return temp;
 };
 #include "xcc-singlestage-symbolgen.c"
+#include "xcc-singlestage-semanticparser.c"
 #include "xcc-singlestage-launcher.c"
 // the end

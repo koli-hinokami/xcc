@@ -27,6 +27,8 @@ Timestamps:
 				    Some support for multiple symbols per definition
 	20apr2024 13:30 UTC+5       Packaging Publicrelase5. Proper support for
 	                            multiple symbols per definition.
+	21apr2024 23:04 UTC+5       Publicrelease 5 Interim 1. Changelog lost.
+	22apr2024 22:37 UTC+5       Publicrelease 5 Interim 2. Next to no changes.
 
 Stages:
 	¤ Embedder

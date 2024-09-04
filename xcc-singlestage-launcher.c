@@ -76,12 +76,13 @@ void LnCompile(char* file){
 	// Symbolgen struct registration
 	//  not done separately anymore!
 	// Semantic parsing - compiles structs
+	GSecondaryast = SpParse(GLexed);
 	/// The question is where `struct`s go
 	// Compile
 	// Write object file
 };
 int main(int argc,char* argv[]) {
-	//setvbuf(stdout,null,_IONBF,0);
+	setvbuf(stdout,null,_IONBF,0);
 	printf("L:  [M] XCC Retargetable C Compiler\n");
 	printf("L:      Singlestage build - sources to object file\n");
 	printf("L:      Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "0\n");

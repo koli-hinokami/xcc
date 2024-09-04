@@ -414,12 +414,14 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 				mtLxFetcher_Advance(fetcher);
 				declarations = mtList_Create();
 				while(mtLxFetcher_Peek(fetcher)->type!=tToken_Closecurlybraces){
+					//printf("debug123\n");
+					//LfPrint_LxNode(LxParseDeclaration(fetcher));
 					mtList_Append(declarations,LxParseDeclaration(fetcher));
 				};
 				mtLxFetcher_Advance(fetcher);
 			};
 			// Yell at user if both identifier and fields destcription are absent
-			if((identifier==nullptr) && (mtList_Count(declarations)==0)){
+			if((identifier==nullptr) && (declarations==nullptr)){
 				fprintf(stderr,"LX: [F] LxParseBasetype: `struct` w/o both identifier and fields declaration \n");
 				exit(2);
 			};
@@ -496,13 +498,14 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 	};
 	return type;
 };
+tLxNode* LxParseTypeexpression(tLxFetcher* fetcher);
 tLxNode* LxParseType(tLxFetcher* fetcher){
 #ifdef qvGTrace
 	printf("LX: [T] LxParseType(): Entered\n");
 #endif
 	tGType* localtype = LxParseBasetype(fetcher);
 	if(localtype){
-		tLxNode* expr = LxParseExpression(fetcher);
+		tLxNode* expr = LxParseTypeexpression(fetcher);
 		if(expr==nullptr)return nullptr;
 		//if(expr->type==tLexem_Nullexpression)return nullptr;
 		return mtLxNode_Clone(
@@ -1963,6 +1966,148 @@ tLxNode* LxParseExpression(tLxFetcher* fetcher){
 	exit(2);
 	;
 };
+tLxNode* LxParseTypeexpression2(tLxFetcher* fetcher){
+#ifdef qvGTrace
+	printf("LX: [T] LxParseTypeexpression2: entered \n");
+	mtLxFetcher_Print(fetcher);
+#endif
+	tListnode* splitpoint = nullptr;
+	int parenthesation = 0;
+	// Null statement
+	if(fetcher->fetchfrom==fetcher->fetchto){
+		printf("LX: [D] LxParseTypeexpression: Null statement seen \n");
+		// Null statement special code
+		return mtLxNode_Clone(
+			&(tLxNode){
+				.type=tLexem_Nullexpression,
+				.returnedtype=nullptr,
+				.initializer=nullptr,
+				.condition=nullptr,
+				.left=nullptr,
+				.right=nullptr
+			}
+		);
+		return nullptr;
+	};
+	// Unparenthesize
+	if(mtLxFetcher_Peek(fetcher)->type==tToken_Openparentheses){ 
+#ifdef qvGTrace
+		printf("LX: [T] LxParseTypeexpression: Unparenthesize\n");
+#endif
+		if(mtLxFetcher_Peeklast(fetcher)->type==tToken_Closeparentheses){
+			// Parenthesized expression
+			printf("LX: [T] LxParseTypeexpression: Parenthesized expression \n");
+			tLxFetcher localfetcher = *fetcher;
+			localfetcher.fetchfrom=localfetcher.fetchfrom->next;
+			// Trim ending parentheses
+			for(
+				splitpoint = localfetcher.fetchfrom;
+				splitpoint->next != localfetcher.fetchto;
+				splitpoint = splitpoint->next
+			);
+			localfetcher.fetchto=splitpoint;
+			if(LxiParseExpression_Checkparenthesation(&localfetcher)){
+				return LxParseTypeexpression2(&localfetcher);
+			}else{
+				printf("LX: [T] LxParseTypeexpression: I said parenthesized expression? Nevermind, it's not\n");
+				// Not really parenthesized expression
+			};
+		}else{
+			// Open parentheses at start but no at the end
+		};
+	}
+	splitpoint=nullptr;
+	// Const-volatile-restrict bypass
+	if(
+		  mtLxFetcher_Peek(fetcher)->type==tToken_Keywordconst
+		||mtLxFetcher_Peek(fetcher)->type==tToken_Keywordvolatile
+		||mtLxFetcher_Peek(fetcher)->type==tToken_Keywordrestrict
+	){ 
+#ifdef qvGTrace
+		printf("LX: [T] LxParseTypeexpression: Const-volatile-restrict bypass\n");
+#endif
+		
+		return mtLxNode_Clone(
+			&(tLxNode){
+				.type=	
+					 mtLxFetcher_Peek(fetcher)->type==tToken_Keywordconst	
+					?tLexem_Constmodifier
+					:mtLxFetcher_Peek(fetcher)->type==tToken_Keywordrestrict
+					?tLexem_Volatilemodifier
+					:mtLxFetcher_Peek(fetcher)->type==tToken_Keywordvolatile
+					?tLexem_Restrictmodifier
+					:null,
+				.left=LxParseTypeexpression2(
+					&(tLxFetcher){
+						.fetchfrom=fetcher->fetchfrom->next,
+						.fetchto=fetcher->fetchto
+					}
+				)
+			}
+		);
+	};
+	splitpoint=nullptr;
+	// Precedence 15 - Comma 
+	// Parsed with left-associativity unit
+	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
+		switch(((tToken*)i->item)->type){
+			case tToken_Openparentheses: 
+			case tToken_Openbrackets: 
+			case tToken_Opencurlybraces: 
+				parenthesation++;
+				break;
+			case tToken_Closeparentheses: 
+			case tToken_Closebrackets: 
+			case tToken_Closecurlybraces: 
+				parenthesation--;
+				break;
+			default: {
+				if(parenthesation<0){
+					fprintf(stderr,"LX: [F] LxParseTypeexpression: Closed parentheses w/o preceding open parentheses at line %i \n",((tToken*)i->item)->linenumber);
+					exit(1);
+				};
+				if(parenthesation==0){
+					switch(((tToken*)i->item)->type){
+						case tToken_Comma:
+							splitpoint=i;
+							// leftassociative -> full break out of forloop
+						default:
+							break;
+					};
+				};
+			};	break;
+		};
+	};
+	if(splitpoint){ // Operator found -> recursive parse + return node
+#ifdef qvGTraceexpressions
+	printf("LX: [T] LxParseTypeexpression: Precedence 15 - Comma \n");
+#endif
+		return mtLxNode_Clone(
+			&(tLxNode){
+				.type=tLexem_Comma,
+				.left=LxParseTypeexpression(
+					&(tLxFetcher){
+						.fetchfrom=fetcher->fetchfrom,
+						.fetchto=splitpoint
+					}
+				),
+				.right=LxParseTypeexpression2(
+					&(tLxFetcher){
+						.fetchfrom=splitpoint->next,
+						.fetchto=fetcher->fetchto
+					}
+				)
+			}
+		);
+	};
+	// Typeexpressionbypass
+	{
+		tLxNode* typeexpr;
+		if(typeexpr=LxParseType(fetcher))return typeexpr;
+	};
+	// Tailcall
+	LxParseTypeexpression(fetcher);
+};
 tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 #ifdef qvGTrace
 	printf("LX: [T] LxParseTypeexpression: entered \n");
@@ -2044,6 +2189,11 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 		);
 	};
 	splitpoint=nullptr;
+	// Typeexpressionbypass
+	//{
+	//	tLxNode* typeexpr;
+	//	if(fetcher->fetchfrom!=fetcher->fetchto)if(fetcher->fetchfrom->next!=fetcher->fetchto)if(typeexpr=LxParseType(fetcher))return typeexpr;
+	//};
 	// Precedence 15 - Comma 
 	// Parsed with left-associativity unit
 	for(tListnode* i=fetcher->fetchfrom;i!=fetcher->fetchto;i=i->next){
@@ -2318,7 +2468,8 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 	};
 	if(splitpoint){ // Operator found -> recursive parse + return node
 		switch(((tToken*)splitpoint->item)->type){
-			case tToken_Openparentheses:
+			case tToken_Openparentheses: {
+				// Type expressions need to be handled
 				return mtLxNode_Clone(
 					&(tLxNode){
 						.type=tLexem_Functioncall,
@@ -2328,16 +2479,20 @@ tLxNode* LxParseTypeexpression(tLxFetcher* fetcher){
 								.fetchto=splitpoint
 							}
 						),
-						.right=LxParseTypeexpression(
-							&(tLxFetcher){
-								// Reparses parentheses, but it's fine
-								.fetchfrom=splitpoint,
-								.fetchto=fetcher->fetchto
-							}
+						.right=LxParseTypeexpression2(
+							mtLxFetcher_Trimfirst(
+								mtLxFetcher_Trimlast(
+									&(tLxFetcher){
+										// Reparses parentheses, but it's fine // not anymore neither it's fine
+										.fetchfrom=splitpoint,
+										.fetchto=fetcher->fetchto
+									}
+								)
+							)
 						)
 					}
 				);
-				break;
+			};	break;
 			case tToken_Dot:
 				return mtLxNode_Clone(
 					&(tLxNode){
