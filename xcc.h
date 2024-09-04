@@ -214,6 +214,7 @@ enum tTokentype {
 	tSplexem_Breakstatement		= 1051,		//
 	tSplexem_Equality		= 1052,		//
 	tSplexem_Nonequality		= 1053,		//
+	tSplexem_Assign		= 1054,		//
 	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
@@ -1302,7 +1303,7 @@ char *TokenidtoName[]={
 	"tSplexem_Breakstatement     ",// 1051
 	"tSplexem_Equality           ",// 1052
 	"tSplexem_Nonequality        ",// 1053
-	"tSplexem_Undefined          ",// 1054
+	"tSplexem_Assign             ",// 1054
 	"tSplexem_Undefined          ",// 1055
 	"tSplexem_Undefined          ",// 1056
 	"tSplexem_Undefined          ",// 1057

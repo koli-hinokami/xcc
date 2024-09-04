@@ -552,8 +552,25 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			};	break;
 			case tLexem_Assign: {
 				tSpNode* left = SpParse(self->left);
-				tSpNode* right = SpInsertimpliedrvaluecast(SpParse(self->right));
+				tSpNode* right = mtSpNode_Promote(
+					SpInsertimpliedrvaluecast(SpParse(self->right)),
+					mtGType_SetValuecategory(
+						mtGType_Clone(left->returnedtype),
+						eGValuecategory_Rightvalue
+					)
+				);
 				assert((mtGType_GetBasetype(left->returnedtype)->valuecategory==eGValuecategory_Leftvalue,"SP: [E] Assignment to right value \n"));
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Assign,
+						.returnedtype=mtGType_SetValuecategory(
+							mtGType_Clone(left->returnedtype),
+							eGValuecategory_Rightvalue
+						),
+						.left=left,
+						.right=right,
+					}
+				);
 				assert(false);
 			};
 		};
