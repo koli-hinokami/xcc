@@ -21,6 +21,7 @@
 #include "basictypes.h"
 #include "xcc.h"
 #include "xcc-targetconfiguration.h"
+#include "errorreportingfacilities.h"
 
 /*
 	Used namespaces:

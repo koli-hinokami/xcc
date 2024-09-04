@@ -42,6 +42,9 @@ bool mtList_Isempty(ptList self){
 void* mtList_GetFirstitem(ptList self){
 	return self->first->item;
 };
+void* mtList_GetFirst(ptList self){
+	return mtList_GetFirstitem(self);
+};
 void mtList_Removefirst(ptList self){
 	if(self->last == nullptr){ // List empty
 		return;

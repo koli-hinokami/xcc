@@ -33,8 +33,7 @@ tErfVframe* mtErfVframe_Create_String(char* /* takeowns */ str){
 // ------------------ Functions ------------------
 
 void ErfDumpvframe(int count, tErfVframe* frame){
-	fprintf(stderr,"erf:[M]  • %i: %p•%s\n",
-		count,
+	fprintf(stderr,"erf:[M]  • Native frame %p•{%s}\n",
 		frame,
 		frame->string
 	);
@@ -65,7 +64,7 @@ void ErfDumpstacktrace(){ // Stacktrace
 	fprintf(stderr,"erf:[M] (end nativestacktrace)\n");
 #endif
 };
-void ErfEnter_String(char* /* borrows */ string){
+void ErfEnter(char* /* borrows */ string){
 	mtList_Prepend(&ErfVframes,
 		mtErfVframe_Create_String(
 			mtString_Clone(string)
@@ -76,21 +75,10 @@ void ErfLeave(void){
 	mtErfVframe_Destroy(mtList_GetFirst(&ErfVframes));
 	mtList_Removefirst(&ErfVframes);
 };
-void ErfWarning(){
-	fprintf(stderr,"erf:[W] Warning thrown\n");
-	ErfDumpstacktrace();
-	fprintf(stderr,"erf:[W] (end errorlog)\n");
-};
 void ErfError(){
 	fprintf(stderr,"erf:[E] Error occured!\n");
 	ErfDumpstacktrace();
 	fprintf(stderr,"erf:[E] (end errorlog)\n");
-	exit(1);
-};
-void ErfFatal_String(char* /* borrows*/ string){
-	fprintf(stderr,"erf:[F] Fatal error occured: %s\n",string);
-	ErfDumpstacktrace();
-	fprintf(stderr,"erf:[F] (end errorlog)\n");
 	exit(1);
 };
 void ErfFatal(){

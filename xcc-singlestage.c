@@ -1025,10 +1025,12 @@ void GInitializePerfile(){
 	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 };
 void GError(){
+	ErfError();
 	fprintf(stderr,"SS: [E] Error occured, terminating \n");
 	exit(1);
 };
 void GFatal(){
+	ErfFatal();
 	fprintf(stderr,"SS: [F] Fatal error occured, terminating \n");
 	exit(1);
 };

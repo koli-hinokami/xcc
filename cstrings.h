@@ -16,7 +16,6 @@ int mtString_Length(char* str){
 	for(ptr=str;(*ptr)!=0;ptr++){;};
 	return (int)(ptr-str);
 };
-
 int mtString_Fulllength(char* str){
 	return mtString_Length(str)+1;
 };
@@ -62,7 +61,6 @@ char* mtString_Join(char* s1,char* s2){
 	memcpy(str+mtString_Length(s1),s2,mtString_Fulllength(s2));
 	return str;
 };
-
 void mtString_Append(char** s1,char* s2){
 	//s1->: Pointer to variable: takeown's and frees residing string
 	//s1<-                       creates new string and gives you ownership of
@@ -71,7 +69,6 @@ void mtString_Append(char** s1,char* s2){
 	free(*s1);
 	*s1=str;
 };
-
 bool mtString_Equals(char* s1,char* s2){
 	int i=0;
 	for(i=0;(s1[i]!=0)&&(s2[i]!=0);i++){

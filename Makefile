@@ -1,7 +1,7 @@
 # Makefile for XCC Retargetable C Compiler
 
 CC = gcc
-CFLAGS = -g -O0 -Wall -Wno-char-subscripts \
+CFLAGS = -rdynamic -g -O0 -Wall -Wno-char-subscripts \
  -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
  -DqszGVersion=\"1.0.1.0\" \
  -DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
@@ -14,6 +14,7 @@ DEPS = \
 	cstrings.h \
 	basictypes.h \
 	lists.h \
+	errorreportingfacilities.h \
 	Makefile
 
 
@@ -35,14 +36,14 @@ clean:
 	rm -f xcc-lexer
 run: build
 #	cpp ./xcc-singlestage.c -o ./xcc-singlestage.cpr
-	./xcc -m ./helloworld.c
+	./xcc ./helloworld.c
 #	./xcc -m ./xcc-singlestage.c
 #	./xcc-singlestage ./xcc-singlestage.cpr
 debug: build
 	gdb ./xcc-singlestage ./xcc-singlestage.c
 
 xcc-test: xcc-all
-	./xcc -m xcc-singlestage.c
+	./xcc xcc-singlestage.c
 
 xcc-all: xcc xcc-singlestage xcc-embedder xcc-preprocess xcc-tokenizer 
 xcc-singlestage: \

@@ -12,7 +12,7 @@ typedef struct {
 
 tLnFlagdefinition tLfFlags[] = {
 //	 last    s-ch.  str   given   def.   assigned  
-	{false,  true,  "m",  false,  false, false    },
+	{false,  true,  "m",  false,  false, false    }, // Mode - use multistage
 	{true,   false, "",   false,  false, false    }
 };
 
@@ -134,7 +134,7 @@ void compile(char* file){
 	char* filename = trimextension(file);
 	parsefile("xcc-embedder"   ,filename,".c"  ,".cem",0);
 	parsefile("xcc-preprocess" ,filename,".cem",".cpr",0);
-	if(tLnArgsGetflag("m")){
+	if(!tLnArgsGetflag("m")){
 		//Use singlestage compiler
 		parsefile("xcc-singlestage",filename,".cpr",".obj",0);
 	}else{
@@ -145,9 +145,11 @@ void compile(char* file){
 		parsefile("xcc-untypedef"  ,filename,".clx",".cut",0);
 		parsefile("xcc-unstruct"   ,filename,".cut",".blx",0);
 		parsefile("xcc-irmaker"    ,filename,".blx",".ir" ,0);
-		parsefile("xcc-ircompiler" ,filename,".ir" ,".asm",0);
-		parsefile("xcc-asm"        ,filename,".asm",".obj",0);
 	}
+	// IR Compiler and assembler currently are used by Singlestage compiler
+	// as well
+	parsefile("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
+	parsefile("xcc-asm"        ,filename,".asm",".obj",0);
 	parsefile("xcc-ld"        ,filename,".obj",".exe",0);
 	
 	free(filename);

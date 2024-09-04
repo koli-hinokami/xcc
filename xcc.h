@@ -106,6 +106,9 @@ enum tTokentype {
 	tToken_Keyworduint32t           = 179,  //uint32_t
 	tToken_Keyworduint64t           = 180,  //uint64_t
 	tToken_Keywordsizet             = 181,  //size_t
+	tToken_Keywordintptrt           = 182,  //intptr_t
+	tToken_Keywordintnearptrt       = 183,  //intnearptr_t
+	tToken_Keywordintfarptrt        = 184,  //intfarptr_t
 	//tToken_                       = 256,  //      String tokens
 	tToken_Identifier               = 256,  //Generic identifier
 	tToken_String                   = 257,  //String
@@ -182,7 +185,9 @@ enum tTokentype {
 	tLexem_Namespace                = 580,  //
 	tLexem_Using                    = 581,  //
 	tLexem_Ellipsis                 = 582,  //
-	//tLexem_                       = 582,  //
+	tLexem_Charaterconstant         = 583,  //
+	tLexem_Continuestatement        = 584,  //
+	//tLexem_                       = 586,  //
 	//tToken_                       = 768,  //      String lexems
 	//tToken_                       = 1024, //      Second AST lexems
 	tSplexem_Declarationlist        = 1024, // Same as tLexem_Declaration
@@ -423,18 +428,18 @@ char *TokenidtoName[]={
 	"tToken_Keywordvoid          ",// 170
 	"tToken_Keywordvolatile      ",// 171
 	"tToken_Keywordwhile         ",// 172
-	"tToken_Undefined            ",// 173
-	"tToken_Undefined            ",// 174
-	"tToken_Undefined            ",// 175
-	"tToken_Undefined            ",// 176
-	"tToken_Undefined            ",// 177
-	"tToken_Undefined            ",// 178
-	"tToken_Undefined            ",// 179
-	"tToken_Undefined            ",// 180
-	"tToken_Undefined            ",// 181
-	"tToken_Undefined            ",// 182
-	"tToken_Undefined            ",// 183
-	"tToken_Undefined            ",// 184
+	"tToken_Keywordint8t         ",// 173
+	"tToken_Keywordint16t        ",// 174
+	"tToken_Keywordint32t        ",// 175
+	"tToken_Keywordint64t        ",// 176
+	"tToken_Keyworduint8t        ",// 177
+	"tToken_Keyworduint16t       ",// 178
+	"tToken_Keyworduint32t       ",// 179
+	"tToken_Keyworduint64t       ",// 180
+	"tToken_Keywordsizet         ",// 181
+	"tToken_Keywordintptrt       ",// 182
+	"tToken_Keywordintnearptrt   ",// 183
+	"tToken_Keywordintfarptrt    ",// 184
 	"tToken_Undefined            ",// 185
 	"tToken_Undefined            ",// 186
 	"tToken_Undefined            ",// 187
@@ -2021,10 +2026,10 @@ char *TokenidtoName_Compact[]={
 	"uint16_t"     ,// 178
 	"uint32_t"     ,// 179
 	"uint64_t"     ,// 180
-	"?",// 181
-	"?",// 182
-	"?",// 183
-	"?",// 184
+	"size_t"       ,// 181
+	"intptr_t"     ,// 182
+	"intnearptr_t" ,// 183
+	"intfarptr_t"  ,// 184
 	"?",// 185
 	"?",// 186
 	"?",// 187
@@ -3457,6 +3462,9 @@ struct{char* keyword;int tokentype;} KeywordtoTokentype[]={
 	{"int64_t"      ,tToken_Keywordint64t           },
 	{"inline"       ,tToken_Keywordinline           },
 	{"int"          ,tToken_Keywordint              },
+	{"intptr_t"     ,tToken_Keywordintptrt          },
+	{"intnearptr_t" ,tToken_Keywordintnearptrt      },
+	{"intfarptr_t"  ,tToken_Keywordintfarptrt       },
 	{"long"         ,tToken_Keywordlong             },
 	{"nullptr"      ,tToken_Keywordnullptr          },
 //	{"namespace"    ,tToken_Keywordnamespace        },
@@ -3511,7 +3519,7 @@ typedef struct tToken {
 	char string[];
 #endif
 } tToken, *ptToken;
-typedef enum eGSegment {
+typedef enum eGSegment { // Acts as addressing mode as well
 	//none code data udata rodata stack tls
 	meGSegment_Relative,	//none
 	meGSegment_Code,	//code  == cs
@@ -3525,7 +3533,19 @@ typedef enum eGSegment {
 	                       // (fp-relative) -> stack (ss-relative)
 	meGSegment_Far,		// program-defined bank/segment
 	meGSegment_Count
-} eGSegment;
+} eGSegment, eGAddressingmode;
+char* meGSegment_ToStringTable[]= {
+	"relative",
+	"code",
+	"rodata",
+	"data",
+	"udata",
+	"tls",
+	"stack",
+	"frame",
+	"far",
+	0
+};
 typedef enum eGAtomictype {
 	eGAtomictype_Void             = 0,
 	eGAtomictype_Structure        = 1,
@@ -3629,10 +3649,62 @@ GAtomictypetostring_Entry GAtomictypetostring[] = {
 	{ eGAtomictype_Void                      , "void" },
 	{ 0, 0 }
 };
-
+char* meGAtomictype_ToStringTable[] = {
+	"void"            ,
+	"structure"       ,
+	"enumeration"     ,
+	"unresolved"      ,
+	"union"           ,
+	"pointer"         ,
+	"array"           ,
+	"function"        ,
+	"nearpointer"     ,
+	"neararray"       ,
+	"nearfunction"    ,
+	"farpointer"      ,
+	"fararray"        ,
+	"farfunction"     ,
+	"int8"            ,
+	"uint8"           ,
+	"int16"           ,
+	"uint16"          ,
+	"int24"           ,
+	"uint24"          ,
+	"int32"           ,
+	"uint32"          ,
+	"int48"           ,
+	"uint48"          ,
+	"int64"           ,
+	"uint64"          ,
+	"int80"           ,
+	"uint80"          ,
+	"float32"         ,
+	"float64"         ,
+	"float80"         ,
+	"char"            ,
+	"signedchar"      ,
+	"unsignedchar"    ,
+	"short"           ,
+	"unsignedshort"   ,
+	"int"             ,
+	"unsigned"        ,
+	"long"            ,
+	"unsignedlong"    ,
+	"longlong"        ,
+	"unsignedlonglong",
+	"boolean"         ,
+	"float"           ,
+	"double"          ,
+	"longdouble"      ,
+	"intptr"          ,
+	"intnearptr"      ,
+	"intfarptr"       ,
+	"sizet"           ,
+};
 typedef struct tGOpcode { 
 	short opr;
 	enum eGAtomictype isize;
+	enum eGSegment segment;
 } tGOpcode;
 typedef struct tGInstruction {
 	tGOpcode opcode; 
