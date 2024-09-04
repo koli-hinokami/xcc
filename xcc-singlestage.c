@@ -1110,7 +1110,7 @@ tGInstruction* mtGInstruction_Create(void){
 };
 tGInstruction* mtGInstruction_CreateAllocatestorage(tGTargetSizet size){
 	tGInstruction* i=mtGInstruction_Create();
-	i->opcode.opr=tInstruction_Allocatestorage;
+	i->opcode.opr=tInstruction_Allocatestorage2;
 	i->opcode.isize=eGAtomictype_Uint8;
 	i->immediate=size;
 	return i;

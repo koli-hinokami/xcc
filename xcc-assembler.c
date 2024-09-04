@@ -1621,6 +1621,7 @@ int main(int argc, char** argv){
 	// Emit header
 
 	// Second pass
+	iAsmRepeattimes = 1;
 #ifdef qvGDebug
 	printf("ASM:[D] Second pass \n");
 #endif

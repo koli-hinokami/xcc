@@ -1156,12 +1156,13 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	return code;
 };
 tGInstruction* IgCompileVariable(tSpNode* self){
-	assert(self->type==tSplexem_Variabledeclaration);
+	assert(self);
+	tGInstruction* retval;
 	if(self->returnedtype->atomicbasetype==eGAtomictype_Array){
 		// Compile an array
 		assert(!self->returnedtype->dynamicarraysize);
 		assert(self->returnedtype->arraysize);
-		return mtGInstruction_Join_Modify(
+		retval = mtGInstruction_Join_Modify(
 			mtGInstruction_SetLabel(
 				mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
 				mtString_Clone(self->symbol->name)
@@ -1181,7 +1182,7 @@ tGInstruction* IgCompileVariable(tSpNode* self){
 		);
 	}else{
 		// Relatively normal variable
-		return mtGInstruction_Join_Modify(
+		retval = mtGInstruction_Join_Modify(
 			mtGInstruction_SetLabel(
 				mtGInstruction_CreateBasic(tInstruction_Global,eGAtomictype_Void),
 				mtString_Clone(self->symbol->name)
@@ -1192,6 +1193,14 @@ tGInstruction* IgCompileVariable(tSpNode* self){
 			)
 		);
 	};
+	assert(self);
+	assert(self->symbol);
+	assert(self->symbol->allocatedstorage);
+	assert(self->symbol->allocatedstorage->dynamicpointer);
+	*self->symbol->allocatedstorage->dynamicpointer=*retval;
+	retval=self->symbol->allocatedstorage->dynamicpointer;
+
+	return retval;
 };
 void IgParse(tSpNode* self){
 	assert(self);
