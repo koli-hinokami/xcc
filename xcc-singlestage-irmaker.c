@@ -45,8 +45,9 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		case tSplexem_Dereference: {
 			tGInstruction* i;
 			i = IgCompileExpression(self->left);
-			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
-				tInstruction_Loadindirect,
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateSegmented(
+				tInstruction_Load,
+				meGSegment_Data,
 				self->returnedtype->atomicbasetype
 			);
 			return i;
@@ -74,7 +75,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			if(self->symbol->allocatedstorage->nonconstant){
 				return mtGInstruction_CreateCodepointer(
 					tInstruction_Loadaddress,
-					eGAtomictype_Pointer,
+					eGAtomictype_Nearpointer,
 					self->symbol->allocatedstorage->dynamicpointer
 				);
 				
@@ -84,12 +85,12 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 					return mtGInstruction_Join_Modify(
 						mtGInstruction_CreateImmediate(
 							tInstruction_Constant,
-							eGAtomictype_Pointer,
+							eGAtomictype_Nearpointer,
 							self->symbol->allocatedstorage->offset
 						),
 						mtGInstruction_CreateBasic(
 							tInstruction_Indexfp,
-							eGAtomictype_Pointer
+							eGAtomictype_Nearpointer
 						)
 					);
 				}else{
@@ -153,20 +154,120 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 		};	break;
 		case tSplexem_Cast:
 			if(mtGType_Sizeof(self->returnedtype)!=mtGType_Sizeof(self->left->returnedtype)){
-				printf("IG: [E] IgCompileExpression: Cast: Sizes mismatch: %i•%i \n",
-					mtGType_Sizeof(self->returnedtype),
-					mtGType_Sizeof(self->left->returnedtype)
+				//printf("IG: [E] IgCompileExpression: Cast: Sizes mismatch: %i•%i \n",
+				//	mtGType_Sizeof(self->returnedtype),
+				//	mtGType_Sizeof(self->left->returnedtype)
+				//);
+				//assert(mtGType_Sizeof(self->returnedtype)==mtGType_Sizeof(self->left->returnedtype));
+				//ErfFatal();
+				return mtGInstruction_Join_Modify(
+					mtGInstruction_CreateCast(
+						tInstruction_Cast,
+						self->left->returnedtype->atomicbasetype,
+						self->returnedtype->atomicbasetype
+					),
+					IgCompileExpression(self->left)
 				);
-				assert(mtGType_Sizeof(self->returnedtype)==mtGType_Sizeof(self->left->returnedtype));
 			};
 			return IgCompileExpression(self->left);
+		case tSplexem_Assign: {
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								self->right->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateSegmented(
+								tInstruction_Store,
+								meGSegment_Data, // TODO: Segmentation: Get segment using
+												 //        mtSpNode_GetSegment(self->right)
+								self->right->returnedtype->atomicbasetype
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Preincrement: {
+			assert(  self->left->returnedtype->valuecategory
+			       ==eGValuecategory_Leftvalue);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Lvalueincrement,
+					meGSegment_Data, // TODO: Segmentation: Get segment using
+									 //        mtSpNode_GetSegment(self->right)
+					self->left->returnedtype->atomicbasetype
+				)
+			);
+		};	break;
 		default:
-			assert(false);
+			printf("IG: [E] IgCompileExpression: Unrecognized "
+			       "node %i•%s \n",
+				self->type,TokenidtoName[self->type]
+			);
+			printf("IG: [E] IgCompileExpression: Secondary AST snippet: \n");
+			LfPrint_SpNode(self);
+			printf("IG: [E] IgCompileExpression: (secondary ast snippet end) \n");
+			ErfError();
+			return nullptr;
 	};
 	printf("IG: [F] IgCompileExpression: Absolutely incomprehensible control flow occured \n");
 	assert(false);
 	return nullptr;
 };
+tGInstruction* IgCompileConditionaljump(
+	tSpNode* self,
+	tGInstruction* jumptarget
+){ // compiles some exprs to compare-jump-condition
+	assert(self->returnedtype->atomicbasetype==eGAtomictype_Boolean);
+	tGInstruction* expr = nullptr;
+	// Check for special cases
+	// TODO: Disable some based on configuration file settings
+	if(self->type==tSplexem_Lessthan){
+		assert(
+			  self->left->returnedtype->atomicbasetype
+			==self->right->returnedtype->atomicbasetype
+		);
+		return mtGInstruction_Join_Modify(
+			IgCompileExpression(self->left),
+			mtGInstruction_Join_Modify(
+				mtGInstruction_CreateBasic(
+					tInstruction_Pushleft,self->left->returnedtype->atomicbasetype
+				),
+				mtGInstruction_Join_Modify(
+					IgCompileExpression(self->right),
+					mtGInstruction_Join_Modify(
+						mtGInstruction_CreateBasic(
+							tInstruction_Popright,self->right->returnedtype->atomicbasetype
+						),
+						mtGInstruction_CreateCodepointer(
+							 mtGType_IsSigned(self->left->returnedtype)
+							?tInstruction_Comparejumpsignedlessthan
+							:tInstruction_Comparejumpunsignedlessthan,
+							self->left->returnedtype->atomicbasetype,
+							jumptarget
+						)
+					)
+				)
+			)
+		);
+	};
+	// If no special cases seen, tailcall to IgCompileExpression 
+	// and append jump instruction
+	expr = IgCompileExpression(SpInsertbooleantointegercast(self));
+	mtGInstruction_GetLast(expr)->next = mtGInstruction_CreateCodepointer(
+		tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+	return expr;
+}
 tGInstruction* IgCompileStatement(tSpNode* self){
 #ifdef qvGTrace
 	printf("IG: [T] IgCompileStatement: entered %i•%s\n",self->type,TokenidtoName[self->type]);
@@ -212,8 +313,118 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			);
 			return i;
 		};	break;
+		case tSplexem_Variabledeclaration: {
+			//	forloop: initializer
+			//	_loop:   cj##cond _end
+			//	         body
+			//	         iterator
+			//	         jmp _loop
+			//	_end:
+			//
+			//	init -> cond
+			//	cond -> body end
+			//
+			if(self->right==nullptr)return nullptr; // No initializer - no code emmited
+			assert(self!=nullptr);
+			assert(self->symbol);
+			assert(self->symbol->type->valuecategory == eGValuecategory_Leftvalue);
+			assert(self->symbol->symbolkind == mtGSymbol_eType_Pointer);
+			return mtGInstruction_Join_Modify(
+					self->symbol->allocatedstorage->nonconstant 
+				?	mtGInstruction_CreateCodepointer(
+						tInstruction_Loadaddress,
+						eGAtomictype_Nearpointer,
+						self->symbol->allocatedstorage->dynamicpointer
+					)
+				:	mtGInstruction_Join_Modify(
+						mtGInstruction_CreateImmediate(
+							tInstruction_Constant,
+							eGAtomictype_Nearpointer,
+							self->symbol->allocatedstorage->offset
+						),
+						 	self->symbol->allocatedstorage->segment==meGSegment_Stackframe
+						?	mtGInstruction_CreateBasic(
+								tInstruction_Indexfp,
+								eGAtomictype_Nearpointer
+							)
+						:	nullptr
+					)
+				,
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						self->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								self->right->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateSegmented(
+								tInstruction_Store,
+								meGSegment_Data, // TODO: Segmentation: Get segment using
+												 //        mtSpNode_GetSegment(self->right)
+								self->right->returnedtype->atomicbasetype
+							)
+						)
+					)
+				)
+			);
+		};
+		case tSplexem_Forstatement: {
+			//	forloop: initializer
+			//	         jmp   _cond
+			//	_loop:   body
+			//	         iterator
+			//	_cond:   cj##cond  _loop
+			//	_end:
+			ErfEnter_String("IgCompileStatement: Forloop");
+				tGInstruction* end  = mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				ErfEnter_String("IgCompileStatement: Body");
+				tGInstruction* body = IgCompileStatement(self->right);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Initializer");
+				tGInstruction* init = IgCompileStatement(self->initializer);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Condition");
+				tGInstruction* cond = IgCompileConditionaljump(self->condition,body);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Iterator");
+				tGInstruction* iter = IgCompileStatement(self->left);
+				ErfLeave();
+				ErfEnter_String("IgCompileStatement: Binding it together");
+				mtGInstruction_GetLast(init)->next = 
+					mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						cond
+					);
+				mtGInstruction_GetLast(init)->next = body;
+				mtGInstruction_GetLast(init)->next = iter;
+				mtGInstruction_GetLast(init)->next = cond;
+				//mtGInstruction_GetLast(init)->next = 
+				//	mtGInstruction_CreateCodepointer(
+				//		tInstruction_Jump,
+				//		eGAtomictype_Void,
+				//		body
+				//	);
+				mtGInstruction_GetLast(init)->next = end;
+				ErfLeave();
+			ErfLeave();
+			return init;
+		};
 		default:
-			assert(false);
+			printf("IG: [E] IgCompileStatement: Unrecognized statement "
+			       "node %i•%s \n",
+				self->type,TokenidtoName[self->type]
+			);
+			printf("IG: [E]                     Secondary AST snippet: \n");
+			LfPrint_SpNode(self);
+			printf("IG: [E] IgCompileStatement: (secondary ast snippet end) \n");
+			ErfError();
+			return nullptr;
 	};
 	printf("IG: [F] IgCompileStatement: Absolutely incomprehensible control flow occured \n");
 	assert(false);
@@ -278,35 +489,44 @@ void IgDumpir(tGInstruction** code, FILE* file){
 			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){
 				fprintf(file,"l_%p:\t",j);
 				if(j->label)fprintf(file,"%s:\t",j->label);
-				fprintf(file,"v.%s.%s.%s\t",
-					TokenidtoName_Compact[j->opcode.opr],
-					meGSegment_ToStringTable[j->opcode.segment],
-					meGAtomictype_ToStringTable[j->opcode.isize]
-				);
+				if(j->opcode.opr == tInstruction_Cast){
+					fprintf(file,"v.%s.%s.%s\t",
+						TokenidtoName_Compact[j->opcode.opr],
+						meGAtomictype_ToStringTable[j->opcode.isize],
+						meGAtomictype_ToStringTable[j->opcode.altsize]
+					);
+				}else
+					fprintf(file,"v.%s.%s.%s\t",
+						TokenidtoName_Compact[j->opcode.opr],
+						meGSegment_ToStringTable[j->opcode.segment],
+						meGAtomictype_ToStringTable[j->opcode.isize]
+					);
 				if(	// Instruction that need a label
-					  (j->opcode.opr==tInstruction_Jump)
-					||(j->opcode.opr==tInstruction_Jumptrue)
-					||(j->opcode.opr==tInstruction_Jumpfalse)
-					||(j->opcode.opr==tInstruction_Loadaddress)
+					   j->opcode.opr==tInstruction_Jump
+					|| j->opcode.opr==tInstruction_Jumptrue
+					|| j->opcode.opr==tInstruction_Jumpfalse
+					|| j->opcode.opr==tInstruction_Loadaddress
+					|| j->opcode.opr==tInstruction_Comparejumpequal               
+					|| j->opcode.opr==tInstruction_Comparejumpnotequal            
+					|| j->opcode.opr==tInstruction_Comparejumpsignedlessthan      
+					|| j->opcode.opr==tInstruction_Comparejumpsignedlessequal     
+					|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterthan   
+					|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterequal  
+					|| j->opcode.opr==tInstruction_Comparejumpunsignedlessthan    
+					|| j->opcode.opr==tInstruction_Comparejumpunsignedlessequal   
+					|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterthan 
+					|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterequal
 				){
 					if(j->jumptarget->label){
 						fprintf(
 							file,
-							"l_%p:\tv.%s.%s.%s %s \n",
-							j,
-							TokenidtoName_Compact[j->opcode.opr],
-							meGSegment_ToStringTable[j->opcode.segment],
-							meGAtomictype_ToStringTable[j->opcode.isize],
+							"%s ",
 							j->jumptarget->label
 						);
 					}else{
 						fprintf(
 							file,
-							"l_%p:\tv.%s.%s.%s l_%p \n",
-							j,
-							TokenidtoName_Compact[j->opcode.opr],
-							meGSegment_ToStringTable[j->opcode.segment],
-							meGAtomictype_ToStringTable[j->opcode.isize],
+							"l_%p ",
 							j->jumptarget
 						);
 					}

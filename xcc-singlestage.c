@@ -579,6 +579,39 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 	};
 	return self;
 };
+bool mtGType_IsSigned(tGType* self){
+	switch(self->atomicbasetype){
+		case eGAtomictype_Char            :return false;
+		case eGAtomictype_Signedchar      :return true;
+		case eGAtomictype_Unsignedchar    :return false;
+		case eGAtomictype_Short           :return true;
+		case eGAtomictype_Unsignedshort   :return false;
+		case eGAtomictype_Int             :return true;
+		case eGAtomictype_Unsigned        :return false;
+		case eGAtomictype_Long            :return true;
+		case eGAtomictype_Unsignedlong    :return false;
+		case eGAtomictype_Longlong        :return true;
+		case eGAtomictype_Unsignedlonglong:return false;
+		case eGAtomictype_Float           :return true;
+		case eGAtomictype_Double          :return true;
+		case eGAtomictype_Longdouble      :return true;
+		case eGAtomictype_Pointer         :return true;
+		case eGAtomictype_Sizet           :return false;
+		case eGAtomictype_Intptr          :return true;
+		case eGAtomictype_Intnearptr      :return true;
+		case eGAtomictype_Intfarptr       :return true;
+		case eGAtomictype_Nearpointer     :return false; 
+		// TODO: : ptrdiff_t is signed but nearpointer is not
+		default: 
+			printf("ss: [E] mtGType_IsSigned: Unrecognized atomic type %i\n",
+				self->atomicbasetype
+			);
+			ErfError();
+			return false;
+			break;
+	};
+	
+};
 char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char *s1;
@@ -1050,6 +1083,13 @@ tGInstruction* mtGInstruction_CreateBasic(short opcode,enum eGAtomictype size){
 	i->opcode.isize=size;
 	return i;
 };
+tGInstruction* mtGInstruction_CreateSegmented(short opcode,enum eGSegment segment,enum eGAtomictype size){
+	tGInstruction* i = mtGInstruction_Create();
+	i->opcode.opr=opcode;
+	i->opcode.segment=segment;
+	i->opcode.isize=size;
+	return i;
+};
 tGInstruction* mtGInstruction_CreateImmediate(int opcode,int size,int val){
 	tGInstruction* i = mtGInstruction_Create();
 	i->opcode.opr=opcode;
@@ -1062,6 +1102,13 @@ tGInstruction* mtGInstruction_CreateCodepointer(int opcode,int size,tGInstructio
 	i->opcode.opr=opcode;
 	i->opcode.isize=size;
 	i->jumptarget=val;
+	return i;
+};
+tGInstruction* mtGInstruction_CreateCast(int opcode,int fromsize,int tosize){
+	tGInstruction* i = mtGInstruction_Create();
+	i->opcode.opr=opcode;
+	i->opcode.isize=fromsize;
+	i->opcode.altsize=tosize;
 	return i;
 };
 tGInstruction* mtGInstruction_GetLast(tGInstruction* self){

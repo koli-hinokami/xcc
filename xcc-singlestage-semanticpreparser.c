@@ -333,43 +333,30 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 		// Internal types
 		case eGAtomictype_Union: // Temporary type - gets converted to struct later on
 			return self->structsize;
-		case eGAtomictype_Nearpointer:
-			return 2;
-		case eGAtomictype_Farpointer:
-			return 4;
+		case eGAtomictype_Nearpointer:     return 2;
+		case eGAtomictype_Farpointer:      return 4;
 		case eGAtomictype_Array:
 			assert(self->arraysizepresent);
 			assert(self->dynamicarraysize==nullptr);
 			return mtGType_Sizeof(self->complexbasetype)*self->arraysize;
 		case eGAtomictype_Function:
 			assert(false);
+			ErfFatal();
+			return 9999;
 		// IR-side types (and optionally C-side)
-		case eGAtomictype_Int8:
-			return 1;
-		case eGAtomictype_Uint8:
-			return 1;
-		case eGAtomictype_Int16:
-			return 2;
-		case eGAtomictype_Uint16:
-			return 2;
-		case eGAtomictype_Int32:
-			return 4;
-		case eGAtomictype_Uint32:
-			return 4;
-		case eGAtomictype_Int64:
-			return 8;
-		case eGAtomictype_Uint64:
-			return 8;
-		case eGAtomictype_Int80:
-			return 10;
-		case eGAtomictype_Uint80:
-			return 10;
-		case eGAtomictype_Float32:
-			return 4;
-		case eGAtomictype_Float64:
-			return 8;
-		case eGAtomictype_Float80:
-			return 10;
+		case eGAtomictype_Int8:              return 1;  break;
+		case eGAtomictype_Uint8:             return 1;  break;
+		case eGAtomictype_Int16:             return 2;  break;
+		case eGAtomictype_Uint16:            return 2;  break;
+		case eGAtomictype_Int32:             return 4;  break;
+		case eGAtomictype_Uint32:            return 4;  break;
+		case eGAtomictype_Int64:             return 8;  break;
+		case eGAtomictype_Uint64:            return 8;  break;
+		case eGAtomictype_Int80:             return 10; break;
+		case eGAtomictype_Uint80:            return 10; break;
+		case eGAtomictype_Float32:           return 4;  break;
+		case eGAtomictype_Float64:           return 8;  break;
+		case eGAtomictype_Float80:           return 10; break;
 		// C-side types
 		case eGAtomictype_Char:             //return 1;
 		case eGAtomictype_Signedchar:       //return 1;
@@ -389,7 +376,8 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			printf("spp:[F] mtGType_Sizeof: Calculating size of an C-side type \n");
 			// You're supposed to have all types transformed into target types by now
 			GFatal();
-		default: {
+		default: 
+			{
 				// Resolve atomic type to string
 				char* str = "unknown";
 				for(
@@ -405,6 +393,7 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 				printf("spp:[F] mtGType_Sizeof: Unrecognized atomic type %i•%s \n",
 					self->atomicbasetype,str
 				);
+				ErfFatal();
 				assert(false);
 			};
 			break;

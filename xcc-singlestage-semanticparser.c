@@ -149,6 +149,7 @@ tSpNode* SpInsertbooleantointegercast(tSpNode* self){
 	if(!self->returnedtype)return self;
 	if(!mtGType_GetBasetype(self->returnedtype))return self;
 	
+	assert(self->returnedtype->atomicbasetype==eGAtomictype_Boolean);
 	//if(self->returnedtype->atomicbasetype==eGAtomictype_Boolean){
 		return mtSpNode_Clone(
 			&(tSpNode){
@@ -169,14 +170,12 @@ tSpNode* SpInsertintegertobooleancast(tSpNode* self){
 	if(!self->returnedtype)return self;
 	if(!mtGType_GetBasetype(self->returnedtype))return self;
 	
-	if(self->returnedtype->atomicbasetype==eGAtomictype_Boolean){
+	if(self->returnedtype->atomicbasetype!=eGAtomictype_Boolean){
 		return mtSpNode_Clone(
 			&(tSpNode){
 				.type=tSplexem_Casttoboolean,
-				.returnedtype=mtGType_Transform(
-					mtGType_CreateAtomic(
-						eGAtomictype_Boolean
-					)
+				.returnedtype=mtGType_CreateAtomic(
+					eGAtomictype_Boolean
 				),
 				.left=self,
 			}
@@ -433,8 +432,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					}
 				);
 			};	break;
-			//(forloop init cond iter body)
-			case tLexem_Forstatement: {
+			case tLexem_Forstatement: { //(forloop init cond iter body)
 				ErfEnter_String("SpParse: Forloop");
 				tSpNode* i = mtSpNode_Clone(
 					&(tSpNode){
@@ -569,6 +567,15 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				};
 				returnedtype=returnedtype->complexbasetype;
 				mtGType_GetBasetype(returnedtype)->valuecategory=eGValuecategory_Leftvalue;
+				if(right->type==tSplexem_Nullexpression){
+					return mtSpNode_Clone( // cast<lvalue T>(self->left + sizeof(T)*self->right)
+						&(tSpNode){
+							.type=tSplexem_Cast,
+							.returnedtype=returnedtype,
+							.left=left
+						}
+					);
+				}else
 				return mtSpNode_Clone( // cast<lvalue T>(self->left + sizeof(T)*self->right)
 					&(tSpNode){
 						.type=tSplexem_Cast,
@@ -582,9 +589,11 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 									&(tSpNode){
 										.type=tSplexem_Multiplication,
 										.returnedtype=mtGType_SetValuecategory(
-											mtGType_CreatePointer(
-												mtGType_CreateAtomic(
-													eGAtomictype_Void
+											mtGType_Transform(
+												mtGType_CreatePointer(
+													mtGType_CreateAtomic(
+														eGAtomictype_Void
+													)
 												)
 											),
 											eGValuecategory_Rightvalue
@@ -593,9 +602,11 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 											&(tSpNode){
 												.type=tSplexem_Cast,
 												.returnedtype=mtGType_SetValuecategory(
-													mtGType_CreatePointer(
-														mtGType_CreateAtomic(
-															eGAtomictype_Void
+													mtGType_Transform(
+														mtGType_CreatePointer(
+															mtGType_CreateAtomic(
+																eGAtomictype_Void
+															)
 														)
 													),
 													eGValuecategory_Rightvalue
@@ -724,6 +735,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					printf("SP: [E] SpParse: `=`: Assignment to right value \n");
 					GError();
 					assert(false);
+					return nullptr;
 				};
 				return mtSpNode_Clone(
 					&(tSpNode){
@@ -987,9 +999,50 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 			//	1++
 			//	(ignore)
 			//}
+			case tLexem_Increment: {
+				tSpNode* left = SpParse(self->left);
+				if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Leftvalue){
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Preincrement,
+							.returnedtype=left->returnedtype,
+							.left=left,
+						}
+					);
+				}else{
+					ErfFatal_String("SP: SpParse: Postdecrement: Unrecognized"
+					                "value category \n");
+					assert(false);
+				};
+			};	break;
+			case tLexem_Postincrement: {
+				tSpNode* left = SpParse(self->left);
+				if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Leftvalue){
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Postincrement,
+							.returnedtype=left->returnedtype,
+							.left=left,
+						}
+					);
+				}else if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Rightvalue){
+					return mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Rvalueincrement,
+							.returnedtype=left->returnedtype,
+							.left=left,
+						}
+					);
+				}else{
+					ErfFatal_String("SP: SpParse: Postdecrement: Unrecognized"
+					                "value category \n");
+					assert(false);
+				};
+			};	break;
 			case tLexem_Postdecrement: {
 				tSpNode* left = SpParse(self->left);
-				if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Rightvalue){
+				if(  mtGType_GetValuecategory(left->returnedtype)
+				   ==eGValuecategory_Leftvalue){
 					return mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Postdecrement,
@@ -997,7 +1050,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 							.left=left,
 						}
 					);
-				}else if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Leftvalue){
+				}else if(  mtGType_GetValuecategory(left->returnedtype)
+				         ==eGValuecategory_Rightvalue){
 					return mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Rvaluedecrement,
@@ -1006,7 +1060,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						}
 					);
 				}else{
-					ErfFatal_String("SP: SpParse: Postdecrement: Unrecognized value category \n");
+					ErfFatal_String("SP: SpParse: Postdecrement: Unrecognized"
+					                "value category \n");
 					assert(false);
 				};
 			};	break;

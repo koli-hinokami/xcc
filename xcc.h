@@ -165,10 +165,10 @@ char* meGAtomictype_ToStringTable[] = {
 	"pointer"         ,
 	"array"           ,
 	"function"        ,
-	"nearpointer"     ,
+	"nearptr"         ,
 	"neararray"       ,
 	"nearfunction"    ,
-	"farpointer"      ,
+	"farptr"          ,
 	"fararray"        ,
 	"farfunction"     ,
 	"int8"            ,
@@ -211,6 +211,7 @@ char* meGAtomictype_ToStringTable[] = {
 typedef struct tGOpcode { 
 	short opr;
 	enum eGAtomictype isize;
+	enum eGAtomictype altsize;
 	enum eGSegment segment;
 } tGOpcode;
 typedef struct tGInstruction {

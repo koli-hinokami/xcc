@@ -401,6 +401,7 @@ void SgParse(tLxNode* ast){
 			case tLexem_Bitwiseand:
 			case tLexem_Lessequal:
 			case tLexem_Greaterthan:
+			case tLexem_Increment:
 				break;
 		};
 		default:
