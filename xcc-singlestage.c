@@ -162,6 +162,34 @@ void LfPrint_LxNode(tLxNode* self){
 	//exit(4);
 };
 char* mtGType_ToString_Embeddable(tGType *);
+char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
+char* mtGSymbol_ToString(tGSymbol* self){
+	char buffer[4096];
+	if(self==nullptr){
+		return mtString_Clone("`(tGSymbol*)nullptr`");
+	}else{
+		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		// Some conversions
+		return mtString_Join(
+			 self->symbolkind==mtGSymbol_eType_Constant?          "const"
+			:self->symbolkind==mtGSymbol_eType_Namespace?         "namespace"
+			:self->symbolkind==mtGSymbol_eType_Pointer?           "declare"
+			:self->symbolkind==mtGSymbol_eType_Deferredevaulation?"declareexpr"
+			:self->symbolkind==mtGSymbol_eType_Typedef?           "typedef"
+			:"unknown",
+			mtString_Join(
+				mtGType_ToString(self->type),
+				mtString_Join(
+					self->name,
+					";"
+				)
+				
+			)
+		);
+	};
+	LfWriteline(buffer);
+
+};
 char* mtLxNode_ToString(tLxNode* self){
 	char buffer[512];
 	char* bufptr=buffer;
@@ -314,6 +342,47 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			};
 		};
 		return s2;
+	};
+};
+void LfiPrint_SpNode(char* pr,tSpNode* self){
+	char buffer[512];
+	char* bufptr=buffer;
+	if(self==nullptr){
+		//exit(5);
+		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
+		LfWriteline(buffer);
+	}else if(self->type==tLexem_Declarationlist){
+		LfiPrint_SpNode("l:",self->left);
+		LfiPrint_SpNode("r:",self->right);
+	}else{
+		if(self->type==tSplexem_Integerconstant){
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],(int)self->constant);
+			LfWriteline(buffer);
+			return;
+		}else if(self->type==tSplexem_Symbol){
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],mtGSymbol_ToString(self->symbol));
+			LfWriteline(buffer);
+			return;
+		}else{
+			sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
+		};
+		//exit(6);
+		LfIndent(buffer);
+		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
+		if(
+			  (self->type==tLexem_Switchcase)
+			||(self->type==tLexem_Switchdefault)
+		){
+			LfWriteline("Lf: [M] · i: ¤ Folded bound switch \n");
+		}else if(self->type==tLexem_Breakstatement){
+			LfWriteline("Lf: [M] · i: ¤ Folded bound break target \n");
+		}else{
+			LfiPrint_SpNode("i:",self->initializer);
+		};
+		LfiPrint_SpNode("c:",self->condition);
+		LfiPrint_SpNode("l:",self->left);
+		LfiPrint_SpNode("r:",self->right);
+		LfUnindent("Lf: [M]   \n");
 	};
 };
 void LfPrint_GSymbol(tGSymbol* self){

@@ -29,6 +29,7 @@ Timestamps:
 	                            multiple symbols per definition.
 	21apr2024 23:04 UTC+5       Publicrelease 5 Interim 1. Changelog lost.
 	22apr2024 22:37 UTC+5       Publicrelease 5 Interim 2. Next to no changes.
+	24apr2024 11:02 UTC+5       Publicrelease 6. Next to no changes.
 
 Stages:
 	¤ Embedder
@@ -103,6 +104,12 @@ Things to be done:
 IR Generator notes:
 	IgCompile(tSpNode* self){
 		switch(self->type){
+			case `assign`:
+				return {
+					assemble(left),
+					assemble(right),
+					v.store.(right.type)
+				};
 			case `switch`:
 				preserve(IgCurrentbreak){
 					IgCurrentbreak=GIrInstruction.CreateCnop();

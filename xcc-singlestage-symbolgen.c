@@ -215,14 +215,14 @@ void SgAutoiteratecommas(tLxNode* ast, void(*lambda)(tLxNode* ast)){
 void SgParseTypedefInternal(tLxNode* ast){
 };
 void SgParse(tGNamespace* namespace, tLxNode* ast){
+	if(ast==nullptr){
+		printf("SG: [W] SgParse: Null AST protection triggered \n");
+		return;
+	};
 #ifdef qvGTrace
 	printf("SG: [T] SgParse: Entered with node %i∙%s\n",ast->type,TokenidtoName[ast->type]);
 	//LfPrint_LxNode(ast);
 #endif
-	if(ast==nullptr){
-		printf("SG: [T] SgParse: Null AST protection triggered \n");
-		return;
-	};
 	if(namespace==nullptr){
 		printf("SG: [T] SgParse: Null namespace protection triggered \n");
 		return;

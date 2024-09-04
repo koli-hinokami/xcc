@@ -174,6 +174,9 @@ enum tTokentype {
 	//tToken_	        	= 768,		//	String lexems
 	//tToken_	        	= 1024,		//	Second AST lexems
 	tSplexem_Declarationlist	= 1024,		// Same as tLexem_Declaration
+	tSplexem_Integerconstant	= 1025,		// 
+	tSplexem_Symbol			= 1026,		//
+	//tSplexem_			= 1027,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//tToken_	        	= 1536,		//	IR instructions
 	tInstruction_Nop		= 1536+1,	//No operation
@@ -1351,10 +1354,13 @@ typedef struct tSpPrenode {
 
 typedef struct tSpNode {
 	eTokentype type;
+	tGType* returnedtype;
 	struct tSpNode * initializer;
 	struct tSpNode * condition;
 	struct tSpNode * left;
 	struct tSpNode * right;
+	tGTargetUintmax constant;
+	tGSymbol* symbol;
 	
 } tSpNode;
 

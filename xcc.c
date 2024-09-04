@@ -68,12 +68,19 @@ void runprogram(char* program, char** argv){
 	};
 	printf("\n");
 	{
-		int pid;
+		int pid,err;
 		if(!(pid=fork())){
-			//execv(program,(const char * const *)argv);
-			printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
+			execv(program,(char * const *)argv);
+			//printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
 		}else{
-			waitpid(pid,nullptr,null);
+			waitpid(pid,&err,null);
+			printf("Ln: [M] Exitcode: %i: %s∙%i %s\n",err,err>=256?"user":"posix",err>=256?err/256:err,
+				  err==  139?"segfault"
+				 :err==1*256?"generic user error"
+				 :err==4*256?"internal debug"
+				 :err==5*256?"internal debug"
+				 :""
+			);
 		};
 	};
 	//printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));
