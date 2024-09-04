@@ -194,6 +194,20 @@ bool mtChar_AsmIsTokenterminator(char self){
 	return true;                       //The rest are 'auto-whitespace' chars that begin another token
 };
 
+bool AsmIsLabelLocal(char* /* borrows */ label){
+	if(label[0]=='_' || label[0]=='.')
+		return true;
+	return false;
+};
+char* /* deallocate */ AsmLocallabelfilter(char* /* borrows */ label){
+	if(AsmIsLabelLocal(label)){
+		assert(szAsmLastlabel);
+		return mtString_Join(szAsmLastlabel,label);
+	}else{
+		return mtString_Clone(label);
+	};
+};
+
 // -- Source file get/peek wrapper --
 
 FILE* getcurrentfile(){
@@ -473,23 +487,27 @@ void mtAsmBinarytoken_Emit(tAsmBinarytoken* self,FILE* dst){
 							mtList_Find_Clojure(
 								&AsmExternallabels,
 								(bool(*)(void*,void*))mtString_Equals,
-								j->string
+								AsmLocallabelfilter(j->string)
 							)
 						){
 							// External label
 							assert(mode==1);
 							mtList_Append(relocations,
 								mtAsmRelocationentry_CreateLabel(
-									j->string
+									AsmLocallabelfilter(j->string)
 								)
 							);
 						}else{
 							// Label handled internally
-							val = AsmGetlabelvalue(j->string);
+							val = AsmGetlabelvalue( // Label offset
+								AsmLocallabelfilter(j->string));
 							assert(mode==1);
-							mtList_Append(relocations,
+							mtList_Append(relocations, // Relocate by 
+							                           // label's segment
 								mtAsmRelocationentry_CreateSegmentstart(
-									AsmGetlabelsegment(j->string)
+									AsmGetlabelsegment(
+										AsmLocallabelfilter(j->string)
+									)
 								)
 							);
 						};
@@ -1129,7 +1147,8 @@ void AsmSecondpassline(FILE* dst){
 			return;
 			break;
 		case eAsmTokentype_Label:
-			szAsmLastlabel = mtString_Clone(tok->string);
+			if(!AsmIsLabelLocal(tok->string))
+				szAsmLastlabel = mtString_Clone(tok->string);
 			mtAsmToken_Destroy(tok);
 			break;
 		case eAsmTokentype_Identifier:
@@ -1270,8 +1289,9 @@ void AsmFirstpassline(){
 			return;
 			break;
 		case eAsmTokentype_Label:
-			szAsmLastlabel = mtString_Clone(tok->string);
-			AsmCreatelabel(tok->string);
+			if(!AsmIsLabelLocal(tok->string))
+				szAsmLastlabel = mtString_Clone(tok->string);
+			AsmCreatelabel(AsmLocallabelfilter(tok->string));
 			mtAsmToken_Destroy(tok);
 			break;
 		case eAsmTokentype_Identifier:
