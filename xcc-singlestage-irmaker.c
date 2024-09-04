@@ -20,8 +20,8 @@ tGInstruction* IgCompileFunctionarguments(tSpNode* self){
 			//  differenciate `pascal` and `cdecl`/`stdcall`
 			//  functions
 			return mtGInstruction_Join_Modify(
-				IgCompileFunctionarguments(self->left),
-				IgCompileFunctionarguments(self->right)
+				IgCompileFunctionarguments(self->right),
+				IgCompileFunctionarguments(self->left)
 			);
 		default:
 			return mtGInstruction_Join_Modify(
@@ -54,6 +54,33 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				tInstruction_Load,
 				meGSegment_Data,
 				self->returnedtype->atomicbasetype
+			);
+			return i;
+		};	break;
+		case tSplexem_Negation: {
+			tGInstruction* i;
+			i = IgCompileExpression(self->left);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Negation,
+				self->returnedtype->atomicbasetype
+			);
+			return i;
+		};	break;
+		case tSplexem_Bitwiseand: {
+			tGInstruction* i;
+			i=IgCompileExpression(self->left);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Pushleft,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=IgCompileExpression(self->right);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Popright,
+				self->left->returnedtype->atomicbasetype
+			);
+			mtGInstruction_GetLast(i)->next=mtGInstruction_CreateBasic(
+				tInstruction_Bitwiseand,
+				self->left->returnedtype->atomicbasetype
 			);
 			return i;
 		};	break;
@@ -297,6 +324,183 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 	assert(false);
 	return nullptr;
 };
+tGInstruction* IgCompileInvertedconditionaljump(
+	tSpNode* self,
+	tGInstruction* jumptarget
+){ // compiles some exprs to compare-jump-condition
+	assert(self);
+	assert(self->left);
+	assert(self->returnedtype);
+	assert(self->returnedtype->atomicbasetype==eGAtomictype_Boolean);
+	tGInstruction* expr = nullptr;
+	// Check for special cases
+	// TODO: Disable some based on configuration file settings
+	switch(self->type){
+		case tSplexem_Greaterequal: {
+			assert(self->right);
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedlessthan
+								:tInstruction_Comparejumpunsignedlessthan,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Lessequal: {
+			assert(self->right);
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedgreaterthan
+								:tInstruction_Comparejumpunsignedgreaterthan,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Greaterthan: {
+			assert(self->right);
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedlessequal
+								:tInstruction_Comparejumpunsignedlessequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Lessthan: {
+			assert(self->right);
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedgreaterequal
+								:tInstruction_Comparejumpunsignedgreaterequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Casttoboolean: {
+			expr = IgCompileExpression(self->left);
+			mtGInstruction_GetLast(expr)->next = 
+				mtGInstruction_CreateCodepointer(
+					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+		};	break;
+		default:
+			assert(false);
+	};
+	// If no special cases seen, tailcall to IgCompileExpression 
+	// and append jump instruction
+	return expr;
+}
 tGInstruction* IgCompileConditionaljump(
 	tSpNode* self,
 	tGInstruction* jumptarget
@@ -309,48 +513,164 @@ tGInstruction* IgCompileConditionaljump(
 	tGInstruction* expr = nullptr;
 	// Check for special cases
 	// TODO: Disable some based on configuration file settings
-	if(self->type==tSplexem_Lessthan){
-		assert(
-			  self->left->returnedtype->atomicbasetype
-			==self->right->returnedtype->atomicbasetype
-		);
-		return mtGInstruction_Join_Modify(
-			IgCompileExpression(self->left),
-			mtGInstruction_Join_Modify(
-				mtGInstruction_CreateBasic(
-					tInstruction_Pushleft,
-					   self->left->returnedtype->valuecategory
-					 ==eGValuecategory_Leftvalue
-					?eGAtomictype_Nearpointer
-					:self->left->returnedtype->atomicbasetype
-				),
+	switch(self->type){
+		case tSplexem_Greaterequal: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
 				mtGInstruction_Join_Modify(
-					IgCompileExpression(self->right),
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
 					mtGInstruction_Join_Modify(
-						mtGInstruction_CreateBasic(
-							tInstruction_Popright,
-							   self->left->returnedtype->valuecategory
-							 ==eGValuecategory_Leftvalue
-							?eGAtomictype_Nearpointer
-							:self->left->returnedtype->atomicbasetype
-						),
-						mtGInstruction_CreateCodepointer(
-							 mtGType_IsSigned(self->left->returnedtype)
-							?tInstruction_Comparejumpsignedlessthan
-							:tInstruction_Comparejumpunsignedlessthan,
-							self->left->returnedtype->atomicbasetype,
-							jumptarget
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedgreaterequal
+								:tInstruction_Comparejumpunsignedgreaterequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
 						)
 					)
 				)
-			)
-		);
+			);
+		};	break;
+		case tSplexem_Lessequal: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedlessequal
+								:tInstruction_Comparejumpunsignedlessequal,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Greaterthan: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedgreaterthan
+								:tInstruction_Comparejumpunsignedgreaterthan,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Lessthan: {
+			assert(
+				  self->left->returnedtype->atomicbasetype
+				==self->right->returnedtype->atomicbasetype
+			);
+			return mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_Join_Modify(
+					mtGInstruction_CreateBasic(
+						tInstruction_Pushleft,
+						   self->left->returnedtype->valuecategory
+						 ==eGValuecategory_Leftvalue
+						?eGAtomictype_Nearpointer
+						:self->left->returnedtype->atomicbasetype
+					),
+					mtGInstruction_Join_Modify(
+						IgCompileExpression(self->right),
+						mtGInstruction_Join_Modify(
+							mtGInstruction_CreateBasic(
+								tInstruction_Popright,
+								   self->left->returnedtype->valuecategory
+								 ==eGValuecategory_Leftvalue
+								?eGAtomictype_Nearpointer
+								:self->left->returnedtype->atomicbasetype
+							),
+							mtGInstruction_CreateCodepointer(
+								 mtGType_IsSigned(self->left->returnedtype)
+								?tInstruction_Comparejumpsignedlessthan
+								:tInstruction_Comparejumpunsignedlessthan,
+								self->left->returnedtype->atomicbasetype,
+								jumptarget
+							)
+						)
+					)
+				)
+			);
+		};	break;
+		case tSplexem_Casttoboolean: {
+			expr = IgCompileExpression(self->left);
+			mtGInstruction_GetLast(expr)->next = 
+				mtGInstruction_CreateCodepointer(
+					tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
+		};	break;
+		default:
+			assert(false);
 	};
-	// If no special cases seen, tailcall to IgCompileExpression 
-	// and append jump instruction
-	expr = IgCompileExpression(SpInsertbooleantointegercast(self));
-	mtGInstruction_GetLast(expr)->next = mtGInstruction_CreateCodepointer(
-		tInstruction_Jumptrue,eGAtomictype_Void,jumptarget);
 	return expr;
 }
 tGInstruction* IgCompileStatement(tSpNode* self){
@@ -359,6 +679,23 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 #endif
 	assert(self);
 	switch(self->type){
+		case tSplexem_Declarationlist: {
+			ErfEnter_String("IgCompileStatement: Declarationlist");
+			tGInstruction* i;
+			if(self->left){
+				i=IgCompileStatement(self->left);
+				if(!i)i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				assert(i);
+			}else{
+				i=mtGInstruction_CreateBasic(tInstruction_Cnop,eGAtomictype_Void);
+				assert(i);
+			};
+			assert(i);
+			assert(mtGInstruction_GetLast(i));
+			if(self->right)mtGInstruction_GetLast(i)->next=IgCompileStatement(self->right);
+			ErfLeave();
+			return i;
+		};	break;
 		case tSplexem_Blockstatement: {
 			ErfEnter_String("IgCompileStatement: Blockstatement");
 			tGInstruction* i;
@@ -487,7 +824,15 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 				tGInstruction* init = IgCompileStatement(self->initializer);
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Condition");
-				tGInstruction* cond = IgCompileConditionaljump(self->condition,body);
+				tGInstruction* cond = 
+					 self->condition->type==tSplexem_Nullexpression
+					?mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						body
+					)
+					:IgCompileConditionaljump(self->condition,body)
+					;
 				ErfLeave();
 				ErfEnter_String("IgCompileStatement: Iterator");
 				tGInstruction* iter = IgCompileStatement(self->left);
@@ -513,6 +858,50 @@ tGInstruction* IgCompileStatement(tSpNode* self){
 			ErfLeave();
 			return init;
 		};
+		case tSplexem_Ifstatement: {
+			//		ifstatement
+			//
+			//		cj	_t
+			//		false
+			//		jmp	_e
+			//_t	true
+			//_e	
+			//
+			//		cjn	_e
+			//		true
+			//_e
+			ErfEnter_String("IgCompileStatement: `if`");
+			tGInstruction* i = mtGInstruction_CreateCnop();
+			ErfUpdate_String("IgCompileStatement: `if` - then");
+			tGInstruction* thenbranch = IgCompileStatement(self->left);
+			tGInstruction* cond;
+			if(self->right){
+				ErfUpdate_String("IgCompileStatement: `if` - else");
+				tGInstruction* elsebranch = IgCompileStatement(self->right);
+				ErfUpdate_String("IgCompileStatement: `if` - condition");
+				cond = IgCompileConditionaljump(self->condition,thenbranch);
+				ErfUpdate_String("IgCompileStatement: `if` - tying together");
+				mtGInstruction_GetLast(cond)->next=elsebranch;
+				mtGInstruction_GetLast(cond)->next=
+					mtGInstruction_CreateCodepointer(
+						tInstruction_Jump,
+						eGAtomictype_Void,
+						i
+					);
+				mtGInstruction_GetLast(cond)->next=thenbranch;
+				mtGInstruction_GetLast(cond)->next=i;
+				i=cond;
+			}else{
+				ErfUpdate_String("IgCompileStatement: `if` - condition");
+				cond = IgCompileInvertedconditionaljump(self->condition,i);
+				ErfUpdate_String("IgCompileStatement: `if` - tying together");
+				mtGInstruction_GetLast(cond)->next=thenbranch;
+				mtGInstruction_GetLast(cond)->next=i;
+				i=cond;
+			};
+			ErfLeave();
+			return i;
+		};	break;
 		default:
 			printf("IG: [E] IgCompileStatement: Unrecognized statement "
 			       "node %i•%s \n",
@@ -565,8 +954,6 @@ tGInstruction* IgCompileFunction(tSpNode* self){
 	};
 	ErfLeave();
 	return code;
-
-
 };
 tGInstruction* IgCompileVariable(tSpNode* self){
 	assert(self->type==tSplexem_Variabledeclaration);

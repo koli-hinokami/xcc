@@ -49,7 +49,8 @@ enum tTokentype {
 	tToken_Comma                    = 46,   //,
 	tToken_Semicolon                = 47,   //;
 	tToken_Ellipsis                 = 48,   //...
-	tToken_Integerconstant          = 96,   //
+	tToken_Integerconstant          = 96,   // a constant
+	tToken_Unsignedintegerconstant  = 97,   // same but unsigned
 	tToken_Whitespace               = 127,  //
 	//tToken_                       = 47,   //      Keywords
 	tToken_Keywordalignas           = 128,  //alignas
@@ -238,8 +239,11 @@ enum tTokentype {
 	tSplexem_Shiftright             = 1067, //
 	tSplexem_Negation               = 1068, //
 	tSplexem_Bitwiseand             = 1069, //
+	tSplexem_Greaterthan            = 1070, //
+	tSplexem_Greaterequal           = 1071, //
+	tSplexem_Lessequal              = 1072, //
 	//tSplexem_                     = ,     //
-	//tToken_                       = 1280, //      Second AST string lexems
+	//tToken_                       = 1280, //      Secondary AST string lexems
 	//                                      //        Actually are deprecated
 	//tToken_                       = 1536, //      IR instructions
 	tInstruction_Cnop               = 1536, //Clash nop - used internally
@@ -286,6 +290,8 @@ enum tTokentype {
 	tInstruction_Constantshiftright = 1577, //Shifts by a constant amount
 	tInstruction_Allocatestorage2   = 1578, //Requires immediate that tells how many times to reserve the storage
 	tInstruction_Multiply           = 1579, //Doesn't produce top half of result
+	tInstruction_Bitwiseand         = 1580, //
+	tInstruction_Negation           = 1581, //
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -390,7 +396,7 @@ char *TokenidtoName[]={
 	"tToken_Undefined            ",// 94 
 	"tToken_Undefined            ",// 95 
 	"tToken_Integerconstant      ",// 96 
-	"tToken_Undefined            ",// 97 
+	"tToken_Unsignedintegerconst>",// 97 
 	"tToken_Undefined            ",// 98 
 	"tToken_Undefined            ",// 99 
 	"tToken_Undefined            ",// 100
@@ -1363,9 +1369,9 @@ char *TokenidtoName[]={
 	"tSplexem_Shiftright         ",// 1067
 	"tSplexem_Negation           ",// 1068
 	"tSplexem_Bitwiseand         ",// 1069
-	"tSplexem_Undefined          ",// 1070
-	"tSplexem_Undefined          ",// 1071
-	"tSplexem_Undefined          ",// 1072
+	"tSplexem_Greaterthan        ",// 1070
+	"tSplexem_Greaterequal       ",// 1071
+	"tSplexem_Lessequal          ",// 1072
 	"tSplexem_Undefined          ",// 1073
 	"tSplexem_Undefined          ",// 1074
 	"tSplexem_Undefined          ",// 1075
@@ -3463,8 +3469,8 @@ char *TokenidtoName_Compact[]={
 	"constantshr"                 ,// 1577
 	"r2"                          ,// 1578
 	"mul"                         ,// 1579
-	"?"                           ,// 1580
-	"?"                           ,// 1581
+	"bitwiseand"                  ,// 1580
+	"negate"                      ,// 1581
 	"?"                           ,// 1582
 	"?"                           ,// 1583
 	"?"                           ,// 1584

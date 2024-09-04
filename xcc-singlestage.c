@@ -716,6 +716,18 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 			"*"
 		);
 		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Nearpointer){ 
+		return mtString_Join(
+			mtGType_ToString_Embeddable(self->complexbasetype),
+			"*near"
+		);
+		//LfPrint_GNamespace(self->structure);
+	}else if(self->atomicbasetype==eGAtomictype_Farpointer){ 
+		return mtString_Join(
+			mtGType_ToString_Embeddable(self->complexbasetype),
+			"*far"
+		);
+		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Array){ 
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),

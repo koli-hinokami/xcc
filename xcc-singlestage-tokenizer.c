@@ -275,13 +275,17 @@ void TkTokenize(FILE* srcfile){
 				}else{
 					if(isdigit(str1[0])){
 						// A (potential) number. Need to parse it.
-						//Negative numbers are handled as unary minus operation applied to positive number and optimizer
-						//TODO make it
-						
+						//Negative numbers are handled as unary minus operation
+						//applied to positive number and optimizer
+						char* strtol_tail;
+						tGTargetUintmax constant = strtol(str1,&strtol_tail,0);
 						TkEmittoken(
 							(tToken){
-								.type=tToken_Integerconstant,
-								.constant=TkStringtonumber(str1)
+								.type=
+									 strtol_tail[0]=='u'
+									?(strtol_tail++,tToken_Unsignedintegerconstant)
+									:tToken_Integerconstant,
+								.constant=constant
 							}
 						);
 					}else{

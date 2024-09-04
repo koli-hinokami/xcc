@@ -38,197 +38,328 @@ puts_r: pop	si
 	pop	ra
 	.times	2	pop	c
 	ret
-CliWriteinteger:	; My routine for dumping integers to string
-	pop	c
-	pop	d
-	mov	b,	6
-CliWriteinteger_loop:
-	mov	tx,	CliWriteinteger_waituart
-CliWriteinteger_waituart:
+;CliWriteinteger:	; My routine for dumping integers to string
+;	pop	c
+;	pop	d
+;	mov	b,	6
+;CliWriteinteger_loop:
+;	mov	tx,	CliWriteinteger_waituart
+;CliWriteinteger_waituart:
+;	in	a,	uart_ctrl
+;	shl	a
+;	jlc	tx
+;	push	b
+;	mov	a,	7
+;	and	a,	c
+;	mov	b,	48
+;	add	a,	b
+;	pop	b
+;	out	uart_data, a
+;	.times 3 slr	cd
+;	dec	b
+;	jnz	CliWriteinteger_loop
+;	ret
+putchar:		; stdcall void ¤(char ch)
+	mov	tx,	putchar_l
+putchar_l:
 	in	a,	uart_ctrl
 	shl	a
 	jlc	tx
-	push	b
-	mov	a,	7
-	and	a,	c
-	mov	b,	48
-	add	a,	b
-	pop	b
+	pop	a
 	out	uart_data, a
-	.times 3 slr	cd
-	dec	b
-	jnz	CliWriteinteger_loop
 	ret
-	
-; 16*16->32 Unsigned Multiplication routine, graciously provided by James Sharman
-;             63 - 381 Cycles  
-; __reg_abcd__ uint32_t ¤(__reg_ab__ uint16_t val1, __reg_cd__ uint16_t val2)
-Math_Multiply_16_16: 
-	push ra
-	
-	push a
-	push b
-	
-	call Math_Multiply_16_8   ; abc=ab*c         ; low triple 
-	
-	mov tl,a 
-	mov th,b 
-	
-	pop b
-	pop a
-	
-	nop
-	
-	push tl
-	push th
-	push c
-	
-	mov c,d 	
-	
-	call Math_Multiply_16_8   ; abc=ab*c         ; high tripple 
-	
-	mov d,c     
-	mov c,b
-	mov b,a       ; shuffle them up into correct location. 
-	
-	pop a         ; c from low tripple. 
-	add c,a
-	incc d
-	
-	pop a         ; b from low tribble
-	add b,a
-	incc c
-	incc d
-	
-	pop a         ; nothing to ripple add to. 
-
-	pop ra
+memset:			; stdcall void ¤(void* area, uint8_t byte, size_t size)
+	; TODO: Save `di`
+	pop	di
+	pop	a
+	pop	cd
+	mov	tx,	memset_l
+memset_l:
+	stosb
+	dec	c
+	jnz	tx
+	dec	d
+	jnz	tx
 	ret
-; 16*8->24 Unsigned Multiplication routine, graciously provided by James Sharman
-; Paramaters: ab LHS Input
-;             c  RHS Input
-; Overwrites: 
-; Returns:    abc result
-;             9 - 168 Cycles  
-Math_Multiply_16_8:		proc	
-	test c
-	jz Math_Multiply_16_8_zero
-
-	push ra
-	push d
-
-	push b    ;save the upper half of LHS
-	mov b,c   ;mov rhs into b. 
-	
-	call Math_Multiply_8_8_zt
-	; cd now our return. 
-	
-	pop a     ; Get then upper half of LHS
-	nop
-	push c    ; and save result from first mul.
-	push d
-	
-	;b is still RHS 
-	call Math_Multiply_8_8_zt
-	
-	;cd 
-	pop b     
-	pop a     ; a is low 8 bits, not contended.  
-	add b,c   ; b is some of overlap
-	
-	incc d    ; that add may carry into d.
-	mov c,d 
-	
-	pop d
-	pop ra
+math_divide_16_8:	; stdcall uint16_t(uint16_t, uint8_t)
+	pop	ab
+	pop	c
+	jmp	Math_Divide_16_8
 	ret
-	endp
-
-Math_Multiply_16_8_zero:
-	mov a,c
-	mov b,c
+math_abs:
+	pop	ab
+	jmp	Math_ABS_16
 	ret
-; Early out version that can be much faster if one param is zero. Or it adds 12 cycles worst case 
-;             8-65 Cycles 
-Math_Multiply_8_8_zt:	proc
-	mov tx,Math_Multiply_8_8_retZ
-	test a
-	jz tx
-	test b 
-	jz tx
-	; otherwise we fall into Math_Multiply_8_8
-	endp	
-	; ^ does a fall downwards
-; 8*8->16 Unsigned Multiplication routine, graciously provided by James Sharman
-; Paramaters: a LHS Input
-;             b RHS Input
-; Overwrites: 
-; Returns:    cd result
-;             53 Cycles  (8086  70-77)
-Math_Multiply_8_8:	proc
-	push b
-
-	xor c,c       ; set result (low) to zero
-	add b,b       ; get next highest bit of rhs
-	mov d,c       ; copy zero to result (high) 
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	shl c         ; shift cd up 1 place
-	shl d
-	add b,b       ; get next highest bit of rhs
-	nop
-	addac c,a     ; conditionaly add lhs to result (low)
-	incc d        ;   carry add over to result (high)
-
-	pop b
+fixed16_mul:		; stdcall fixed16 ¤(fixed16 a, fixed16 b)
+	pop	ab
+	pop	cd
+	jmp	Math_Multiply_fp88_fp88
 	ret
-	endp
-; return case for zero test version.
-Math_Multiply_8_8_retZ:	proc
-	xor c,c
-	mov d,c
+fixed16_divide:		; stdcall fixed16 ¤(fixed16 numerator, fixed16 denominator)
+	pop	ab
+	pop	cd
+	jmp	Math_Divide_fp88_fp88
 	ret
-	endp
+fixed16_reciprocal:	; stdcall fixed16 ¤(fixed16 num)
+	mov	ab,	256
+	pop	cd
+	jmp	Math_Divide_fp88_fp88
+	ret
+fixed16_sinetab:
+	dw	0
+	dw	0
+	dw	12
+	dw	12
+	dw	25
+	dw	25
+	dw	37
+	dw	37
+	dw	49
+	dw	49
+	dw	62
+	dw	62
+	dw	74
+	dw	74
+	dw	86
+	dw	86
+	dw	97
+	dw	97
+	dw	109
+	dw	109
+	dw	120
+	dw	120
+	dw	131
+	dw	131
+	dw	142
+	dw	142
+	dw	152
+	dw	152
+	dw	162
+	dw	162
+	dw	171
+	dw	171
+	dw	181
+	dw	181
+	dw	189
+	dw	189
+	dw	197
+	dw	197
+	dw	205
+	dw	205
+	dw	212
+	dw	212
+	dw	219
+	dw	219
+	dw	225
+	dw	225
+	dw	231
+	dw	231
+	dw	236
+	dw	236
+	dw	241
+	dw	241
+	dw	244
+	dw	244
+	dw	248
+	dw	248
+	dw	251
+	dw	251
+	dw	253
+	dw	253
+	dw	254
+	dw	254
+	dw	255
+	dw	255
+	dw	256
+	dw	256
+	dw	255
+	dw	255
+	dw	254
+	dw	254
+	dw	253
+	dw	253
+	dw	251
+	dw	251
+	dw	248
+	dw	248
+	dw	244
+	dw	244
+	dw	241
+	dw	241
+	dw	236
+	dw	236
+	dw	231
+	dw	231
+	dw	225
+	dw	225
+	dw	219
+	dw	219
+	dw	212
+	dw	212
+	dw	205
+	dw	205
+	dw	197
+	dw	197
+	dw	189
+	dw	189
+	dw	181
+	dw	181
+	dw	171
+	dw	171
+	dw	162
+	dw	162
+	dw	152
+	dw	152
+	dw	142
+	dw	142
+	dw	131
+	dw	131
+	dw	120
+	dw	120
+	dw	109
+	dw	109
+	dw	97
+	dw	97
+	dw	86
+	dw	86
+	dw	74
+	dw	74
+	dw	62
+	dw	62
+	dw	49
+	dw	49
+	dw	37
+	dw	37
+	dw	25
+	dw	25
+	dw	12
+	dw	12
+	dw	0
+	dw	0
+	dw	65524
+	dw	65524
+	dw	65511
+	dw	65511
+	dw	65499
+	dw	65499
+	dw	65487
+	dw	65487
+	dw	65474
+	dw	65474
+	dw	65462
+	dw	65462
+	dw	65450
+	dw	65450
+	dw	65439
+	dw	65439
+	dw	65427
+	dw	65427
+	dw	65416
+	dw	65416
+	dw	65405
+	dw	65405
+	dw	65394
+	dw	65394
+	dw	65384
+	dw	65384
+	dw	65374
+	dw	65374
+	dw	65365
+	dw	65365
+	dw	65355
+	dw	65355
+	dw	65347
+	dw	65347
+	dw	65339
+	dw	65339
+	dw	65331
+	dw	65331
+	dw	65324
+	dw	65324
+	dw	65317
+	dw	65317
+	dw	65311
+	dw	65311
+	dw	65305
+	dw	65305
+	dw	65300
+	dw	65300
+	dw	65295
+	dw	65295
+	dw	65292
+	dw	65292
+	dw	65288
+	dw	65288
+	dw	65285
+	dw	65285
+	dw	65283
+	dw	65283
+	dw	65282
+	dw	65282
+	dw	65281
+	dw	65281
+	dw	65280
+	dw	65280
+	dw	65281
+	dw	65281
+	dw	65282
+	dw	65282
+	dw	65283
+	dw	65283
+	dw	65285
+	dw	65285
+	dw	65288
+	dw	65288
+	dw	65292
+	dw	65292
+	dw	65295
+	dw	65295
+	dw	65300
+	dw	65300
+	dw	65305
+	dw	65305
+	dw	65311
+	dw	65311
+	dw	65317
+	dw	65317
+	dw	65324
+	dw	65324
+	dw	65331
+	dw	65331
+	dw	65339
+	dw	65339
+	dw	65347
+	dw	65347
+	dw	65355
+	dw	65355
+	dw	65365
+	dw	65365
+	dw	65374
+	dw	65374
+	dw	65384
+	dw	65384
+	dw	65394
+	dw	65394
+	dw	65405
+	dw	65405
+	dw	65416
+	dw	65416
+	dw	65427
+	dw	65427
+	dw	65439
+	dw	65439
+	dw	65450
+	dw	65450
+	dw	65462
+	dw	65462
+	dw	65474
+	dw	65474
+	dw	65487
+	dw	65487
+	dw	65499
+	dw	65499
+	dw	65511
+	dw	65511
+	dw	65524
+	dw	65524
+
