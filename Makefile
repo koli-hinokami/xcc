@@ -3,7 +3,7 @@
 CC = gcc
 CFLAGS = -g -O0 -D__timestamp__=\"$(TIMESTAMP)\" -D__buildlab__=\"kolishome\" \
 -DqszGVersion=\"1.0.1.0\" \
--DqvGDebug -DqvGTrace -D_qvGTraceexpressions -D_qvGIgnorefatals
+-DqvGDebug -DqvGTrace -D_qvGTraceexpressions
 #-D__buildlab__=\"$(USER)\"
 TIMESTAMP = `date +%y%m%d-%H%M`
 DEPS = hyperheader.h xcc.h softpipe.h cstrings.h basictypes.h lists.h Makefile
@@ -40,10 +40,8 @@ xcc-singlestage: \
 	xcc-singlestage.c \
 	xcc-singlestage-tokenizer.c \
 	xcc-singlestage-lexicalparser.c \
-	xcc-singlestage-semanticpreparser.c \
 	xcc-singlestage-symbolgen.c \
 	xcc-singlestage-semanticparser.c \
-	xcc-singlestage-irmaker.c \
 	xcc-singlestage-fetcher.c \
 	xcc-singlestage-launcher.c
 

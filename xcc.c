@@ -68,31 +68,12 @@ void runprogram(char* program, char** argv){
 	};
 	printf("\n");
 	{
-		int pid,err;
+		int pid;
 		if(!(pid=fork())){
-			execv(program,(char * const *)argv);
-			//printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
+			//execv(program,(const char * const *)argv);
+			printf("Ln: [M] Exitcode: %i\n",execv(program,(char * const *)argv));
 		}else{
-			waitpid(pid,&err,null);
-			if(err){
-				fprintf(stderr,"Ln: [M] Exitcode [%i: %s∙%i %s] on program \"%s\"\n",err,err>=256?"user":"posix",err>=256?err/256:err,
-					 err==  139?"segfault"
-					:err==  134?"failed assertion"
-					:err==1*256?"generic user error"
-					:err==4*256?"internal debug"
-					:err==5*256?"internal debug"
-					:"",
-					program
-				);
-			};
-			printf("Ln: [M] Exitcode: %i: %s∙%i %s\n",err,err>=256?"user":"posix",err>=256?err/256:err,
-				  err==  139?"segfault"
-				 :err==  134?"failed assertion"
-				 :err==1*256?"generic user error"
-				 :err==4*256?"internal debug"
-				 :err==5*256?"internal debug"
-				 :""
-			);
+			waitpid(pid,nullptr,null);
 		};
 	};
 	//printf("Ln: [M] Exitcode: %i\n",spawnv(_P_WAIT,program,(const char * const *)argv));

@@ -186,7 +186,7 @@ void TkTokenize(FILE* srcfile){
 							.string = str1
 						}
 					);
-					//free(str1);
+					free(str1);
 				};
 				break;
 			case '\"':	//String incoming!
@@ -205,7 +205,9 @@ void TkTokenize(FILE* srcfile){
 									default:
 										break;
 								};
-								mtString_Append(&str1,(char*)(&(char[2]){buffer2,0}));
+								str2=mtString_Join(str1,(char*)(&(char[2]){buffer2,0}));
+								free(str1);
+								str1=str2;
 										
 								break;
 							case '\"':
@@ -223,7 +225,7 @@ void TkTokenize(FILE* srcfile){
 							.string = str1
 						}
 					);
-					//free(str1);
+					free(str1);
 				};
 				break;
 			case '\t':

@@ -29,7 +29,6 @@
 
 void LnCompile(char* file){
 	printf("L:  [M] Compiling \"%s\"\n",file);
-	GInitializePerfile();
 	// preprocess file
 	//char* filename = LnTrimextension(file);
 	//LnParsefile("cpp",filename,".c",".cpr",0);
@@ -45,92 +44,42 @@ void LnCompile(char* file){
 	};
 	// Tokenize
 	TkTokenize(srcfile);
-	if(0){
-		printf("L:  [D] . Printing tList<tToken> GTokenized :\n");
-		for(tListnode* i=GTokenized.first;i!=nullptr;i=i->next){
-			tToken* j=i->item;
-			if(i->next){
-				if(mtToken_HasString(j))
-				printf("L:  [D] | %p->%p   .- %s \n",i,j,j->string);
-				printf("L:  [D] | %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
-			}else{
-				printf("L:  [D] ' %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
-			};
+	/*
+	printf("L:  [D] . Printing tList<tToken> GTokenized :\n");
+	for(tListnode* i=GTokenized.first;i!=nullptr;i=i->next){
+		tToken* j=i->item;
+		if(i->next){
+			if(mtToken_HasString(j))
+			printf("L:  [D] | %p->%p  .- %s \n",i,j,j->string);
+			printf("L:  [D] | %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
+		}else{
+			printf("L:  [D] ' %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
 		};
 	};
+	*/
 	fclose(srcfile);
 	// Lexical parsing
-	fprintf(stderr,"L:  [M] Lexicalparser \n");
 	GLexed = LxParse(GTokenized.first);
-	if(0){
-		fprintf(stderr,"L:  [M] Printing First AST \n");
-		LfPrint_LxNode(GLexed);
-		fprintf(stderr,"L:  [M] Done printing First AST \n");
-	};
-	//exit(4);
-	// Preparse
-	fprintf(stderr,"L:  [M] Lexicalpostparser \n");
-	GRootnamespace = mtGNamespace_Create();
-	GLexed->name_space=GRootnamespace;
-	GLexed = SppPreparse(GLexed,nullptr); // Semanticalpreparser produces 
-	                                      // same type of tree that 
-					      // Lexicalparser does
-	if(1){
-		fprintf(stderr,"L:  [M] Printing Primary AST \n");
-		LfPrint_LxNode(GLexed);
-		fprintf(stderr,"L:  [M] Done printing Primary AST \n");
-	};
-	//exit(4);
+	LfPrint_LxNode(GLexed);
 	// Symbol generation - includes structs
-	fprintf(stderr,"L:  [M] Symbolgen \n");
+	GRootnamespace = mtGNamespace_Create();
 	SgUnresolvedtypes = mtList_Create();
 	SgUnresolvedstructures = mtList_Create();
-	SgCompilablestructures = mtList_Create();
 	GStructuretypes = mtGNamespace_Create();
-	SgParse(GLexed);
-	if(1){
-		fprintf(stderr,"L:  [M] Printing Rootnamespace \n");
-		LfPrint_GNamespace(GRootnamespace);
-		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
-	};
+	SgParse(GRootnamespace,GLexed);
+	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen second pass
-	//SgUnresolvedtypes = mtList_Create();
-	fprintf(stderr,"L:  [M] Symbolgen second pass - finding unresolved types\n");
+	SgUnresolvedtypes = mtList_Create();
 	SgFindunresolvedtypes(GRootnamespace);
-	fprintf(stderr,"L:  [M] Symbolgen second pass - resolving unresolved types\n");
 	SgResolveunresolvedtypes();
-	fprintf(stderr,"L:  [M] Symbolgen second pass - compiling structures\n");
-	SgCompilestructures();
-	if(1){
-		fprintf(stderr,"L:  [M] Printing Rootnamespace \n");
-		LfPrint_GNamespace(GRootnamespace);
-		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
-	};
+	LfPrint_GNamespace(GRootnamespace);
 	// Symbolgen struct registration
 	//  not done separately anymore!
 	// Semantic parsing - compiles structs
-	//exit(4);
-	fprintf(stderr,"L:  [M] Semanticparser\n");
 	GSecondaryast = SpParse(GLexed);
-	if(1){
-		fprintf(stderr,"L:  [M] Printing Secondary AST \n");
-		LfPrint_SpNode(GSecondaryast);
-		fprintf(stderr,"L:  [M] Done printing Secondary AST \n");
-	};
-	//exit(4);
 	/// The question is where `struct`s go
 	// Compile
-	fprintf(stderr,"L:  [M] IR Generator\n");
-	IgParse(GSecondaryast);
-	fprintf(stderr,"L:  [M] Printing IR\n");
-	printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
-	printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
-	printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
-	printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
-	fprintf(stderr,"L:  [M] Done printing IR\n");
-	fprintf(stderr,"L:  [M] Codegen\n");
 	// Write object file
-	fprintf(stderr,"L:  [M] Done compiling\n");
 };
 int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
@@ -138,7 +87,8 @@ int main(int argc,char* argv[]) {
 	printf("L:      Singlestage build - sources to object file\n");
 	printf("L:      Version 1.0.1.0.gcc-x86_64-cygwin." __buildlab__ "." __timestamp__ "0\n");
 	printf("L:      ----------------------------------------------------\n");
-	int aindex=1; //Command-line options
+	int aindex=1;
+	//Command-line options
 	printf("L:  [T] Options:\n");
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
