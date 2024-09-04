@@ -42,6 +42,17 @@ Timestamps:
 	01may2024                   Development seems to slow down. I may go more into
 	                            documenting things rather than to actually implement 
 				    them.
+	04may2024 03:10             Publicrelease 8.
+	04may2024 15:22             Publicrelease 8 Interim 1.
+	04may2024 21:23             Publicrelease 8 Interim 2.
+	05may2024 17:35             Publicrelease 8 Interim 3.
+	06may2024 03:42             Publicrelease 8 Interim 4.
+	07may2024 02:58             Publicrelease 8 Interim 5.
+	07may2024 16:57             Publicrelease 8 Interim 6.
+	09may2024 03:12             Publicrelease 9. Charaterized by going for 
+	                            developing Semanticparser and IR Generator 
+				    simultaneously and first properly generated 
+				    code.
 C Grammar deviations:
 
 	• Logical AND/OR operators `&&` and `||` are lower priority compared to 

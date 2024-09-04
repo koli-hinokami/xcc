@@ -11,7 +11,7 @@ tSppNode* mtSppNode_Create(){
 
 tGType* SppGeneratetype(tGType* basetype, tLxNode* typeexpr, char* *name);
 tListnode /* <tGType> */ * SppParsefunctionarguments(tLxNode* expr){
-	return nullptr;
+	//return nullptr;
 	if(!expr){
 		// wat
 		fprintf(stderr,"SG: [E] SppParsefunctionarguments: Null pointer!\n");
@@ -212,7 +212,7 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			node->left=self->left->left;
 			node->right=self->left->right;
 			return node;
-		}else {
+		}else{
 #ifdef qvGTrace
 		printf("SPP:[T] SppPreparse: Rawvariabledeclaration: Confirm\n");
 #endif
@@ -234,7 +234,7 @@ tLxNode* SppPreparse(tLxNode* self,tLxNode* parentnode){ // Lexicalpostparser
 			node1->returnedtype=node->returnedtype;
 			node1->left=self->left->left;
 			tLxNode* node2 = mtLxNode_Create();
-			node2->type=tLexem_Rawvariabledeclaration;
+			node2->type=tLexem_Typedefinition;
 			node2->returnedtype=node->returnedtype;
 			node2->left=self->left->right;
 			

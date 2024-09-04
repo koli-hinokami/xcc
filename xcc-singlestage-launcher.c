@@ -45,19 +45,19 @@ void LnCompile(char* file){
 	};
 	// Tokenize
 	TkTokenize(srcfile);
-	/*
-	printf("L:  [D] . Printing tList<tToken> GTokenized :\n");
-	for(tListnode* i=GTokenized.first;i!=nullptr;i=i->next){
-		tToken* j=i->item;
-		if(i->next){
-			if(mtToken_HasString(j))
-			printf("L:  [D] | %p->%p  .- %s \n",i,j,j->string);
-			printf("L:  [D] | %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
-		}else{
-			printf("L:  [D] ' %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
+	if(0){
+		printf("L:  [D] . Printing tList<tToken> GTokenized :\n");
+		for(tListnode* i=GTokenized.first;i!=nullptr;i=i->next){
+			tToken* j=i->item;
+			if(i->next){
+				if(mtToken_HasString(j))
+				printf("L:  [D] | %p->%p   .- %s \n",i,j,j->string);
+				printf("L:  [D] | %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
+			}else{
+				printf("L:  [D] ' %p->%p % 4i:%s \n",i,j,j->type,TokenidtoName[j->type]);
+			};
 		};
 	};
-	*/
 	fclose(srcfile);
 	// Lexical parsing
 	fprintf(stderr,"L:  [M] Lexicalparser \n");
@@ -120,8 +120,15 @@ void LnCompile(char* file){
 	//exit(4);
 	/// The question is where `struct`s go
 	// Compile
-	fprintf(stderr,"L:  [M] IR Maker\n");
-	fprintf(stderr,"L:  [M] IR Compiler\n");
+	fprintf(stderr,"L:  [M] IR Generator\n");
+	IgParse(GSecondaryast);
+	fprintf(stderr,"L:  [M] Printing IR\n");
+	printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
+	printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
+	printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
+	printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
+	fprintf(stderr,"L:  [M] Done printing IR\n");
+	fprintf(stderr,"L:  [M] Codegen\n");
 	// Write object file
 	fprintf(stderr,"L:  [M] Done compiling\n");
 };

@@ -270,7 +270,7 @@ void SgParse(tLxNode* ast){
 			assert(mtGType_GetBasetype(type));
 			mtGType_GetBasetype(type)->valuecategory=eGValuecategory_Leftvalue;
 			mtGNamespace_Add( // Register function itself
-				ast->parentnode->name_space,
+				ast->parentnode?ast->parentnode->name_space:GRootnamespace,
 				mtGSymbol_CreatePointer(
 					name,
 					type,

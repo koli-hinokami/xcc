@@ -118,7 +118,7 @@ void LfiPrint_GType(char* pr, tGType* self){
 	};
 	LfUnindent("Lf: [M]   \n");
 };
-void LfiPrint_LxNode(char* pr,tLxNode* self){
+void LfiPrint_LxNode_Commafolding(char* pr,tLxNode* self){
 	char buffer[512];
 	char* bufptr=buffer;
 	if(self==nullptr){
@@ -128,6 +128,29 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 	}else if(self->type==tLexem_Declarationlist){
 		LfiPrint_LxNode("l:",self->left);
 		LfiPrint_LxNode("r:",self->right);
+	}else if(self->type==tLexem_Comma){
+		LfiPrint_LxNode_Commafolding("  ",self->left);
+		LfiPrint_LxNode_Commafolding("  ",self->right);
+	}else{
+		LfiPrint_LxNode(pr,self);
+	};
+};
+void LfiPrint_LxNode(char* pr,tLxNode* self){
+	char buffer[512];
+	char* bufptr=buffer;
+	if(self==nullptr){
+		//exit(5);
+		sprintf(buffer,"Lf: [M] · %2s ¤ Nullpointer \n",pr);
+		//LfWriteline(buffer);
+	}else if(self->type==tLexem_Declarationlist){
+		LfiPrint_LxNode_Commafolding("  ",self->left);
+		LfiPrint_LxNode_Commafolding("  ",self->right);
+	}else if(self->type==tLexem_Comma){
+		sprintf(buffer,"Lf: [M] %2s ¤ Lexem %i:%s \n",pr,self->type,TokenidtoName[self->type]);
+		LfIndent(buffer);
+		LfiPrint_LxNode_Commafolding("  ",self->left);
+		LfiPrint_LxNode_Commafolding("  ",self->right);
+		LfUnindent("Lf: [M]   \n");
 	}else{
 		if(self->type==tLexem_Integerconstant){
 			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%i \n",pr,self->type,TokenidtoName[self->type],self->constant);
@@ -135,6 +158,10 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 			return;
 		}else if(self->type==tLexem_Identifier){
 			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:%s \n",pr,self->type,TokenidtoName[self->type],self->identifier);
+			LfWriteline(buffer);
+			return;
+		}else if(self->type==tLexem_Stringconstant){
+			sprintf(buffer,"Lf: [M] ∙ %2s ¤ Lexem %i:%s:\"%s\" \n",pr,self->type,TokenidtoName[self->type],self->identifier);
 			LfWriteline(buffer);
 			return;
 		}else{
@@ -158,7 +185,6 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 		LfiPrint_LxNode("r:",self->right);
 		LfUnindent("Lf: [M]   \n");
 	};
-	
 };
 void LfPrint_LxNode(tLxNode* self){
 	LfWriteline("DBG:[M] LfPrint_LxNode: Printing primary AST \n");
@@ -349,9 +375,21 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Function){ 
+		char* s1 = mtString_Clone("");
+		for(tListnode* i=self->functionarguments;i!=nullptr;i=i->next){
+			mtString_Append(&s1,mtGType_ToString((tGType*)i->item));
+			mtString_Append(&s1,",");
+		}
+
 		return mtString_Join(
 			mtGType_ToString_Embeddable(self->complexbasetype),
-			"()"
+			mtString_Join(
+				"(",
+				mtString_Join(
+					s1,
+					")"
+				)
+			)
 		);
 		//LfPrint_GNamespace(self->structure);
 	}else if(self->atomicbasetype==eGAtomictype_Void){ 
@@ -546,6 +584,59 @@ tGType* mtGType_GetBasetype(tGType* self){
 	};
 	exit(2);
 };
+bool mtGType_IsCastableto(tGType* self,tGType* type){
+	if(
+		  (self->atomicbasetype==eGAtomictype_Pointer)
+		&&(
+			  (self->atomicbasetype!=eGAtomictype_Pointer)
+			&&(self->atomicbasetype!=eGAtomictype_Array)
+		)
+	)return false;
+	if(
+		(
+			  (self->atomicbasetype==eGAtomictype_Structure)
+			||(self->atomicbasetype==eGAtomictype_Union)
+		)&&(
+			  (type->atomicbasetype!=eGAtomictype_Structure)
+			&&(type->atomicbasetype!=eGAtomictype_Union)
+		)
+	)return false;
+	if(
+		(
+			  (type->atomicbasetype==eGAtomictype_Structure)
+			||(type->atomicbasetype==eGAtomictype_Union)
+		)&&(
+			  (self->atomicbasetype!=eGAtomictype_Structure)
+			&&(self->atomicbasetype!=eGAtomictype_Union)
+		)
+	)return false;
+	return true;
+};
+bool mtGType_Equals(tGType* self,tGType* type){
+
+	if(
+		  (self->atomicbasetype==eGAtomictype_Function)
+		&&(type->atomicbasetype==eGAtomictype_Function)
+	){
+		for(tListnode* i;i;i=i->next)
+			if(!mtGType_Equals(i->item,i->item))return false;
+	};
+	if(
+		(
+			  (self->atomicbasetype==eGAtomictype_Pointer)
+			&&(type->atomicbasetype==eGAtomictype_Pointer)
+		)||(
+			  (self->atomicbasetype==eGAtomictype_Array)
+			&&(type->atomicbasetype==eGAtomictype_Array)
+		)||(
+			  (self->atomicbasetype==eGAtomictype_Function)
+			&&(type->atomicbasetype==eGAtomictype_Function)
+		)
+	){
+		return mtGType_Equals(self->complexbasetype,type->complexbasetype);
+	};
+	return self->atomicbasetype==type->atomicbasetype;
+};
 tGSymbol* mtGSymbol_Create(){
 	return calloc(sizeof(tGSymbol),1);
 };
@@ -566,6 +657,8 @@ tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum m
 		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found \n",self,kind,name);
 		return nullptr;
 	};
+	printf("ss: [T] mtGNamespace_Findsymbol_NameKind(namespace %p, symbol %i•%s): Entered \n",self,kind,name);
+
 	// Search in list
 	for(tListnode* ptr=self->symbols.first;ptr!=nullptr;ptr=ptr->next){
 		tGSymbol* symbol = ptr->item;
@@ -744,15 +837,89 @@ tGInstruction* mtGInstruction_CreateCnop(){
 	i->opcode.isize=eGAtomictype_Void;
 	return i;
 };
+tGInstruction* mtGInstruction_CreateDefinecharater(char ch){
+	tGInstruction* i=mtGInstruction_Create();
+	i->opcode.opr=tInstruction_Definevalue;
+	i->opcode.isize=eGAtomictype_Uint8;
+	i->immediate=ch;
+	return i;
+};
+tGInstruction* mtGInstruction_CreateStringdefinition(char* str){
+	assert(str);
+	tGInstruction* i=mtGInstruction_CreateDefinecharater(*str);
+	if(*str){
+		i->next=mtGInstruction_CreateStringdefinition(str+1);
+	}else{
+		i->next=nullptr;
+	};
+	return i;
+};
+tGInstruction* mtGInstruction_CreateBasic(short opcode,enum eGAtomictype size){
+	tGInstruction* i = mtGInstruction_Create();
+	i->opcode.opr=opcode;
+	i->opcode.isize=size;
+	return i;
+};
+tGInstruction* mtGInstruction_CreateImmediate(int opcode,int size,int val){
+	tGInstruction* i = mtGInstruction_Create();
+	i->opcode.opr=opcode;
+	i->opcode.isize=size;
+	i->immediate=val;
+	return i;
+};
 tGInstruction* mtGInstruction_GetLast(tGInstruction* self){
 	// Normally I'd use a forloop `for(T i = self;i;i=i->next);` but I'm
 	// lazy here so recursion it is.
+	assert(self);
 	if(self->next==nullptr){
 		return self;
 	}else{
 		return mtGInstruction_GetLast(self->next);
 	}
 };
+char* mtGInstruction_ToString(tGInstruction* self){
+	char buffer[512];
+	// Resolve atomic type to string
+	char* size = "?";
+	for(
+		GAtomictypetostring_Entry * ptr = GAtomictypetostring;
+		ptr->str;
+		ptr++
+	){
+		if(ptr->atomictype==self->opcode.isize){
+			size = ptr->str;
+			break;
+		};
+	};
+	
+	snprintf(
+		buffer,512,"%-20p: %-17s %-10i %-20p",
+		self,
+		mtString_Join(
+			TokenidtoName_Compact[self->opcode.opr],
+			mtString_Join(".",size)
+		),
+		(int)self->immediate,
+		self->jumptarget
+	);
+	return mtString_Clone(buffer);
+};
+void LfPrint_GInstruction(tGInstruction* self){
+	char buffer[512];
+	snprintf(buffer,512,"Lf: [M] Printing instruction %p\n",self);
+	LfIndent(buffer);
+	for(tGInstruction* i = self;i;i=i->next){
+		char* s1=mtGInstruction_ToString(i);
+		snprintf(buffer,512,"Lf: [M] %s\n",s1);
+		LfWriteline(buffer);
+		free(s1);
+	};
+	LfUnindent("Lf: [M]   \n");
+};
+tGInstruction* GAddinstructiontosegment(eGSegment segment, tGInstruction* instr){
+	return mtGInstruction_GetLast(GCompiled[segment])->next=instr;
+};
+
 // --------------------- Tokenizer ---------------------
 void GInitializePerfile(){
 	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
@@ -765,5 +932,6 @@ void GFinalize(){
 #include "xcc-singlestage-semanticpreparser.c"
 #include "xcc-singlestage-symbolgen.c"
 #include "xcc-singlestage-semanticparser.c"
+#include "xcc-singlestage-irmaker.c"
 #include "xcc-singlestage-launcher.c"
 // the end
