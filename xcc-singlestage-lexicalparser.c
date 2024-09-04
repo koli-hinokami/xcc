@@ -1,6 +1,7 @@
 // ---------------------- Globals ---------------------
 tLxNode* /* <nullptr||.type=switch> */ LxCurrentswitch;
 tLxNode* /* <nullptr||.type=statement> */ LxCurrentbreak;
+tList /* <char*> */ LxTypesdeclared;
 // ------------------ Lexical parsing ------------------
 tLxNode* mtLxNode_Create(void){
 	return calloc(sizeof(tLxNode),1);
@@ -8,7 +9,7 @@ tLxNode* mtLxNode_Create(void){
 tLxNode* mtLxNode_Clone(tLxNode* self){
 	return memcpy(malloc(sizeof(tLxNode)),self,sizeof(tLxNode));
 };
-// ----------------- The Lexer -----------------
+// --------------------- The Lexer ---------------------
 tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher);
 tLxNode* LxParseDeclaration(tLxFetcher* fetcher);
 tGType* LxParseBasetype(tLxFetcher* fetcher);
@@ -50,12 +51,33 @@ tLxNode* LxParseDeclarationorstatement(tLxFetcher* fetcher){
 		tGType* basetype = LxParseBasetype(&localfetcher);
 		//tLxFetcher localfetcher = *fetcher; // uncomment when a fetcher
 		                                      // will be needed
-		if(
-			  basetype 
-			&&basetype->atomicbasetype!=eGAtomictype_Unresolved
-		){
-			return LxParseDeclaration(fetcher);
+		if(basetype){
+			// Valid type
+			if(
+				basetype->atomicbasetype!=eGAtomictype_Unresolved
+			){
+				// Type not confusable with anything
+				return LxParseDeclaration(fetcher);
+			}else{
+				// Confusable with symbols. Verify being a type
+				// If Lexicalpreparser is not availible, just
+				//  parse as a declaration.
+				if(
+					mtList_Find_Clojure(
+						&LxTypesdeclared,
+						(bool(*)(void*, void*))mtString_Equals,
+						basetype->unresolvedsymbol
+					)
+				){
+					// A known type.
+					return LxParseDeclaration(fetcher);
+				}else{
+					// Not really a type but an identifier.
+					return LxParseExpressionstatement(fetcher);
+				};
+			};
 		}else{
+			// Not anywhere near type
 			return LxParseExpressionstatement(fetcher);
 		};
 	}
@@ -367,12 +389,44 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 		type->typequalifiers|=eGTypequalifiers_Restrict;
 	};
 	switch((token=mtLxFetcher_Peek(fetcher))->type){
+		case tToken_Keywordsigned:
+			mtLxFetcher_Advance(fetcher);
+			switch((token=mtLxFetcher_Peek(fetcher))->type){
+				case tToken_Keywordchar:
+					mtLxFetcher_Advance(fetcher);
+					type->atomicbasetype = eGAtomictype_Signedchar;
+					break;
+				case tToken_Keywordshort:
+					mtLxFetcher_Advance(fetcher);
+					type->atomicbasetype = eGAtomictype_Short;
+					break;
+				case tToken_Keywordint:
+					mtLxFetcher_Advance(fetcher);
+					type->atomicbasetype = eGAtomictype_Int;
+					break;
+				case tToken_Keywordlong:
+					mtLxFetcher_Advance(fetcher);
+					switch((token=mtLxFetcher_Peek(fetcher))->type){
+						case tToken_Keywordlong:
+							mtLxFetcher_Advance(fetcher);
+							type->atomicbasetype = eGAtomictype_Longlong;
+							break;
+						default:
+							type->atomicbasetype = eGAtomictype_Long;
+							break;
+					};
+					break;
+				default:
+					type->atomicbasetype = eGAtomictype_Int;
+					break;
+			};
+			break;
 		case tToken_Keywordunsigned:
 			mtLxFetcher_Advance(fetcher);
 			switch((token=mtLxFetcher_Peek(fetcher))->type){
 				case tToken_Keywordchar:
 					mtLxFetcher_Advance(fetcher);
-					type->atomicbasetype = eGAtomictype_Unsignedshort;
+					type->atomicbasetype = eGAtomictype_Unsignedchar;
 					break;
 				case tToken_Keywordshort:
 					mtLxFetcher_Advance(fetcher);
@@ -3033,4 +3087,90 @@ tLxNode* LxParse(tListnode* startpoint){
 //			break;
 //	};
 //	return nullptr;
+};
+// ------------------ Lexicalpreparser -----------------
+void LxpRegistertypedefs(tLxNode* typeexpr){
+	switch(typeexpr->type){
+		case tLexem_Comma:
+			LxpRegistertypedefs(typeexpr->left);
+			LxpRegistertypedefs(typeexpr->right);
+		case tLexem_Dereference:
+		case tLexem_Arrayindex:
+		case tLexem_Functioncall:
+			LxpRegistertypedefs(typeexpr->left);
+			break;
+		case tLexem_Identifier:
+			mtList_Append(&LxTypesdeclared,typeexpr->identifier);
+			break;
+		default:
+			printf(
+				"LXP:[E] Unrecognized node %i•%s \n",
+				typeexpr->type,
+				TokenidtoName[typeexpr->type]
+			);
+			GError();
+			assert(false);
+	};
+};
+void LxPreparseDeclaration(tLxFetcher* fetcher){
+	switch(mtLxFetcher_Peek(fetcher)->type){
+		case tToken_Semicolon:
+			mtLxFetcher_Advance(fetcher);
+			break;
+		case tToken_Keywordtypedef: {
+			// The one I'm writing Lexicalpreparser for
+			mtLxFetcher_Advance(fetcher);
+			LxParseBasetype(fetcher);
+			tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
+			mtLxFetcher_Advance(fetcher); // skip semicolon
+			tLxNode* typeexpr = LxParseTypeexpression(typeexprfetcher);
+			LxpRegistertypedefs(typeexpr);
+		};	break;
+		default: {
+			tLxFetcher localfetcher = *fetcher;
+			if(LxParseBasetype(fetcher)){
+				localfetcher = *fetcher;
+				mtLxFetcher_FetchuntilParenthesized_Variadic(fetcher, 
+					4,tToken_Opencurlybraces,tToken_Semicolon,tToken_Assign,tToken_Comma
+				);
+				switch(mtLxFetcher_Peek(fetcher)->type){
+					case tToken_Opencurlybraces:
+						printf("LX: [T] LxPreparseDeclaration: Block statement\n");
+						LxParseBlockstatement(fetcher);
+						break;
+					case tToken_Semicolon:
+						// Plain uninitialized declaration
+					case tToken_Comma:
+						// Probably multideclaration
+					case tToken_Assign:
+						// *Probably* initialized declaration
+						// Either way, all three have been merged into 'multideclaration', so parse identically
+						printf("LX: [T] LxPreParseDeclaration: Rawvariabledeclaration\n");
+						*fetcher = localfetcher;
+						mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
+						mtLxFetcher_Advance(fetcher); // Skip semicolon
+						break;
+				};
+			}else{
+				*fetcher = localfetcher;
+				printf(
+					"LXP:[E] Unrecognized node %i•%s \n",
+					mtLxFetcher_Peek(fetcher)->type,
+					TokenidtoName[mtLxFetcher_Peek(fetcher)->type]
+				);
+				GError();
+			};
+		};	break;
+	};
+};
+void LxPreparse(tListnode /* <tToken> */ * startpoint){
+	// Only reason Lexicalpreparser exists is how typedefs work in C
+	// and how ambiguous they are
+	tLxFetcher* fetcher = &(tLxFetcher){
+		.fetchfrom=startpoint,
+		.fetchto=nullptr
+	};
+	while(!mtLxFetcher_Eof(fetcher)){
+		LxPreparseDeclaration(fetcher);
+	};
 };

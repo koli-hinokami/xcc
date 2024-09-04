@@ -60,6 +60,19 @@ void LnCompile(char* file){
 	};
 	fclose(srcfile);
 	// Lexical parsing
+	fprintf(stderr,"L:  [M] Lexicalpreparser \n");
+	//LxTypesdeclared = mtList_Create();
+	LxPreparse(GTokenized.first);
+	if(0){
+		printf("L:  [D] . Printing tList<tString> LxTypesdeclared:\n");
+		for(tListnode* i=LxTypesdeclared.first;i!=nullptr;i=i->next){
+			if(i->next){
+				printf("L:  [D] | Type \"%s\"\n",(char*)i->item);
+			}else{
+				printf("L:  [D] ' Type \"%s\"\n",(char*)i->item);
+			};
+		};
+	};
 	fprintf(stderr,"L:  [M] Lexicalparser \n");
 	GLexed = LxParse(GTokenized.first);
 	if(0){

@@ -278,6 +278,7 @@ tSppNode* SppParse(tLxNode /* From SppPreparse! */ * self, tSppNode* parent){ //
 	// Typedeclarations - those are kinda like inside Symbolgen and Semanticparser.
 	
 	// Deepclone struct
+	if(!self)return nullptr;
 	tSppNode* node = mtSppNode_Create();
 	node->type         = self->type;
 	node->initializer  = SppParse(self->initializer,node);

@@ -3870,8 +3870,7 @@ basetype
 	| identifier:typedefnamespace
 	;
 expression
-	:
-	| constant
+	: constant
 	| identifier:variablenamespace
 	| openparentheses expression closeparentheses
 	| prefixop expression

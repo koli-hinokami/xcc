@@ -173,22 +173,22 @@ void* mtList_Find_Lambda(ptList self, bool(*lambda)(void* item)){
 		return nullptr;
 	};
 };
-//void* mtList_Find_Capturelesslambda(ptList self, struct{bool(*func)(void* args,void* item);void*args;}*lambda){
-//	if(self->last == nullptr){ // List empty
-//		return nullptr;
-//	}else if(self->first == self->last){ // List contains one item
-//		if(lambda->func(lambda->args,self->first->item)){
-//			return self->first->item;
-//		}else{
-//			return nullptr;
-//		};
-//	}else { // List normal - two or more items
-//		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
-//			if(lambda->func(lambda->args,ptr->item))return ptr->item;
-//		};
-//		return nullptr;
-//	};
-//};
+void* mtList_Find_Clojure(ptList self, bool(*func)(void* args,void* item), void* args){
+	if(self->last == nullptr){ // List empty
+		return nullptr;
+	}else if(self->first == self->last){ // List contains one item
+		if(func(args,self->first->item)){
+			return self->first->item;
+		}else{
+			return nullptr;
+		};
+	}else { // List normal - two or more items
+		for(tListnode* ptr=self->first;ptr!=nullptr;ptr=ptr->next){
+			if(func(args,ptr->item))return ptr->item;
+		};
+		return nullptr;
+	};
+};
 
 // --------------------- tListnode family of functions -----------------------
 

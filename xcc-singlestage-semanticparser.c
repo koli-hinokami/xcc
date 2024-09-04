@@ -272,10 +272,10 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						mtGSymbol_eType_Pointer
 					);
 					if(SpCurrentfunction){
-						assert(symbol->symbolkind=mtGSymbol_eType_Pointer);
+						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocatelocalvarstorage(SpCurrentfunction->fextinfo,mtGType_Sizeof(type));
 					}else{
-						assert(symbol->symbolkind=mtGSymbol_eType_Pointer);
+						assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
 						symbol->allocatedstorage=SpAllocateglobalvarstorage(mtGType_Sizeof(type));
 					};
 					return mtSpNode_Clone(
@@ -559,7 +559,11 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						eGValuecategory_Rightvalue
 					)
 				);
-				assert((mtGType_GetBasetype(left->returnedtype)->valuecategory==eGValuecategory_Leftvalue,"SP: [E] Assignment to right value \n"));
+				if(mtGType_GetBasetype(left->returnedtype)->valuecategory!=eGValuecategory_Leftvalue){
+					printf("SP: [E] SpParse: `=`: Assignment to right value \n");
+					GError();
+					assert(false);
+				};
 				return mtSpNode_Clone(
 					&(tSpNode){
 						.type=tSplexem_Assign,
