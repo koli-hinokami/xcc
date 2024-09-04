@@ -8,12 +8,16 @@ help(){
 usage(){
 	echo "cfg:[M] Usage: ./configure --help"
 	echo "cfg:[M]    or: ./configure --usage"
-	echo "cfg:[M]    or: ./configure [platform]"
+	echo "cfg:[M]    or: ./configure platform [opttemplates]"
 	echo "cfg:[M] Platforms:"
 	echo "cfg:[M]     \"cygwin\" - Cygwin environment. Uses libargp"
 	echo "cfg:[M]     \"debian\" - Generic linux environment."\
 	                               "Relies on libc to provide argp."
-
+	echo "cfg:[M] Opttemplates: (are optional templates for various tweaks "
+	echo "cfg:[M]                in behaviour that Makefile is created for)"
+	echo "cfg:[M]     \"tracess\"  - Compile xcc-singlestage with tracing enabled"
+	echo "cfg:[M]     \"traceld\"  - Compile xcc-ld with tracing enabled"
+	echo "cfg:[M]     \"traceasm\" - Compile xcc-assembler with tracing enabled"
 }
 
 if [ -z $1 ]; then
@@ -27,7 +31,7 @@ elif [ $1 = "--usage" ]; then
 	usage
 	exit
 else
-	echo "cfg:[M] Configuring for" $1
+	echo "cfg:[M] Configuring for" $@
 	rm -f Makefile
 	touch Makefile
 	echo """\
@@ -36,7 +40,10 @@ else
 # -- Makefile.*.template and Makefile.posttemplate as appropriate instead --
 	""" >> Makefile
 	cat Makefile.pretemplate   >> Makefile
-	cat Makefile.$1.template   >> Makefile
+	for template in "$@"
+	do
+		cat Makefile.$template.template >> Makefile
+	done
 	cat Makefile.posttemplate  >> Makefile
 	echo "cfg:[M] Done"
 fi
