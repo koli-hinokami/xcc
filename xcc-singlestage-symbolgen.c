@@ -181,6 +181,34 @@ void SgAutoiteratecommas(tLxNode* ast, void(*lambda)(tLxNode* ast)){
 };
 void SgParseTypedefInternal(tLxNode* ast){
 };
+void SgRegisterfunctionarguments(tLxNode* self,tGNamespace* namespace){
+	if(self){
+		if(self->type==tLexem_Comma){
+			SgRegisterfunctionarguments(self->left,namespace);
+			SgRegisterfunctionarguments(self->right,namespace);
+		}else if(self->type==tLexem_Typeexpression){
+			char* name;
+		
+			tGType* type = SppGeneratetype(self->returnedtype,self->left,&name);
+			mtGNamespace_Add(
+				namespace,
+				mtGSymbol_CreatePointer(
+					name,
+					type,
+					nullptr
+				)
+			);
+		}else if(self->type==tLexem_Nullexpression){
+			// Nothing here
+		}else {
+			// Someone, put an error message here!
+			printf("SP: [E] SgRegisterfunctionarguments: Unrecognized node %i•%s \n",self->type,TokenidtoName[self->type]);
+			assert(false);
+		};
+	}else{
+		assert(false);
+	};
+};
 void SgParse(tLxNode* ast){
 	if(ast==nullptr){
 		printf("SG: [W] SgParse: Null AST protection triggered \n");
@@ -222,7 +250,7 @@ void SgParse(tLxNode* ast){
 				ast->returnedtype,ast->left,&name
 			);
 			mtGNamespace_Add( // Register function itself
-				ast->name_space,
+				ast->parentnode->name_space,
 				mtGSymbol_CreatePointer(
 					name,
 					type,
@@ -232,13 +260,16 @@ void SgParse(tLxNode* ast){
 			if(ast->right){
 				mtGNamespace_Add( // And it's namespace... you need to
 						  // take care of locals, after all...
-					ast->name_space,
+					ast->parentnode->name_space,
 					mtGSymbol_CreateNamespace(
 						name,
 						ast->right->name_space
 					)
 				);
 			};
+			assert(ast->left);
+			assert(ast->left->type==tLexem_Functioncall);
+			SgRegisterfunctionarguments(ast->left->right,ast->right->name_space);
 			SgParse(ast->right); // functions and their locals...
 		};	break;
 		case tLexem_Variabledeclaration: {

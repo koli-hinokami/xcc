@@ -191,6 +191,7 @@ enum tTokentype {
 	tSplexem_Functiondeclaration	= 1029,		//
 	tSplexem_Returnstatement	= 1030,		//
 	tSplexem_Variabledeclaration	= 1031,		//
+	tSplexem_Nullexpression		= 1032,		//
 	//tSplexem_			= ,		//
 	//tToken_	        	= 1280,		//	Second AST string lexems
 	//						//    Actually are deprecated
@@ -1827,6 +1828,7 @@ typedef uint16_t tGTargetNearpointer;
 typedef uint16_t tGTargetSizet;
 typedef uint8_t  tGTargetSegment;
 typedef uint32_t tGTargetUintmax;
+const tGTargetSizet GTargetStackframeArgumentsstart = 4;
 
 // XCC types
 typedef struct tToken {
@@ -2082,6 +2084,8 @@ typedef struct tSppNode {
 } tSppNode;
 
 typedef struct tSpFunctionextinfo {
+	tGTargetSizet localssize;
+	tGTargetSizet argumentssize;
 } tSpFunctionextinfo;
 
 typedef struct tSpNode {
@@ -2169,8 +2173,7 @@ declaration
 	| semicolon // empty declaration
 	;
 basetype
-	:
-	| int
+	: int
 	| unsigned
 	| short
 	| unsigned short

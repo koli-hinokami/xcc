@@ -1,5 +1,5 @@
 // Semantic(al) parser
-tSpNode* SpCurrentfunction;
+tSpNode /* Function declaration */ * SpCurrentfunction;
 
 
 tSpNode* mtSpNode_Create(void){
@@ -10,6 +10,59 @@ tSpNode* mtSpNode_Clone(tSpNode* self){
 };
 tSpFunctionextinfo* mtSpFunctionextinfo_Create(){
 	return calloc(sizeof(tSpFunctionextinfo),1);
+};
+tGTargetPointer* SpAllocatelocalvarstorage(tSpFunctionextinfo* fextinfo, tGTargetSizet size){
+	fextinfo->localssize-=size;
+	return mtGTargetPointer_CreateStatic(meGSegment_Stackframe,fextinfo->localssize);
+};
+tGTargetPointer* SpAllocateglobalvarstorage(tGTargetSizet size){
+	tGInstruction* i = mtGInstruction_CreateAllocatestorage(size);
+	mtGInstruction_GetLast(GCompiled[meGSegment_Data])->next=i;
+	return mtGTargetPointer_CreateDynamic(i);
+};
+void SpCompilefunctionarguments(
+	tLxNode /* comma-separated list of variable declarations */ * typeexpr,
+	tSpFunctionextinfo* fextinfo, 
+	tGNamespace* name_space
+){
+#ifdef qvGTrace
+	printf("SP: [T] SpCompilefunctionarguments: entered \n");
+#endif
+	// if(comma){
+	// 	recurse(self->left,,);recurse(->right,,);
+	// else 
+	// 	namespace.find(typeexpr->name)->pointer=
+	// 		new Pointer(
+	// 			segment_stackframe,
+	// 			fextinfo->argumentssize-=sizeof(typeexpr->type)
+	// 		);
+	if(typeexpr){
+		if(typeexpr->type==tLexem_Comma){
+			SpCompilefunctionarguments(typeexpr->left,fextinfo,name_space);
+			SpCompilefunctionarguments(typeexpr->right,fextinfo,name_space);
+		}else{
+			char* name;
+			if(typeexpr->type==tLexem_Typeexpression){
+				tGType* type = SppGeneratetype(typeexpr->returnedtype,typeexpr->left,&name);
+				mtGNamespace_Findsymbol_NameKind(
+					name_space,
+					name,
+					mtGSymbol_eType_Pointer
+				)->allocatedstorage=(
+					mtGTargetPointer_CreateStatic(
+						meGSegment_Stackframe,
+						fextinfo->argumentssize-=mtGType_Sizeof(type)
+					)
+				);
+			}else{
+				printf("SP: [F] SpCompilefunctionarguments: Unrecognized node %i•%s \n",typeexpr->type,TokenidtoName[typeexpr->type]);
+				LfPrint_LxNode(typeexpr);
+				GFinalize();
+			};
+		}
+	}else{
+		printf("SP: [E] SpCompilefunctionarguments: typeexpr==nullptr \n");
+	};
 };
 tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 	if(self)printf("SP: [T] Entered with node %i:%s\n",self->type,TokenidtoName[self->type]);
@@ -44,11 +97,16 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 				node->returnedtype = SgGeneratetype(self->returnedtype,self->left,&name);
 				// Bind symbol
 				node->symbol=mtGNamespace_Findsymbol_NameKind(GRootnamespace,name,mtGSymbol_eType_Pointer);
-				 // And insert clashnop inside
+				 // And insert compilernop inside
 				 node->symbol->allocatedstorage=mtGTargetPointer_CreateDynamic(mtGInstruction_CreateCnop());
 				// Compile function
 				node->fextinfo = mtSpFunctionextinfo_Create();
+				node->fextinfo->argumentssize = GTargetStackframeArgumentsstart;
+				assert(self->left);
+				assert(self->left->type==tLexem_Functioncall);
+				SpCompilefunctionarguments(self->left->right,node->fextinfo,self->right->name_space);
 				node->right=SpParse(self->right);
+				SpCurrentfunction = nullptr;
 				return node;
 			};	break;
 			case tLexem_Blockstatement: {
@@ -95,33 +153,49 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						self->left,
 						&name
 					);
+					tGSymbol* symbol=mtGNamespace_Findsymbol_NameKind(
+						self->name_space,
+						name,
+						mtGSymbol_eType_Pointer
+					);
+					if(SpCurrentfunction){
+						assert(symbol->symbolkind=mtGSymbol_eType_Pointer);
+						symbol->allocatedstorage=SpAllocatelocalvarstorage(SpCurrentfunction->fextinfo,mtGType_Sizeof(type));
+					}else{
+						assert(symbol->symbolkind=mtGSymbol_eType_Pointer);
+						symbol->allocatedstorage=SpAllocateglobalvarstorage(mtGType_Sizeof(type));
+					};
 					return mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Variabledeclaration,
 							.returnedtype=type,
 							//.identifier=name,
-							.symbol=mtGNamespace_Findsymbol_NameKind(self->name_space,name,mtGSymbol_eType_Pointer)
+							.symbol=symbol
 						}
 					);
 				};
 				//return nullptr;
 				break;
-			//case tLexem_Nullexpression:
-			//	return mtSpNode_Clone(
-			//		&(tSpNode){
-			//			.type=tSplexem_Nullexpression,
-			//			.returnedtype=mtGType_Void
-			//		}
-			//	);
-			//case tLexem_Identifier:
-			//	tGSymbol* symbol = mtGNamespace_Find_NameKind(GRootnamespace,self->identifier,mtGSymbol_eType_Pointer);
-			//	return mtSpNode_Clone(
-			//		&(tSpNode){
-			//			.type=tSplexem_Symbol,
-			//			.returnedtype=symbol->type,
-			//			.symbol=symbol,
-			//		}
-			//	);
+			case tLexem_Nullexpression:
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Nullexpression,
+						.returnedtype=mtGType_CreateAtomic(eGAtomictype_Void)
+					}
+				);
+			case tLexem_Identifier:
+				tGSymbol* symbol = mtGNamespace_Findsymbol_NameKind(
+					self->name_space,
+					self->identifier,
+					mtGSymbol_eType_Pointer
+				);
+				return mtSpNode_Clone(
+					&(tSpNode){
+						.type=tSplexem_Symbol,
+						.returnedtype=symbol->type,
+						.symbol=symbol,
+					}
+				);
 			//case tLexem_Variabledeclaration: {
 			//	char* name = nullptr;
 			//	if(self->left->type==tLexem_Assign){

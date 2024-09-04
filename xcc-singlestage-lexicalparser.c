@@ -2804,6 +2804,7 @@ tLxNode* LxParseDeclaration(tLxFetcher* fetcher){
 			mtLxFetcher_Advance(fetcher);
 			tGType* basetype=LxParseBasetype(fetcher);
 			tLxFetcher* typeexprfetcher = mtLxFetcher_FetchuntilParenthesized(fetcher,tToken_Semicolon);
+			mtLxFetcher_Advance(fetcher); // skip semicolon
 			mtLxFetcher_Print(typeexprfetcher);
 			tLxNode* expr = LxParseTypeexpression(typeexprfetcher);
 			return mtLxNode_Clone(

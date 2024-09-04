@@ -20,7 +20,7 @@ tList GTokenized;
 tLxNode* GLexed;
 tGNamespace* GRootnamespace;
 tSpNode* GSecondaryast;
-tList /* <tGIrInstruction> */ GCompiled[/*segment*/meGSegment_Count];
+tGInstruction* GCompiled[/*segment*/meGSegment_Count];
 
 int iLfIndentation = 0;
 char* iLfIndentationstring =  "| | | | | | | | | | | | | | | | | | | | ";
@@ -511,7 +511,10 @@ tGSymbol* mtGNamespace_Findsymbol_NameKind(tGNamespace* self, char* name, enum m
 	printf("ss: [T] mtGNamespace_Findsymbol_NameKind: Entered \n");
 #endif
 	// Empty namespace
-	if(self==nullptr)return nullptr;
+	if(self==nullptr){
+		printf("ss: [E] mtGNamespace_Findsymbol_NameKind(%p): Symbol %i•%s not found \n",self,kind,name);
+		return nullptr;
+	};
 	// Search in list
 	for(tListnode* ptr=self->symbols.first;ptr!=nullptr;ptr=ptr->next){
 		tGSymbol* symbol = ptr->item;
@@ -554,7 +557,9 @@ tGSymbol* mtGNamespace_FindsymbolNoparent_NameKind(tGNamespace* self, char* name
 };
 void mtGNamespace_Add(tGNamespace* namespace, tGSymbol* symbol){
 #ifdef qvGTrace
-	printf("ss: [T] mtGNamespace_Add: Entered \n");
+	printf("ss: [T] mtGNamespace_Add(namespace %p,symbol %s): Entered \n",
+		namespace,mtGSymbol_ToString(symbol)
+	);
 #endif
 	// Obviously check if namespace is valid
 	if(namespace==nullptr){
@@ -665,14 +670,37 @@ tGTargetPointer* mtGTargetPointer_CreateDynamic(tGInstruction* instr){
 	i->dynamicpointer=instr;
 	return i;
 };
+tGTargetPointer* mtGTargetPointer_CreateStatic(eGSegment segment, tGTargetNearpointer offset){
+	tGTargetPointer* i=mtGTargetPointer_Create();
+	i->nonconstant=false;
+	i->segment=segment;
+	i->offset=offset;
+	return i;
+};
 tGInstruction* mtGInstruction_Create(){
 	return calloc(sizeof(tGInstruction),1);
+};
+tGInstruction* mtGInstruction_CreateAllocatestorage(tGTargetSizet size){
+	tGInstruction* i=mtGInstruction_Create();
+	i->opcode.opr=tInstruction_Allocatestorage;
+	i->opcode.isize=eGAtomictype_Uint8;
+	i->immediate=size;
+	return i;
 };
 tGInstruction* mtGInstruction_CreateCnop(){
 	tGInstruction* i=mtGInstruction_Create();
 	i->opcode.opr=tInstruction_Cnop;
 	i->opcode.isize=eGAtomictype_Void;
 	return i;
+};
+tGInstruction* mtGInstruction_GetLast(tGInstruction* self){
+	// Normally I'd use a forloop `for(T i = self;i;i=i->next);` but I'm
+	// lazy here so recursion it is.
+	if(self->next==nullptr){
+		return self;
+	}else{
+		return mtGInstruction_GetLast(self->next);
+	}
 };
 // --------------------- Tokenizer ---------------------
 void GFinalize(){
