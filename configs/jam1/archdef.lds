@@ -8,3 +8,4 @@ segment 7
 segment 8
 segment 9
 segment 10
+symbol GEndofimage

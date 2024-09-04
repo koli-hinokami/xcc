@@ -4,16 +4,16 @@
 	.extern main
 	.segment 1
 start:	push	ra
+	mov	tx,	sp
+	mov	ab,	tx
+	sxa	crt0_unwindsp
 	mov	si,	0
 	mov	ab,	libc_envp
-	push	b
-	push	a
+	push	ab
 	mov	ab,	libc_argv
-	push	b
-	push	a
+	push	ab
 	mov	ab,	1
-	push	b
-	push	a
+	push	ab
 	call	main
 	nop
 	;mov	ab,	__crt0_leftstring
@@ -24,37 +24,19 @@ start:	push	ra
 	pop	ra
 	nop
 	ret
+exit:	.global
+	lxa	crt0_unwindsp
+	mov	tx,	ab
+	nop
+	mov	sp,	tx
+	pop	ra
+	ret
 	.segment 2
-libc_argv:	
-	dw	libc_argv_0
-libc_envp:	
-	dw	0
-libc_argv_0:
-	db	106
-	db	97
-	db	109
-	db	49
-	db	112
-	db	116
-	db	111
-	db	103
-	db	0
+libc_argv:	dw	libc_argv_0
+		dw	0
+libc_envp:	dw	0
+libc_argv_0:	.sz	"jam1prog"
 crt0_leftstring:
-	db 0x63
-	db 0x72
-	db 0x74
-	db 0x30
-	db 0x3a
-	db 0x20
-	db 0x6d
-	db 0x61
-	db 0x69
-	db 0x6e
-	db 0x20
-	db 0x6c
-	db 0x65
-	db 0x66
-	db 0x74
-	db 0x0a
 	db 0
+crt0_unwindsp:	dw 0
 	.segment 0
