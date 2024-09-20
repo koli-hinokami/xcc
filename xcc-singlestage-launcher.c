@@ -153,30 +153,93 @@ void LnCompile(char* file){
 	fprintf(stderr,"L:  [M] Semanticoptimizer\n");
 	GSecondaryast = SpOptimize(GSecondaryast);
 	// Compile
-	fprintf(stderr,"L:  [M] IR Generator\n");
-	IgParse(GSecondaryast);
-	//fprintf(stderr,"L:  [M] Printing IR\n");
-	//printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
-	//printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
-	//printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
-	//printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
-	//fprintf(stderr,"L:  [M] Done printing IR\n");
-	fprintf(stderr,"L:  [M] Emitting IR\n");
-	FILE* dstfile = fopen(mtString_Join(LnTrimextension(file),".ir"),"w");
-	IgDumpir(GCompiled, dstfile);
-	fprintf(stderr,"L:  [M] Done emitting IR\n");
 	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
-	fprintf(stderr,"L:  [M] Secondary IR Generator\n");
-	Ig2Parse(GSecondaryast);
-	fprintf(stderr,"L:  [M] Emitting Secondary IR\n");
-	dstfile = fopen(mtString_Join(LnTrimextension(file),".ir2"),"w");
-	Ig2Dumpir(GCompiled, dstfile);
-	fprintf(stderr,"L:  [M] Done emitting Secondary IR\n");
-	fclose(dstfile);
-	fprintf(stderr,"L:  [M] Codegen\n");
-	// Write object file
-	fprintf(stderr,"L:  [M] Done compiling\n");
+	switch(LnIr){
+		assert(false);
+		FILE* dstfile = nullptr;
+		case eLnIr_Legacy:
+			fprintf(stderr,"L:  [M] Legacy IR Generator\n");
+			IgParse(GSecondaryast);
+			//fprintf(stderr,"L:  [M] Printing IR\n");
+			//printf("L:  [M] Code segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Code]);
+			//printf("L:  [M] Data segment: \n");             LfPrint_GInstruction(GCompiled[meGSegment_Data]);
+			//printf("L:  [M] Rodata segment: \n");           LfPrint_GInstruction(GCompiled[meGSegment_Readonlydata]);
+			//printf("L:  [M] Udata segment: \n");            LfPrint_GInstruction(GCompiled[meGSegment_Udata]);
+			//fprintf(stderr,"L:  [M] Done printing IR\n");
+			fprintf(stderr,"L:  [M] Emitting IR\n");
+			dstfile = fopen(
+				LnOutputfile?:mtString_Join(LnTrimextension(file),".ir"),
+				"w"
+			);
+			IgDumpir(GCompiled, dstfile);
+			fprintf(stderr,"L:  [M] Done emitting IR\n");
+			break;
+		case eLnIr_Alternate:
+			fprintf(stderr,"L:  [M] Secondary IR Generator\n");
+			Ig2Parse(GSecondaryast);
+			fprintf(stderr,"L:  [M] Emitting Secondary IR\n");
+			dstfile = fopen(
+				LnOutputfile?:mtString_Join(LnTrimextension(file),".ir"),
+				"w"
+			);
+			Ig2Dumpir(GCompiled, dstfile);
+			fprintf(stderr,"L:  [M] Done emitting Secondary IR\n");
+			fclose(dstfile);
+			break;
+		case eLnIr_Native:
+			fprintf(stderr,"L:  [M] Codegen\n");
+			// Do native codegen
+			// Dump assembly
+			ErfError_String2(
+				"L:  [E] "
+				"LnCompile: "
+				"Compile: "
+				"Unable to call codegen:"
+				"Native codegen not implemented"
+				"\n"
+			);
+			fprintf(stderr,"L:  [M] Done compiling\n");
+			break;
+		default:
+			ErfError_String2("L:  [E] LnCompile: Compile: Internal failure: Unable to decide which kind of codegen to use\n");
+	}
+	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 };
+void LnReadarchdef(char* name){
+	assert(name);
+	name = mtString_Join(
+		"/etc/xcc/",
+		mtString_Join(
+			name,
+			"/archdef.ss"
+		)
+	);
+	FILE* archdeffile = fopen(name, "r");
+	if(archdeffile==nullptr)
+		ErfError_String2(mtString_Format("Ln: [E] No archdef \"%s\"\n",name));
+	// Read the archdef
+	while(fpeekc(archdeffile)!=EOF){
+		char* str = mtString_Create();
+		// Read archdef line
+		while(fpeekc(archdeffile)!='\n'){mtString_Appendchar(&str, fgetc(archdeffile));} 
+		fgetc(archdeffile);
+		// Read directive
+		char* arg = mtString_FindcharFirst(str,' ');
+		*arg++ = 0;
+		// Handle directive
+		if(strcmp(str,"transform")==0){
+			char* newarg;
+			int srctype = strtol(arg,&newarg,0);
+			while(*newarg && isspace(*newarg)) newarg++;
+			assert(*newarg);
+			int dsttype = strtol(newarg,nullptr,0);
+			LnTypetranslationmap[srctype]=dsttype;
+		}else{
+			ErfError_String2(mtString_Format(
+				"Ln: [E] Unrecognized directive \"%s\"\n",str));
+		}
+	};
+}
 int main(int argc,char* argv[]) {
 	setvbuf(stdout,null,_IONBF,0);
 	signal(SIGINT,LnInterrupthandler);
@@ -191,6 +254,31 @@ int main(int argc,char* argv[]) {
 	for(;aindex<argc;aindex++){
 		if(argv[aindex][0]!='-')break;
 		switch(argv[aindex][1]){
+			case '!': // Inversion. Lookahead needed.
+				switch(argv[aindex][2]){
+					case 'm': // -!m - use old IR
+						LnIr = eLnIr_Legacy;
+						break;
+					default:
+						printf(
+							"L:  [F] Unrecognized option `-!%c`\n",
+							argv[aindex][2]
+						);
+						exit(2);
+				};
+				break;
+			case 'm': // -m - use new IR
+				LnIr = eLnIr_Alternate;
+				break;
+			case 'n': // -m - use native codegen
+				LnIr = eLnIr_Native;
+				break;
+			case 'a': // Architecture
+				LnReadarchdef(argv[++aindex]);
+				break;
+			case 'o': // Output file
+				LnOutputfile=argv[++aindex];
+				break;
 			case 'f': // Force
 				fprintf(stderr,"L:  [W] Force is used! Things may go wrong!\n");
 				ErfForce();

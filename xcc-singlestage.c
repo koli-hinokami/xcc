@@ -21,6 +21,9 @@ tLxNode* GLexed;
 tGNamespace* GRootnamespace;
 tSpNode* GSecondaryast;
 tGInstruction* GCompiled[/*segment*/meGSegment_Count];
+eGAtomictype LnTypetranslationmap[eGAtomictype_Count];
+char* LnOutputfile;
+enum{eLnIr_Legacy=1,eLnIr_Alternate=2,eLnIr_Native=3}LnIr = 1; //IR to use
 
 int iLfIndentation = 0;
 char* iLfIndentationstring =  "| | | | | | | | | | | | | | | | | | | | ";
@@ -51,6 +54,17 @@ tGType* mtGType_Clone(tGType* self);
 char* mtGSymbol_ToString(tGSymbol* self);
 void GError();
 tGType* mtGType_Transform(tGType /* modifies */ * self);
+
+// ------------------------- Auxiliary functions --------------------------
+
+int fpeekc(FILE* self){
+	int ch = fgetc(self);
+	if(ch==EOF){
+		if(errno!=0)
+			printf("u:  [E] fpeekc(FILE* %p): Error %i•\"%s\" while fetching charater\n",self,errno,strerror(errno));
+	};
+	return  ungetc(ch,self);
+};
 
 // -------------------------- Logging facilities --------------------------
 

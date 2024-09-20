@@ -21,18 +21,28 @@ char* szLnConfigdir;
 char* szLnArchitecture;
 char* szLnOutfile;
 tList /* <char*> */ LnObjectfiles;
+enum{eLnIr_Legacy=1,eLnIr_Alternate=2,eLnIr_Native=3}bLnIr; //IR to use
 
-intptr_t tLnArgsGetflag(char* flag){
-	//printf("DBG:tLnArgsGetflag(\"%s\")\n",flag);
+int fpeekc(FILE* self){
+	int ch = fgetc(self);
+	if(ch==EOF){
+		if(errno!=0)
+			printf("u:  [E] fpeekc(FILE* %p): Error %i•\"%s\" while fetching charater\n",self,errno,strerror(errno));
+	};
+	return  ungetc(ch,self);
+};
+
+intptr_t LnArgsGetflag(char* flag){
+	//printf("DBG:LnArgsGetflag(\"%s\")\n",flag);
 	for(int i=0;!tLfFlags[i].last;i++){
-		//printf("DBG:tLnArgsGetflag(\"%s\"): index %i\n",flag,i);
-		//printf("DBG:tLnArgsGetflag(\"%s\"): trying strcmp(\"%s\",\"%s\"):%i\n",flag,
+		//printf("DBG:LnArgsGetflag(\"%s\"): index %i\n",flag,i);
+		//printf("DBG:LnArgsGetflag(\"%s\"): trying strcmp(\"%s\",\"%s\"):%i\n",flag,
 		//	flag,tLfFlags[i].str,strcmp(tLfFlags[i].str,flag)
 		//);
 		if(strcmp(tLfFlags[i].str,flag)==0){
 			// Flag entry found
-			//printf("DBG:tLnArgsGetflag(\"%s\"): flag entry found\n",flag);
-			//printf("DBG:tLnArgsGetflag(\"%s\"): boolean values: %i, %i, %i\n",flag, 
+			//printf("DBG:LnArgsGetflag(\"%s\"): flag entry found\n",flag);
+			//printf("DBG:LnArgsGetflag(\"%s\"): boolean values: %i, %i, %i\n",flag, 
 			//	tLfFlags[i].passed,tLfFlags[i].value,tLfFlags[i].defaultvalue
 			//);
 			if(tLfFlags[i].passed){
@@ -55,8 +65,8 @@ bool tLnArgsPassed(char* flag){
 	return false;
 };
 
-bool tLnArgsSetflag(char* flag, intptr_t value){
-	//printf("DBG:tLnArgsSetflag(\"%s\",%i)\n",flag,value);
+bool LnArgsSetflag(char* flag, intptr_t value){
+	//printf("DBG:LnArgsSetflag(\"%s\",%i)\n",flag,value);
 	for(int i=0;!tLfFlags[i].last;i++){
 		if(strcmp(tLfFlags[i].str,flag)==0){
 			// Flag entry found
@@ -100,11 +110,14 @@ void runprogram(char* program, char** argv){
 			);
 			exit(1);
 		}else{
+#ifdef qvGTrace
+			printf("Ln: [T] Waiting on process %i\n",pid);
+#endif
 			waitpid(pid,&err,null);
 			if(err){
 				fprintf(stderr,"Ln: [M] Exitcode [%i: %s∙%i %s] on program \"%s\"\n",err,err>=256?"user":"posix",err>=256?err/256:err,
-					 err==  EOVERFLOW?"segfault"
-					:err==  ENOTSUP?"failed assertion"
+					 err==  128+SIGSEGV?"segfault"
+					:err==  128+SIGABRT?"failed assertion"
 					:err==1*256?"generic user error"
 					:err==4*256?"internal debug"
 					:err==5*256?"internal debug"
@@ -113,8 +126,8 @@ void runprogram(char* program, char** argv){
 				);
 			};
 			printf("Ln: [M] Exitcode: %i: %s∙%i %s\n",err,err>=256?"user":"posix",err>=256?err/256:err,
-				  err==  139?"segfault"
-				 :err==  134?"failed assertion"
+				  err==  128+SIGSEGV?"segfault"
+				 :err==  128+SIGABRT?"sigabort • failed assertion"
 				 :err==1*256?"generic user error"
 				 :err==4*256?"internal debug"
 				 :err==5*256?"internal debug"
@@ -139,19 +152,25 @@ void parsefile2(char* program, char* filename, char* ext1, char* ext2, char* arg
 	char* argv[12];
 	fflush(stdout);
 	
-	argv[0]=mtString_Join(szLnRundirectory?:"",program);
-	argv[1]="-a";
-	argv[2]=szLnArchitecture;
-	argv[3]="-o";
-	argv[4]=mtString_Join(filename,ext2);
-	argv[5]=mtString_Join(filename,ext1);
-	argv[6]=szLnConfigdir?"-c":0;
-	argv[7]=szLnConfigdir?:0;
-	argv[8]=0;
-	argv[9]=0;
+	unsigned i = 0;
+	argv[i++]=mtString_Join(szLnRundirectory?:"",program);
+	if(strcmp(program,"xcc-singlestage")==0){
+		if(bLnIr==eLnIr_Alternate) argv[i++]="-m";
+		if(bLnIr==eLnIr_Legacy)    argv[i++]="-!m";
+		if(bLnIr==eLnIr_Native)    argv[i++]="-n";
+	};
+	argv[i++]="-a";
+	argv[i++]=szLnArchitecture;
+	argv[i++]="-o";
+	argv[i++]=mtString_Join(filename,ext2);
+	argv[i++]=mtString_Join(filename,ext1);
+	argv[i++]=szLnConfigdir?"-c":0;
+	argv[i++]=szLnConfigdir?:0;
+	argv[i++]=0;
+	argv[i++]=0;
 	runprogram(program,(char**)(&argv));
-	free(argv[4]);
-	free(argv[5]);
+	//free(argv[4]);
+	//free(argv[5]);
 	fflush(stdout);
 };
 void parsefile(char* program, char* filename, char* ext1, char* ext2, char* args){
@@ -201,10 +220,10 @@ void compile(char* file){ // Downs whatever was given to it to object file
 		parsefile("xcc-preprocess" ,filename,".cem",".cpr",0);
 		extension="cpr";
 	};
-	if(!tLnArgsGetflag("m")){
+	if(!LnArgsGetflag("m")){
 		//Use singlestage compiler
 		if(strcmp(extension,"cpr")==0){
-			parsefile("xcc-singlestage",filename,".cpr",".obj",0);
+			parsefile2("xcc-singlestage",filename,".cpr",".obj",0);
 			extension="ir";
 		};
 	}else{
@@ -249,6 +268,65 @@ void compile(char* file){ // Downs whatever was given to it to object file
 void LnNullpointerhandler(int signum){
 	fprintf(stderr,"Ln: [F] Segfault catched! \n");
 	ErfFatal();
+};
+void LnReadarchdef(char* fname){
+	ErfEnter_String("LnReadarchdef");
+	assert(fname);
+	fname = mtString_Join(
+		"/etc/xcc/",
+		mtString_Join(
+			fname,
+			"/archdef.ln"
+		)
+	);
+	FILE* archdeffile = fopen(fname,"r");
+	if(archdeffile==nullptr)
+		ErfError_String2(mtString_Format("Ln: [E] No archdef \"%s\"\n",fname));
+	// Read the archdef
+	unsigned line = 0;
+	while(fpeekc(archdeffile)!=EOF){
+		ErfUpdate_String(mtString_Format("LnReadarchdef: Line %u",++line));
+		char* str = mtString_Create();
+		// Read archdef line
+		while(fpeekc(archdeffile)!='\n'){
+			if(fpeekc(archdeffile)==EOF)
+				if(errno){
+					ErfError_String2(mtString_Format(
+						"Ln: [E] Unable to read archdef: "
+						"Unexcepted file read error %i"
+						"\n",
+						(int)errno
+					));
+				}else{
+					ErfError_String2("Ln: [E] Unable to read archdef: Unexcepted end of file: Excepted a charater or newline, got end of file\n");
+				};
+			mtString_Appendchar(&str, fgetc(archdeffile));
+		};
+		fgetc(archdeffile);
+		// Read directive
+		char* arg = mtString_FindcharFirst(str,' ');
+		if(arg){
+			// Arguments are passed
+			*arg++ = 0;
+		}else{
+			// No arguments passed
+			//arg=nullptr;
+		};
+		// Handle directive
+		if(!*str){
+			// Empty line/directive
+		}else if(strcmp(str,"usealtir")==0){
+			bLnIr = eLnIr_Alternate;
+		}else if(strcmp(str,"useoldir")==0){
+			bLnIr = eLnIr_Legacy;
+		}else if(strcmp(str,"usenativeir")==0){
+			bLnIr = eLnIr_Native;
+		}else{
+			ErfError_String2(mtString_Format(
+				"Ln: [E] Unrecognized directive \"%s\"\n",str));
+		}
+	};
+	ErfLeave();
 };
 int main (int argc,char* argv[]) {
 	signal(SIGSEGV,LnNullpointerhandler);
@@ -329,6 +407,10 @@ int main (int argc,char* argv[]) {
 			szLnConfigdir = argv[++aindex];
 		}else if(argv[aindex][1]=='a'){ // Architecture
 			szLnArchitecture = argv[++aindex];
+#ifdef qvGTrace
+			printf("Ln: [T] szLnArchitecture==\"%s\"\n",szLnArchitecture);
+#endif
+			LnReadarchdef(szLnArchitecture);
 		}else if(argv[aindex][1]=='o'){ // Outfile
 			szLnOutfile = argv[++aindex];
 		}else if(argv[aindex][1]!='-'){ // Others
@@ -336,16 +418,16 @@ int main (int argc,char* argv[]) {
 			for(int i=1;argv[aindex][i]!=0;i++){
 				if(argv[aindex][i]=='!'){ // Force flag negation
 					i++;
-					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),false);
+					LnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),false);
 				}else if(argv[aindex][i]=='o'){
 					szLnOutfile = argv[++aindex];
 				}else{
-					tLnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),true);
+					LnArgsSetflag((char*)(&(char[2]){argv[aindex][i],0}),true);
 				}
 			};
 		}else{
 			//Multicharater flag
-			tLnArgsSetflag(argv[aindex]+2,true);
+			LnArgsSetflag(argv[aindex]+2,true);
 		}
 	};
 	if(!szLnArchitecture){

@@ -111,7 +111,7 @@ void ErfWarning(){
 	ErfDumpstacktrace();
 	fprintf(stderr,"erf:[W] (end errorlog)\n");
 };
-void ErfError(){
+void ErfError(void){
 	fprintf(stderr,"erf:[E] Error occured!\n");
 	ErfDumpstacktrace();
 	fprintf(stderr,"erf:[E] (end errorlog)\n");

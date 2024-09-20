@@ -118,6 +118,7 @@ typedef enum eGAtomictype {
 	eGAtomictype_Intfarptr        = 48,
 	// Some specific types
 	eGAtomictype_Sizet            = 49,
+	eGAtomictype_Count
 } eGAtomictype;
 typedef struct {eGAtomictype atomictype; char* str;} GAtomictypetostring_Entry;
 GAtomictypetostring_Entry GAtomictypetostring[] = {
@@ -517,3 +518,4 @@ expression
 	| expression operator expression
 	;
 */
+// vim:ts=4:fdm=indent
