@@ -9,6 +9,7 @@ clean:
 	rm -f xcc-embedder
 	rm -f xcc-preprocess
 	rm -f xcc-tokenizer
+	rm -f xcc-lispcompiler
 	rm -f xcc-lexer
 	rm -f xcc-ircompiler
 	rm -f xcc-assembler
@@ -25,6 +26,7 @@ package:
 	cp ./xcc-singlestage  ./usr/local/bin
 	cp ./xcc-embedder     ./usr/local/bin
 	cp ./xcc-preprocess   ./usr/local/bin
+	cp ./xcc-lispcompiler ./usr/local/bin
 	cp ./xcc-ircompiler   ./usr/local/bin
 	cp ./xcc-assembler    ./usr/local/bin
 	cp ./xcc-ld           ./usr/local/bin
@@ -61,6 +63,7 @@ xcc-all: xcc \
 	xcc-embedder \
 	xcc-preprocess \
 	xcc-tokenizer \
+	xcc-lispcompiler \
 	xcc-ircompiler \
 	xcc-assembler \
 	xcc-ld \

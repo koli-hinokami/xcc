@@ -212,6 +212,10 @@ void compile(char* file){ // Downs whatever was given to it to object file
 	char* filename = trimextension(file);
 	char* extension = mtString_FindcharLast(file,'.')+1;
 	assert(extension-1!=file);
+	if(strcmp(extension,"l")==0){
+		parsefile2("xcc-lispcompiler",filename,".l"  ,".ir",0);
+		extension="ir";
+	};
 	if(strcmp(extension,"c")==0){
 		parsefile2("xcc-embedder"   ,filename,".c"  ,".cem",0);
 		extension="cem";
