@@ -45,15 +45,16 @@ ptGCons mtGCons_CreateCons(ptGCons car,ptGCons cdr){return mtGCons_Clone(&(tGCon
 ptGCons mtGCons_CreateAtom(char takeowns * str){return mtGCons_Clone(&(tGCons){.isatom=true,.car=nullptr,.cdr=nullptr,.atom=str});};
 ptGCons mtGCons_PrintI(ptGCons self){
 	if(!self){
-		printf("NIL");
+		printf("/* internal inconsistency */");
 	}else if(self->isatom){
-		printf("•");
-		mtGCons_PrintI(self);
+		printf(" . ");
+		mtGCons_Print(self);
 	}else{
 		mtGCons_Print(self->car);
 		if(self->cdr){
 			printf(" ");
 			mtGCons_PrintI(self->cdr);
+		}else{
 		};
 	}
 	return self;
@@ -91,27 +92,15 @@ ptGCons UReadtree(){ // Global for lcom
 			// Terminate if list terminator ')' is seen
 			if(fpeekc(srcfile)==')'){fgetc(srcfile);return temp;};
 			// Read an atom
-			char* str = mtString_Create();
-			do{
-				if(fpeekc(srcfile)!=EOF){
-					mtString_Appendchar(&str,fgetc(srcfile));
-				}else{ 
-					ErfError_String2(
-						"U:  [E] UReadtree: Reading list: "
-						"Unexcepted end of file\n");
-				};
-			} while(
-				!isblank(fpeekc(srcfile))
-				&& !mtChar_IsTokenseparator(fpeekc(srcfile))
-			);
+			ptGCons atom = UReadtree();
 			// Insert it into list
 			if(!temp){
-				temp=mtGCons_CreateCons(mtGCons_CreateAtom(str),nullptr);
+				temp=mtGCons_CreateCons(atom,nullptr);
 			}else{
 				for(ptGCons i=temp; i; i=i->cdr){
 					assert(i);
 					if(i->cdr==nullptr){
-						i->cdr=mtGCons_CreateCons(mtGCons_CreateAtom(str),nullptr);
+						i->cdr=mtGCons_CreateCons(atom,nullptr);
 						break;
 					};
 				};
@@ -185,6 +174,5 @@ int main(int argc, char** argv, char** envp){
 			UCompilefile(argv[i]);
 		};
 	};
-	exit(4);
 	return 0;
 };
