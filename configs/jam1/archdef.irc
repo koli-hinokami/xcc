@@ -2,6 +2,7 @@
 	; Jam-1 archdef
 opcode	irc.programprologue			: .extern Math_Multiply_16_16
 opcode	irc.programepilogue			: 
+opcode	irc.global				: 
 opcode	irc.segment			#1	: .segment #1
 opcode	v.compilernop.relative.void		: cnop
 opcode	v.nop.relative.void			: nop
@@ -12,6 +13,7 @@ opcode	v.enter.relative.void		#1	: push	ra		\
 						| mov	si,	sp 	\
 						| mov	c,	0	\
 						| .times #1 push c	
+opcode	v.call_abs.relative.nearptr	#1	: call #1
 opcode	v.const.relative.void		#1	: 
 opcode	v.const.relative.int8		#1	: mov a, #1
 opcode	v.const.relative.uint8		#1	: mov a, #1
