@@ -123,6 +123,12 @@ void ErfError_String2(char* /* borrows */ string){
 	fprintf(stderr,"erf:[E] (end errorlog)\n");
 	if(!bErfForce)exit(1);
 };
+void ErfFatal_String2(char* /* borrows*/ string){
+	fprintf(stderr,"%serf:[F] Fatal error occured!\n",string);
+	ErfDumpstacktrace();
+	fprintf(stderr,"erf:[F] (end errorlog)\n");
+	if(!bErfFullforce)exit(1);
+};
 void ErfFatal_String(char* /* borrows*/ string){
 	fprintf(stderr,"erf:[F] Fatal error occured: %s\n",string);
 	ErfDumpstacktrace();
