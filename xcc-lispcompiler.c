@@ -27,6 +27,7 @@ typedef struct {
 #define mut
 // -- Preprocessor constants --
 #define qvSgMaxsize 2000 // Should be enough
+#define qvGConssize 4 // For 16-bit targets. On modern PCs this should be 16.
 // -- Forward declarations --
 ptGCons mtGCons_Print(ptGCons self);
 ptGCons mtGCons_PrintI(ptGCons self);
@@ -51,7 +52,7 @@ bool mtChar_IsTokenseparator(char ch){
 	if(ch=='\n')return true;
 	if(ch==')')return true;
 	if(ch=='(')return true;
-	return isblank(ch);
+	return isspace(ch);
 };
 // -- Lispmachine --
 // typedef struct tGCons { 
@@ -93,10 +94,11 @@ ptGCons mtGCons_Print(ptGCons self){
 // -- Reader --
 ptGCons UReadtree(){ // Global for lcom
 #ifdef qvGTrace
-	//printf("U:  [T] UReadtree: Entered\n");
+	printf("U:  [T] UReadtree: Entered\n");
 #endif
 	// Skip whitespace
 	while(isspace(fpeekc(srcfile)))if(fgetc(srcfile)==EOF)return nullptr;
+	if(fpeekc(srcfile)==EOF) return nullptr;
 	if(fpeekc(srcfile)=='('){fgetc(srcfile);
 		// Open parenthesis -> read a list
 		ptGCons temp = nullptr;
@@ -127,7 +129,11 @@ ptGCons UReadtree(){ // Global for lcom
 	}else{
 		// Atom
 		char* str = mtString_Create();
-		while(!mtChar_IsTokenseparator(fpeekc(srcfile))) mtString_Appendchar(&str,fgetc(srcfile));
+		while(!mtChar_IsTokenseparator(fpeekc(srcfile))){
+			if(fpeekc(srcfile)==EOF)
+				return mtGCons_CreateAtom(str);
+			mtString_Appendchar(&str,fgetc(srcfile));
+		};
 		return mtGCons_CreateAtom(str);
 	};
 };
@@ -143,18 +149,87 @@ tSgSymbol* SgCreatesymbol(char* name){
 	SgSymbols[SgLastsymbolid-1].segment = 0;
 	SgSymbols[SgLastsymbolid-1].offset = 0;
 	SgSymbols[SgLastsymbolid-1].sym = nullptr;
+	return &(SgSymbols[SgLastsymbolid-1]);
+};
+char* mtSgSymbol_Embed(tSgSymbol* self){
+	switch(self->segment){
+		case mtSgSymbol_Code:  return mtString_Format("c_%i\n",self->offset);
+		case mtSgSymbol_Data:  return mtString_Format("d_%i\n",self->offset);
+		case mtSgSymbol_Frame: return mtString_Format("fp+%i\n",self->offset);
+		case mtSgSymbol_Named: return self->sym;
+		default: assert(false);
+	};
 };
 // -- Compiler --
-void CgCompilearguments(ptGCons self){
-	ErfError_String2("U:  [E] CgCompilearguments: Unimplemented code hit\n");
+int CgCompilearguments(ptGCons self){
+	ErfEnter_String("CgCompilearguments");
+	int position = qvGConssize; // Retargetinghook: Arguments start
+	int argcount = 0;
+	assert(!self->isatom);
+	for(ptGCons i=self; i; i=i->cdr){
+		assert(i);
+		assert(i->car);
+		assert(i->car->isatom);
+		tSgSymbol* sym = SgCreatesymbol(i->car->atom);
+		assert(sym);
+		sym->segment = mtSgSymbol_Frame;
+		sym->offset = position+argcount*qvGConssize;
+		argcount++;
+	};
+	//ErfError_String2("U:  [E] CgCompilearguments: Unimplemented code hit\n");
+	ErfLeave();
+	return argcount;
+};
+void CgCompileexpr(ptGCons self){ // Compile an expression
+	// eval[e; a] = [
+	//   atom[e] → assoc[e; a];
+	//   atom[car[e]] → [
+	//     eq[car[e]; QUOTE] → cadr[e];
+	//     eq[car[e]; ATOM]  → atom[eval[cadr[e]; a]];
+	//     eq[car[e]; EQ]    → [eval[cadr[e]; a] = eval[caddr[e]; a]];
+	//     eq[car[e]; COND]  → evcon[cdr[e]; a];
+	//     eq[car[e]; CAR]   → car[eval[cadr[e]; a]];
+	//     eq[car[e]; CDR]   → cdr[eval[cadr[e]; a]];
+	//     eq[car[e]; CONS]  → cons[eval[cadr[e]; a]; eval[caddr[e]; a]];
+	//     T                 → eval[cons[assoc[car[e]; a]; evlis[cdr[e]; a]]; a]
+	//   ];
+	//   eq[caar[e]; LAMBDA] →
+	//     eval[caddar[e]; append[pair[cadar[e]; evlis[cdr[e]; a]; a]]]
+	// ]
+	ErfEnter_String("CgCompileexpr");
+	assert(self);
+	if(self->isatom){
+		// Variable value
+		tSgSymbol* sym = SgFindsymbol(self->atom);
+		fprintf(dstfile,"\tlea\t%s\n",mtSgSymbol_Embed(sym));
+	}else if(self->car->isatom){
+		// Funcall
+		tSgSymbol* sym = SgFindsymbol(self->car->atom);
+		if(!sym) ErfError_String2(mtString_Format("Cg: [E] CgCompileexpr: Funcall: Function \"%s\" not found\n",self->car->atom));
+		for(ptGCons i;i;i=i->cdr){
+			CgCompileexpr(i->car);
+			fprintf(dstfile,"\tpha\n");
+		};
+		fprintf(dstfile,"\tv.call_abs.relative.nearptr\t%s\n",mtSgSymbol_Embed(sym));
+	}else{
+		ErfError_String2("U:  [E] CgCompileexpr: Unrecognized expression\n");
+	};
+	ErfLeave();
 };
 void CgImpliedprogn(ptGCons self){
-	ErfError_String2("U:  [E] CgImpliedprogn: Unimplemented code hit\n");
+	ErfEnter_String("CgImpliedprogn");
+	for(ptGCons i=self; i; i=i->cdr){
+		// For each statement, compile it.
+		// Value of last one ends up in accumulator - that's return value.
+		CgCompileexpr(i->car);
+	};
+	ErfLeave();
 };
 void UCompile(ptGCons tree){ // Compile a tree into compiled lisp code
 	assert(!tree->isatom);
 	if(!tree->car->isatom)
 		ErfError_String2("U:  [E] UCompile: Composite declaration kind\n");
+	ErfEnter_String(mtString_Format("UCompile: %s",tree->car->atom));
 	if(strcmp(tree->car->atom,"rpaqq")==0){
 		ErfError_String2("U:  [E] UCompile: Who gave me Interlisp sources?!\n");
 	}else if(strcmp(tree->car->atom,"defineq")==0){
@@ -169,17 +244,22 @@ void UCompile(ptGCons tree){ // Compile a tree into compiled lisp code
 			sym->segment = mtSgSymbol_Code;
 			sym->offset = ULabels++;
 		}
+		fprintf(dstfile,"c_%i:\t%s:\tirc.global ;; lispfn\n",SgLastsymbolid-1,tree->cdr->car->atom);
 		// Get locals unwinding point
 		int sgunwind = SgLastsymbolid;
 		// Parse arguments
-		CgCompilearguments(tree->cdr->car);
+		int argcount = CgCompilearguments(tree->cdr->cdr->car);
+		fprintf(dstfile,"\t;; %i arguments\n",argcount);
 		// Compile implied progn
-		CgImpliedprogn(tree->cdr->cdr);
+		CgImpliedprogn(tree->cdr->cdr->cdr);
+		// Return and destroy arguments (for C ABI compat)
+		fprintf(dstfile,"\tv.prereturn.relative.nearptr\n\tv.return.relative.nearptr\t%i\n",argcount);
 		// Unwind symbols
 		SgLastsymbolid = sgunwind;
 	}else{
 		ErfError_String2("U:  [E] UCompile: Unrecognized declaration kind\n");
 	};
+	ErfLeave();
 };
 // -- Main loop --
 void UCompilefile(char* file){
@@ -200,9 +280,32 @@ void UCompilefile(char* file){
 		UCompile(tree);
 	};
 };
+// -- Initialization --
+void UCreatebuiltin(char* lispname, char* externalname){
+	SgCreatesymbol(lispname);
+	SgSymbols[SgLastsymbolid-1].segment=mtSgSymbol_Named;
+	SgSymbols[SgLastsymbolid-1].sym=externalname;
+};
+void UInitsymbols(){
+	UCreatebuiltin("QUOTE","LcLiteral");
+	UCreatebuiltin("CAR","LcCar");
+	UCreatebuiltin("CDR","LcCdr");
+	UCreatebuiltin("ATOM","LcAtom");
+	UCreatebuiltin("EQ","LcEqual");
+	UCreatebuiltin("COND","LcCond");
+	UCreatebuiltin("CONS","LcCons");
+	UCreatebuiltin("RPLACA","LcReplacecar");
+	UCreatebuiltin("RPLACD","LcReplacecdr");
+};
 // -- Launcher --
+void LnNullpointerhandler(int signum){
+	fprintf(stderr,"Ln: [F] Segfault catched! \n");
+	ErfFatal();
+};
 int main(int argc, char** argv, char** envp){
+	signal(SIGSEGV,LnNullpointerhandler);
 	printf("L:  [M] %s: xcc Lisp compiler\n", argv[0]);
+	UInitsymbols();
 	for(int i=1;i<argc;i++){assert(argv[i]);
 		// Parse an argument
 #ifdef qvGTrace
@@ -214,6 +317,11 @@ int main(int argc, char** argv, char** envp){
 					case 'o': // Output file.
 						if(dstfile) ErfError_String2("L:  [E] lcom: Output file specified when output file was already specified\n");
 						dstfile = fopen(argv[++i],"w");
+						fprintf(dstfile,
+							"; ------- xcc Retargetable Crossdevelopment suite - Primary IR dump ---------\n"
+							"; -------------------- Compiled Lisp - No GC - xcc C ABI --------------------\n"
+							"\tirc.programprologue"
+						);
 						goto argpunwind;
 						break;
 					case 'a': // Architecture. lcom (so far) doesn't care, so skip.
@@ -234,8 +342,12 @@ int main(int argc, char** argv, char** envp){
 			};
 			argpunwind:
 		}else{
+			fprintf(dstfile,"\t;; -----------------------------\n");
+			fprintf(dstfile,"\t;; start of \"%s\"\n",argv[i]);
 			UCompilefile(argv[i]);
+			fprintf(dstfile,"\t;; end of \"%s\"\n",argv[i]);
 		};
 	};
+	fprintf(dstfile,"\tirc.programepilogue\n\t;; end of compilation\n");
 	return 0;
 };
