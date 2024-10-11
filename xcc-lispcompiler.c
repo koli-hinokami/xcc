@@ -9,17 +9,34 @@ typedef struct tGCons {
 	struct tGCons *cdr;
 	char* atom;
 } tGCons, *ptGCons;
+
+typedef struct {
+	char* name;
+	enum {
+		mtSgSymbol_Frame = 1, // fp+%i
+		mtSgSymbol_Code  = 2, // c_%i
+		mtSgSymbol_Data  = 3, // d_%i
+		mtSgSymbol_Named = 4, // %s
+	} segment;
+	char* sym;
+	int offset;
+} tSgSymbol;
 // -- Preprocessor macroses --
 #define takeowns
 #define borrows
 #define mut
 // -- Preprocessor constants --
+#define qvSgMaxsize 2000 // Should be enough
 // -- Forward declarations --
 ptGCons mtGCons_Print(ptGCons self);
 ptGCons mtGCons_PrintI(ptGCons self);
 // -- Globals --
 FILE* srcfile;
 FILE* dstfile;
+
+tSgSymbol SgSymbols[qvSgMaxsize];
+int SgLastsymbolid; // Also symbol count
+int ULabels;
 // -- Auxilirally functions --
 int fpeekc(FILE* self){
 	int ch = fgetc(self);
@@ -31,6 +48,7 @@ int fpeekc(FILE* self){
 };
 bool mtChar_IsTokenseparator(char ch){
 	if(ch=='_')return false;
+	if(ch=='\n')return true;
 	if(ch==')')return true;
 	if(ch=='(')return true;
 	return isblank(ch);
@@ -75,7 +93,7 @@ ptGCons mtGCons_Print(ptGCons self){
 // -- Reader --
 ptGCons UReadtree(){ // Global for lcom
 #ifdef qvGTrace
-	printf("U:  [T] UReadtree: Entered\n");
+	//printf("U:  [T] UReadtree: Entered\n");
 #endif
 	// Skip whitespace
 	while(isspace(fpeekc(srcfile)))if(fgetc(srcfile)==EOF)return nullptr;
@@ -109,14 +127,59 @@ ptGCons UReadtree(){ // Global for lcom
 	}else{
 		// Atom
 		char* str = mtString_Create();
-		while(!isblank(fpeekc(srcfile))) mtString_Appendchar(&str,fgetc(srcfile));
+		while(!mtChar_IsTokenseparator(fpeekc(srcfile))) mtString_Appendchar(&str,fgetc(srcfile));
 		return mtGCons_CreateAtom(str);
 	};
 };
 // -- Symbolgen --
+tSgSymbol* SgFindsymbol(char* name){
+	for(int i=0;i<SgLastsymbolid;i++)
+		if(strcmp(name,SgSymbols[i].name)==0)
+			return &(SgSymbols[i]);
+	return nullptr;
+};
+tSgSymbol* SgCreatesymbol(char* name){
+	SgSymbols[SgLastsymbolid++].name=name;
+	SgSymbols[SgLastsymbolid-1].segment = 0;
+	SgSymbols[SgLastsymbolid-1].offset = 0;
+	SgSymbols[SgLastsymbolid-1].sym = nullptr;
+};
 // -- Compiler --
+void CgCompilearguments(ptGCons self){
+	ErfError_String2("U:  [E] CgCompilearguments: Unimplemented code hit\n");
+};
+void CgImpliedprogn(ptGCons self){
+	ErfError_String2("U:  [E] CgImpliedprogn: Unimplemented code hit\n");
+};
 void UCompile(ptGCons tree){ // Compile a tree into compiled lisp code
-	ErfFatal_String2("L:  [F] lcom: UCompile: Unimplemented code hit!\n");
+	assert(!tree->isatom);
+	if(!tree->car->isatom)
+		ErfError_String2("U:  [E] UCompile: Composite declaration kind\n");
+	if(strcmp(tree->car->atom,"rpaqq")==0){
+		ErfError_String2("U:  [E] UCompile: Who gave me Interlisp sources?!\n");
+	}else if(strcmp(tree->car->atom,"defineq")==0){
+		ErfError_String2("U:  [E] UCompile: Who gave me Interlisp sources?!\n");
+	}else if(strcmp(tree->car->atom,"*")==0){
+		// Intentional - Interlisp-style inside-progn comments.
+	}else if(strcmp(tree->car->atom,"defun")==0){
+		printf("U:  [D] UCompile: Compiling a defun\n");
+		// Create symbol
+		{
+			tSgSymbol* sym = SgCreatesymbol(tree->cdr->car->atom);
+			sym->segment = mtSgSymbol_Code;
+			sym->offset = ULabels++;
+		}
+		// Get locals unwinding point
+		int sgunwind = SgLastsymbolid;
+		// Parse arguments
+		CgCompilearguments(tree->cdr->car);
+		// Compile implied progn
+		CgImpliedprogn(tree->cdr->cdr);
+		// Unwind symbols
+		SgLastsymbolid = sgunwind;
+	}else{
+		ErfError_String2("U:  [E] UCompile: Unrecognized declaration kind\n");
+	};
 };
 // -- Main loop --
 void UCompilefile(char* file){
