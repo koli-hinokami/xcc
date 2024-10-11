@@ -1,0 +1,30 @@
+	;; Lisp primitives in Primary IR format
+l_0xa000171b0:	LcCar:	v.global.relative.void	
+l_0xa0001db30:	v.enter.relative.void	0
+l_0xa0001fd80:	v.const.relative.nearptr	4
+l_0xa0001fc90:	v.indexfp.relative.nearptr	
+l_0xa0001f970:	v.ld.data.nearptr	; the cons
+l_0xa0001eaa0:	v.ld.data.nearptr	; it's car
+l_0xa00014350:	v.prereturn.relative.nearptr	
+l_0xa000150a0:	v.leave.relative.void	
+l_0xa000166d0:	v.return.relative.nearptr	0
+l_0xa00016d00:	v.const.relative.nearptr	0
+l_0xa00019b40:	v.prereturn.relative.nearptr	
+l_0xa00021e00:	v.leave.relative.void	
+l_0xa00022210:	v.return.relative.nearptr	2
+l_0xa00019ff0:	LcCdr:	v.global.relative.void	
+l_0xa00022ea0:	v.enter.relative.void	2
+l_0xa00023060:	v.compilernop.relative.void	
+l_0xa000251a0:	v.const.relative.nearptr	4
+l_0xa000250b0:	v.indexfp.relative.nearptr	
+l_0xa00024d90:	v.ld.data.nearptr	; the cons
+l_0xa000252b0:	v.pha.relative.nearptr	
+l_0xa00025970:	v.const.relative.int16	2
+l_0xa00026160:	v.plb.relative.nearptr	
+l_0xa000264b0:	v.add.relative.nearptr	
+l_0xa00023ec0:	v.ld.data.nearptr	; it's cdr
+l_0xa00026c00:	v.prereturn.relative.nearptr	
+l_0xa00027010:	v.leave.relative.void	
+l_0xa00027460:	v.return.relative.nearptr	2
+	;; End of primitives
+;;	vim:ts=8:

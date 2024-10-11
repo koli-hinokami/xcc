@@ -34,6 +34,7 @@ ptGCons mtGCons_PrintI(ptGCons self);
 // -- Globals --
 FILE* srcfile;
 FILE* dstfile;
+char* archname;
 
 tSgSymbol SgSymbols[qvSgMaxsize];
 int SgLastsymbolid; // Also symbol count
@@ -244,6 +245,7 @@ void UCompile(ptGCons tree){ // Compile a tree into compiled lisp code
 			sym->segment = mtSgSymbol_Code;
 			sym->offset = ULabels++;
 		}
+		fprintf(dstfile,"\tirc.segment 7\n");
 		fprintf(dstfile,"c_%i:\t%s:\tirc.global ;; lispfn\n",SgLastsymbolid-1,tree->cdr->car->atom);
 		// Get locals unwinding point
 		int sgunwind = SgLastsymbolid;
@@ -320,12 +322,17 @@ int main(int argc, char** argv, char** envp){
 						fprintf(dstfile,
 							"; ------- xcc Retargetable Crossdevelopment suite - Primary IR dump ---------\n"
 							"; -------------------- Compiled Lisp - No GC - xcc C ABI --------------------\n"
-							"\tirc.programprologue"
+							"\tirc.programprologue\n"
 						);
+						{ // Blit primitives
+							FILE* primitivesfile = fopen(mtString_Format("/etc/xcc/%s/archdef.lcp",archname),"r");
+							while(fpeekc(primitivesfile)!=EOF)
+								fputc(fgetc(primitivesfile),dstfile);
+						};
 						goto argpunwind;
 						break;
 					case 'a': // Architecture. lcom (so far) doesn't care, so skip.
-						++i;
+						archname = argv[++i];
 						goto argpunwind;
 						break;
 					case '-':
