@@ -2,7 +2,7 @@
 	; Jam-1 archdef
 opcode	irc.programprologue			: .extern Math_Multiply_16_16
 opcode	irc.programepilogue			: 
-opcode	irc.global				: 
+opcode	irc.global				: .global
 opcode	irc.segment			#1	: .segment #1
 opcode	v.compilernop.relative.void		: cnop
 opcode	v.nop.relative.void			: nop
@@ -245,10 +245,12 @@ opcode	v.r.relative.int8			: db 0 ; rb 1
 opcode	v.r.relative.uint8			: db 0 ; rb 1
 opcode	v.r.relative.int16			: dw 0 ; rw 1
 opcode	v.r.relative.uint16			: dw 0 ; rw 1
+opcode	v.r.relative.nearptr			: dw 0 ; rw 1
 opcode	v.d.relative.int8	#1		: db #1
 opcode	v.d.relative.uint8	#1		: db #1
 opcode	v.d.relative.int16	#1		: dw #1
 opcode	v.d.relative.uint16	#1		: dw #1
+opcode	v.d.relative.nearptr	#1		: dw #1
 opcode	v.push.relative.void			: 
 opcode	v.push.relative.nearptr			: push b | push a
 opcode	v.push.relative.int16			: push b | push a

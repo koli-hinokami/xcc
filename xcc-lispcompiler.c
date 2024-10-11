@@ -17,6 +17,9 @@ typedef struct {
 		mtSgSymbol_Code  = 2, // c_%i
 		mtSgSymbol_Data  = 3, // d_%i
 		mtSgSymbol_Named = 4, // %s
+		mtSgSymbol_Data_car = 5, // d_%i | car
+		mtSgSymbol_Data_cdr = 6, // d_%i | cdr
+		mtSgSymbol_Const  = 7, // %i
 	} segment;
 	char* sym;
 	int offset;
@@ -140,6 +143,7 @@ ptGCons UReadtree(){ // Global for lcom
 };
 // -- Symbolgen --
 tSgSymbol* SgFindsymbol(char* name){
+	assert(name);
 	for(int i=0;i<SgLastsymbolid;i++)
 		if(strcmp(name,SgSymbols[i].name)==0)
 			return &(SgSymbols[i]);
@@ -158,8 +162,10 @@ char* mtSgSymbol_Embed(tSgSymbol* self){
 		case mtSgSymbol_Data:  return mtString_Format("d_%i\n",self->offset);
 		case mtSgSymbol_Frame: return mtString_Format("fp+%i\n",self->offset);
 		case mtSgSymbol_Named: return self->sym;
+		case mtSgSymbol_Const: return mtString_Format("%i\n",self->offset);
 		default: assert(false);
 	};
+	return nullptr;
 };
 // -- Compiler --
 int CgCompilearguments(ptGCons self){
@@ -181,6 +187,31 @@ int CgCompilearguments(ptGCons self){
 	ErfLeave();
 	return argcount;
 };
+void CgLiteral2(int label,ptGCons self){
+	// TODO: Figure out atoms, including interning. xcc-singlestage doesn't
+	//       intern string literals, xcc-lispcompiler will.
+	fprintf(dstfile,"lit_%i:\n",label);
+	if(!self){
+		ErfError_String2("Cg: [E] CgLiteral2: Shouldn't be called with hard nil\n");
+	}else if(self->isatom){
+		ErfError_String2("Cg: [E] CgLiteral2: Atoms as constants are not supported\n");
+	}else{
+		int car = ULabels++;
+		int cdr = ULabels++;
+		if(self->car) fprintf(dstfile,"\tv.d.relative.nearptr\tlit_%i\n",car); 
+		              else fprintf(dstfile,"\tv.d.relative.nearptr\t0\n");
+		if(self->cdr) fprintf(dstfile,"\tv.d.relative.nearptr\tlit_%i\n",cdr); 
+		              else fprintf(dstfile,"\tv.d.relative.nearptr\t0\n");
+		if(self->car) CgLiteral2(car,self->car);
+		if(self->cdr) CgLiteral2(cdr,self->cdr);
+	};
+};
+void CgLiteral(ptGCons self){
+	CgLiteral2(ULabels++,self);
+};
+void CgLiteralcdr(ptGCons self){
+	CgLiteral(mtGCons_CreateCons(nullptr,self));
+};
 void CgCompileexpr(ptGCons self){ // Compile an expression
 	// eval[e; a] = [
 	//   atom[e] → assoc[e; a];
@@ -200,10 +231,13 @@ void CgCompileexpr(ptGCons self){ // Compile an expression
 	ErfEnter_String("CgCompileexpr");
 	assert(self);
 	if(self->isatom){
+		ErfUpdate_String("CgCompileexpr: atom");
 		// Variable value
 		tSgSymbol* sym = SgFindsymbol(self->atom);
-		fprintf(dstfile,"\tlea\t%s\n",mtSgSymbol_Embed(sym));
+		if(!sym) ErfError_String2(mtString_Format("Cg: [E] CgCompileexpr: Variable: Variable \"%s\" not found\n",self->atom));
+		fprintf(dstfile,"\tv.const.relative.nearptr\t%s\n",mtSgSymbol_Embed(sym));
 	}else if(self->car->isatom){
+		ErfUpdate_String("CgCompileexpr: funcall");
 		// Funcall
 		tSgSymbol* sym = SgFindsymbol(self->car->atom);
 		if(!sym) ErfError_String2(mtString_Format("Cg: [E] CgCompileexpr: Funcall: Function \"%s\" not found\n",self->car->atom));
@@ -237,6 +271,19 @@ void UCompile(ptGCons tree){ // Compile a tree into compiled lisp code
 		ErfError_String2("U:  [E] UCompile: Who gave me Interlisp sources?!\n");
 	}else if(strcmp(tree->car->atom,"*")==0){
 		// Intentional - Interlisp-style inside-progn comments.
+	}else if(strcmp(tree->car->atom,"defconstant")==0){
+		printf("U:  [D] UCompile: Compiling a defconstant\n");
+		// Create symbol
+		{
+			tSgSymbol* sym = SgCreatesymbol(tree->cdr->car->atom);
+			sym->segment = mtSgSymbol_Data_cdr;
+			sym->offset = ULabels++;
+		}
+		// Output prologue
+		fprintf(dstfile,"\tirc.segment 8\n");
+		fprintf(dstfile,"c_%i:\t%s:\tirc.global ;; lisp constvar\n",SgLastsymbolid-1,tree->cdr->car->atom);
+		CgLiteralcdr(tree->cdr->cdr?tree->cdr->cdr->car:nullptr);
+		// TODO: Initializers
 	}else if(strcmp(tree->car->atom,"defun")==0){
 		printf("U:  [D] UCompile: Compiling a defun\n");
 		// Create symbol
@@ -289,6 +336,12 @@ void UCreatebuiltin(char* lispname, char* externalname){
 	SgSymbols[SgLastsymbolid-1].sym=externalname;
 };
 void UInitsymbols(){
+	// Hard NIL
+	SgCreatesymbol("NIL");
+	SgSymbols[SgLastsymbolid-1].segment=mtSgSymbol_Const;
+	SgSymbols[SgLastsymbolid-1].offset=0;
+	SgSymbols[SgLastsymbolid-1].sym="NIL";
+	// Primitives
 	UCreatebuiltin("QUOTE","LcLiteral");
 	UCreatebuiltin("CAR","LcCar");
 	UCreatebuiltin("CDR","LcCdr");
@@ -356,5 +409,6 @@ int main(int argc, char** argv, char** envp){
 		};
 	};
 	fprintf(dstfile,"\tirc.programepilogue\n\t;; end of compilation\n");
+	fprintf(dstfile,";;\tvim:ts=8:\n");
 	return 0;
 };
