@@ -1,5 +1,20 @@
  ------------------------ xcc Internals documentation ------------------------
 
+# Namespaces
+
+ *	U	User (from xccsuite perspective's! it's supposed to be xcc's namespace
+ 		      but others are used here, so not much symbols are in U)
+ *	G	Global (libc and xccsuite!)
+ *	L	(in logs) singlestage Launcher 
+ *	Ln	Launcher - frontend and singlestage
+ *	Tk	Tokenizer
+ *	Lx	Lexer
+ *	Sg	Symbolgen
+ *	Sp	Semantic Parser
+ *	Ig	IR Generator
+ *	Cg	Code Generator
+ *	Lf	Logging Facilities
+
 # Overall architecture
 
 To be done
