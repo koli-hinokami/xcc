@@ -4,12 +4,19 @@
 #include "hyperheader.h"
 // -- Types --
 typedef struct tGCons { 
-	union { struct tGCons *car,*left,*node; };
-	union { struct tGCons *cdr,*right,*next; char* atom; };
+	bool isatom;
+	struct tGCons *car;
+	struct tGCons *cdr;
+	char* atom;
 } tGCons, *ptGCons;
 // -- Preprocessor macroses --
+#define takeowns
+#define borrows
+#define mut
 // -- Preprocessor constants --
 // -- Forward declarations --
+ptGCons mtGCons_Print(ptGCons self);
+ptGCons mtGCons_PrintI(ptGCons self);
 // -- Globals --
 FILE* srcfile;
 FILE* dstfile;
@@ -22,11 +29,47 @@ int fpeekc(FILE* self){
 	};
 	return  ungetc(ch,self);
 };
+bool mtChar_IsTokenseparator(char ch){
+	if(ch=='_')return false;
+	if(ch==')')return true;
+	if(ch=='(')return true;
+	return isblank(ch);
+};
 // -- Lispmachine --
 // typedef struct tGCons { 
 // 	union { struct tGCons car,left,node; };
 // 	union { struct tGCons cdr,right,next; char* atom; };
 // } tGCons;
+ptGCons mtGCons_Clone(ptGCons self){return memcpy(malloc(sizeof(tGCons)),self,sizeof(tGCons));};
+ptGCons mtGCons_CreateCons(ptGCons car,ptGCons cdr){return mtGCons_Clone(&(tGCons){.isatom=false,.car=car,.cdr=cdr,.atom="(cons)"});};
+ptGCons mtGCons_CreateAtom(char takeowns * str){return mtGCons_Clone(&(tGCons){.isatom=true,.car=nullptr,.cdr=nullptr,.atom=str});};
+ptGCons mtGCons_PrintI(ptGCons self){
+	if(!self){
+		printf("NIL");
+	}else if(self->isatom){
+		printf("•");
+		mtGCons_PrintI(self);
+	}else{
+		mtGCons_Print(self->car);
+		if(self->cdr){
+			printf(" ");
+			mtGCons_PrintI(self->cdr);
+		};
+	}
+	return self;
+};
+ptGCons mtGCons_Print(ptGCons self){
+	if(!self){
+		printf("NIL");
+	}else if(self->isatom){
+		printf("%s",self->atom);
+	}else{
+		printf("(");
+		mtGCons_PrintI(self);
+		printf(")");
+	}
+	return self;
+};
 // -- Classes --
 // -- Reader --
 ptGCons UReadtree(){ // Global for lcom
@@ -35,13 +78,56 @@ ptGCons UReadtree(){ // Global for lcom
 #endif
 	// Skip whitespace
 	while(isspace(fpeekc(srcfile)))if(fgetc(srcfile)==EOF)return nullptr;
-	ErfFatal_String("L:  [F] lcom: UReadtree: Unimplemented code hit!\n");
-	return nullptr;
+	if(fpeekc(srcfile)=='('){fgetc(srcfile);
+		// Open parenthesis -> read a list
+		ptGCons temp = nullptr;
+		for(;;){
+			// Skip whitespace
+			while(isspace(fpeekc(srcfile)))
+				if(fgetc(srcfile)==EOF) {
+					ErfError_String2("U:  [E] UReadtree: Reading list: No closing parentheses\n");
+					return nullptr;
+				};
+			// Terminate if list terminator ')' is seen
+			if(fpeekc(srcfile)==')'){fgetc(srcfile);return temp;};
+			// Read an atom
+			char* str = mtString_Create();
+			do{
+				if(fpeekc(srcfile)!=EOF){
+					mtString_Appendchar(&str,fgetc(srcfile));
+				}else{ 
+					ErfError_String2(
+						"U:  [E] UReadtree: Reading list: "
+						"Unexcepted end of file\n");
+				};
+			} while(
+				!isblank(fpeekc(srcfile))
+				&& !mtChar_IsTokenseparator(fpeekc(srcfile))
+			);
+			// Insert it into list
+			if(!temp){
+				temp=mtGCons_CreateCons(mtGCons_CreateAtom(str),nullptr);
+			}else{
+				for(ptGCons i=temp; i; i=i->cdr){
+					assert(i);
+					if(i->cdr==nullptr){
+						i->cdr=mtGCons_CreateCons(mtGCons_CreateAtom(str),nullptr);
+						break;
+					};
+				};
+			};
+		};
+	}else{
+		// Atom
+		char* str = mtString_Create();
+		while(!isblank(fpeekc(srcfile))) mtString_Appendchar(&str,fgetc(srcfile));
+		return mtGCons_CreateAtom(str);
+	};
 };
 // -- Symbolgen --
 // -- Compiler --
 void UCompile(ptGCons tree){ // Compile a tree into compiled lisp code
-	ErfFatal_String("L:  [F] lcom: UCompile: Unimplemented code hit!\n");
+	ErfFatal_String2("L:  [F] lcom: UCompile: Unimplemented code hit!\n");
 };
 // -- Main loop --
 void UCompilefile(char* file){
@@ -53,6 +139,11 @@ void UCompilefile(char* file){
 		// Read-eval-print loop is here!
 		// Except it's read-compile-dump loop.
 		ptGCons tree = UReadtree();
+#ifdef qvGTrace
+		printf("U:  [D] UCompilefile: Compiling tree { ");
+		mtGCons_Print(tree);
+		printf(" } \n");
+#endif
 		if(!tree)break;
 		UCompile(tree);
 	};
@@ -71,9 +162,12 @@ int main(int argc, char** argv, char** envp){
 					case 'o': // Output file.
 						if(dstfile) ErfError_String2("L:  [E] lcom: Output file specified when output file was already specified\n");
 						dstfile = fopen(argv[++i],"w");
+						goto argpunwind;
+						break;
 					case 'a': // Architecture. lcom (so far) doesn't care, so skip.
 						++i;
 						goto argpunwind;
+						break;
 					case '-':
 						ErfError_String2(mtString_Format(
 							"L:  [E] lcom: Argument \"%s\": Unrecognized multichar argument '--%s'\n",argv[i],&(argv[i][j+1])
