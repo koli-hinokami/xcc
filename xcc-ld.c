@@ -241,7 +241,7 @@ tGTargetNearpointer LdGetlabelvalue(char* /* takeown */ name){
 void LdCreateexportedlabel(char* /* takeown */ name, tGTargetNearpointer position){
 	printf("LD: [D] Exporting label %-25s:%.4x (%i)\n",name,position,position);
 	if(LdListingfile){
-		fprintf(LdListingfile,"%4x\t%s\n",position,name);
+		fprintf(LdListingfile,"%#4x\t%s\n",position,name);
 	};
 	assert(name);
 	tLdExternlabel* self = calloc(1,sizeof(tLdExternlabel));
@@ -967,8 +967,8 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 			for(tListnode* i = LdLinkerscript.first;i;i=i->next)
 				LdSecondpass(i->item);
 			// Finalize
-			if(LdListingfile) // Vim modeline
-				fprintf(LdListingfile,"\n;\tvim:tw=78:ts=8:noet:\n");
+			//if(LdListingfile) // Vim modeline
+			//	fprintf(LdListingfile,"\n;\tvim:tw=78:ts=8:noet:\n");
 			break;
 		default:
 			return ARGP_ERR_UNKNOWN;
