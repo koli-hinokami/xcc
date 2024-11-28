@@ -1923,6 +1923,16 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					);
 					ErfLeave();
 					return retval;
+				}else if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Rightvalue){
+					retval = mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Rvalueincrement,
+							.returnedtype=left->returnedtype,
+							.left=left,
+						}
+					);
+					ErfLeave();
+					return retval;
 				}else{
 					ErfFatal_String("SP: SpParse: Postincrement: Unrecognized"
 					                "value category \n");
@@ -1949,9 +1959,34 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					ErfLeave();
 					return retval;
 				}else if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Rightvalue){
+					ErfError_String2("SP: [E] SpParse: Postincrement: Incrementing an rvalue\n");
+					retval = left;
+					ErfLeave();
+					return retval;
+				}else{
+					ErfFatal_String("SP: SpParse: Postdecrement: Unrecognized"
+					                "value category \n");
+					assert(false);
+					ErfLeave();
+					return nullptr;
+				};
+			};	break;
+			case tLexem_Decrement: {
+				tSpNode* left = SpParse(self->left);
+				if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Leftvalue){
 					retval = mtSpNode_Clone(
 						&(tSpNode){
-							.type=tSplexem_Rvalueincrement,
+							.type=tSplexem_Predecrement,
+							.returnedtype=left->returnedtype,
+							.left=left,
+						}
+					);
+					ErfLeave();
+					return retval;
+				}else if(mtGType_GetValuecategory(left->returnedtype)==eGValuecategory_Rightvalue){
+					retval = mtSpNode_Clone(
+						&(tSpNode){
+							.type=tSplexem_Rvaluedecrement,
 							.returnedtype=left->returnedtype,
 							.left=left,
 						}
@@ -1959,7 +1994,7 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					ErfLeave();
 					return retval;
 				}else{
-					ErfFatal_String("SP: SpParse: Postdecrement: Unrecognized"
+					ErfFatal_String("SP: SpParse: Postincrement: Unrecognized"
 					                "value category \n");
 					assert(false);
 					ErfLeave();
@@ -1973,7 +2008,12 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					retval = mtSpNode_Clone(
 						&(tSpNode){
 							.type=tSplexem_Postdecrement,
-							.returnedtype=left->returnedtype,
+							.returnedtype=mtGType_SetValuecategory(
+								mtGType_Deepclone(
+									left->returnedtype
+								),
+								eGValuecategory_Rightvalue
+							),
 							.left=left,
 						}
 					);
@@ -1981,13 +2021,8 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 					return retval;
 				}else if(  mtGType_GetValuecategory(left->returnedtype)
 				         ==eGValuecategory_Rightvalue){
-					retval = mtSpNode_Clone(
-						&(tSpNode){
-							.type=tSplexem_Rvaluedecrement,
-							.returnedtype=left->returnedtype,
-							.left=left,
-						}
-					);
+					ErfError_String2("SP: [E] SpParse: Postdecrement: Decrementing an rvalue\n");
+					retval = left;
 					ErfLeave();
 					return retval;
 				}else{

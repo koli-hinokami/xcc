@@ -1289,17 +1289,25 @@ tGInstruction* mtGInstruction_Clone(tGInstruction* self){
 	return memcpy(malloc(sizeof(tGInstruction)),self,sizeof(tGInstruction));
 };
 tGInstruction* mtGInstruction_Deepclone(tGInstruction* self){
-	assert(self->jumptarget==nullptr); // Cloning trees is all nice and great,
-	                                   // it's just recursive.
-	                                   // Cloning directed graphs on the other
-	                                   // hand gets painful quickly.
+	//assert(self->jumptarget==nullptr); // Cloning trees is all nice and great,
+	//                                   // it's just recursive.
+	//                                   // Cloning directed graphs on the other
+	//                                   // hand gets painful quickly.
+	for(tGInstruction* i=self;i;i=i->next) 
+		for(tGInstruction* j=self;j;j=j->next) 
+			assert(j->jumptarget!=i);
+	// ↑ For now I'll just bang in a check for jump target not being 
+	//   referenced by other nodes here.
+	//   Yes, it's cubic time complexity.
+	//   > TODO: get a proper cyclic (acyclic?) directed graph cloning here
+	//   I don't care about it *much* as of now, but we will see.
 	return mtGInstruction_Clone(&(tGInstruction){
 		                                              // // Common
 		.opcode = self->opcode,                       // tGOpcode opcode; 
 		.label = self->label,                         // char* label;
 		.comment = self->comment,                     // char* comment;
 		.next = mtGInstruction_Deepclone(self->next), // struct tGInstruction* next;
-		.jumptarget = nullptr,                        // struct tGInstruction* jumptarget;
+		.jumptarget = self->jumptarget,               // struct tGInstruction* jumptarget;
 		                                              // // Primary IR
 		.immediate = self->immediate,                 // tGTargetUintmax immediate;
 		                                              // // Secondary IR

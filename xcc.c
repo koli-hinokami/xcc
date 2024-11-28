@@ -227,7 +227,7 @@ void compile(char* file){ // Downs whatever was given to it to object file
 	if(!LnArgsGetflag("m")){
 		//Use singlestage compiler
 		if(strcmp(extension,"cpr")==0){
-			parsefile2("xcc-singlestage",filename,".cpr",".obj",0);
+			parsefile2("xcc-singlestage",filename,".cpr",".ir",0);
 			extension="ir";
 		};
 	}else{

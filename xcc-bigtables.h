@@ -309,6 +309,12 @@ enum tTokentype {
 	tInstruction_Nearreturn         = 1588,
 	tInstruction_Farreturn          = 1589,
 	tInstruction_Inplaceincrement   = 1590, 
+	tInstruction_Postincrement      = 1591, // lvalue T -> rvalue T || (T i)->int{return i++;}
+	tInstruction_Predecrement       = 1592, // lvalue T -> rvalue T || (T i)->int{return --i;}
+	tInstruction_Postdecrement      = 1593, // lvalue T -> rvalue T || (T i)->int{return i--;}
+	tInstruction_Preincrement       = 1594, // lvalue T -> rvalue T || (T i)->int{return i++;}
+	tInstruction_Rvalueincrement    = 1595, // rvalue T -> rvalue T || (T i)->int{return ++i;}
+	tInstruction_Rvaluedecrement    = 1596, // rvalue T -> rvalue T || (T i)->int{return --i;}
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -3509,12 +3515,12 @@ char *TokenidtoName_Compact[]={
 	"ret_near"                    ,// 1588
 	"ret_far"                     ,// 1589
 	"inc_inplace"                 ,// 1590
-	"?"                           ,// 1591
-	"?"                           ,// 1592
-	"?"                           ,// 1593
-	"?"                           ,// 1594
-	"?"                           ,// 1595
-	"?"                           ,// 1596
+	"postinc"                     ,// 1591
+	"predec"                      ,// 1592
+	"postdec"                     ,// 1593
+	"preinc"                      ,// 1594
+	"rv_inc"                      ,// 1595
+	"rv_dec"                      ,// 1596
 	"?"                           ,// 1597
 	"?"                           ,// 1598
 	"?"                           ,// 1599

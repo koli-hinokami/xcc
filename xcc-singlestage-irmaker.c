@@ -314,7 +314,7 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			retval = mtGInstruction_Join_Modify(
 				IgCompileExpression(self->left),
 				mtGInstruction_CreateSegmented(
-					tInstruction_Lvalueincrement,
+					tInstruction_Preincrement, //tInstruction_Lvalueincrement,
 					meGSegment_Data, // TODO: Segmentation: Get segment using
 									 //        mtSpNode_GetSegment(self->right)
 					self->left->returnedtype->atomicbasetype
@@ -322,17 +322,67 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 			);
 		};	break;
 		case tSplexem_Postincrement: {
-			assert(false); // todo: handle sideeffects properly
-			retval = IgCompileExpression(self->left);
-			mtList_Prepend(&IgPendingsideeffects,
-				mtGInstruction_Join_Modify(
-					mtGInstruction_Deepclone(retval),
-					mtGInstruction_CreateSegmented(
-						tInstruction_Inplaceincrement,
-						meGSegment_Data, // TODO: Segmentation: Get segment using
-										 //        mtSpNode_GetSegment(self->right)
-						self->left->returnedtype->atomicbasetype
-					)
+			assert(  self->left->returnedtype->valuecategory
+			       ==eGValuecategory_Leftvalue);
+			retval = mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Postincrement,
+					meGSegment_Data, // TODO: Segmentation: Get segment using
+									 //        mtSpNode_GetSegment(self->right)
+					self->left->returnedtype->atomicbasetype
+				)
+			);
+		};	break;
+		case tSplexem_Predecrement: {
+			assert(  self->left->returnedtype->valuecategory
+			       ==eGValuecategory_Leftvalue);
+			retval = mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Predecrement,
+					meGSegment_Data, // TODO: Segmentation: Get segment using
+									 //        mtSpNode_GetSegment(self->right)
+					self->left->returnedtype->atomicbasetype
+				)
+			);
+		};	break;
+		case tSplexem_Postdecrement: {
+			assert(  self->left->returnedtype->valuecategory
+			       ==eGValuecategory_Leftvalue);
+			retval = mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Postdecrement,
+					meGSegment_Data, // TODO: Segmentation: Get segment using
+									 //        mtSpNode_GetSegment(self->right)
+					self->left->returnedtype->atomicbasetype
+				)
+			);
+		};	break;
+		case tSplexem_Rvalueincrement: {
+			assert(  self->left->returnedtype->valuecategory
+			       ==eGValuecategory_Rightvalue);
+			retval = mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Rvalueincrement,
+					meGSegment_Data, // TODO: Segmentation: Get segment using
+									 //        mtSpNode_GetSegment(self->right)
+					self->left->returnedtype->atomicbasetype
+				)
+			);
+		};	break;
+		case tSplexem_Rvaluedecrement: {
+			assert(  self->left->returnedtype->valuecategory
+			       ==eGValuecategory_Rightvalue);
+			retval = mtGInstruction_Join_Modify(
+				IgCompileExpression(self->left),
+				mtGInstruction_CreateSegmented(
+					tInstruction_Rvaluedecrement,
+					meGSegment_Data, // TODO: Segmentation: Get segment using
+									 //        mtSpNode_GetSegment(self->right)
+					self->left->returnedtype->atomicbasetype
 				)
 			);
 		};	break;
