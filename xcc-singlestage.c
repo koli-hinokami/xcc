@@ -22,6 +22,8 @@ tGNamespace* GRootnamespace;
 tSpNode* GSecondaryast;
 tGInstruction* GCompiled[/*segment*/meGSegment_Count];
 eGAtomictype LnTypetranslationmap[eGAtomictype_Count];
+tGTargetSizet LnNearpointersize = 2;
+tGTargetSizet LnFarpointersize = 4;
 char* LnOutputfile;
 enum{eLnIr_Legacy=1,eLnIr_Alternate=2,eLnIr_Native=3}LnIr = 1; //IR to use
 
@@ -686,9 +688,9 @@ tGType* mtGType_Transform(tGType /* modifies */ * self){ // Transform type from 
 			(void(*)(void*))mtGType_Transform_Ignorenullptr
 		);
 	};
-	if(self->atomicbasetype==eGAtomictype_Enumeration){
-		*self=*(self->complexbasetype);
-	};
+	//if(self->atomicbasetype==eGAtomictype_Enumeration){
+	//	*self=*(self->complexbasetype);
+	//};
 	switch(self->atomicbasetype){
 		case eGAtomictype_Char            :self->atomicbasetype=eGAtomictype_Uint8       ;break;
 		case eGAtomictype_Signedchar      :self->atomicbasetype=eGAtomictype_Int8        ;break;
@@ -901,7 +903,7 @@ char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);}
 char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 	char* s1 = mtString_Create();
 	if(self==nullptr){
-		mtString_Append(&s1,"totally_invalid");
+		mtString_Append(&s1,"(nil)");
 	}else if(self->atomicbasetype==eGAtomictype_Unresolved){
 		assert(self->unresolvedsymbol);
 		mtString_Append(&s1,"unresolved<");
@@ -911,6 +913,12 @@ char* mtGType_ToString_Embeddable(tGType* /* MfCcMmDynamic */ self){
 		assert(self->unresolvedsymbol);
 		mtString_Append(&s1,"enum ");
 		mtString_Append(&s1,self->unresolvedsymbol);
+		mtString_Append(&s1," : ");
+		mtString_Append(&s1,mtGType_ToString_Embeddable(self->complexbasetype));
+		if(self->precompiledenumeration)
+			mtString_Append(&s1," ( ... )");
+		if(self->structure)
+			mtString_Append(&s1," { ... }");
 	}else if(self->atomicbasetype==eGAtomictype_Structure){ 
 		mtString_Append(&s1,"struct ");
 		mtString_Append(&s1,self->unresolvedsymbol?:"(anonymous)");
@@ -1279,6 +1287,27 @@ tGInstruction* mtGInstruction_Create(void){
 };
 tGInstruction* mtGInstruction_Clone(tGInstruction* self){
 	return memcpy(malloc(sizeof(tGInstruction)),self,sizeof(tGInstruction));
+};
+tGInstruction* mtGInstruction_Deepclone(tGInstruction* self){
+	assert(self->jumptarget==nullptr); // Cloning trees is all nice and great,
+	                                   // it's just recursive.
+	                                   // Cloning directed graphs on the other
+	                                   // hand gets painful quickly.
+	return mtGInstruction_Clone(&(tGInstruction){
+		                                              // // Common
+		.opcode = self->opcode,                       // tGOpcode opcode; 
+		.label = self->label,                         // char* label;
+		.comment = self->comment,                     // char* comment;
+		.next = mtGInstruction_Deepclone(self->next), // struct tGInstruction* next;
+		.jumptarget = nullptr,                        // struct tGInstruction* jumptarget;
+		                                              // // Primary IR
+		.immediate = self->immediate,                 // tGTargetUintmax immediate;
+		                                              // // Secondary IR
+		                                              // tIr2Operand dest, source, source2;
+		.dest = self->dest,
+		.source = self->source,
+		.source2 = self->source2,
+	});
 };
 tGInstruction* mtGInstruction_CreateAllocatestorage(tGTargetSizet size){
 	tGInstruction* i=mtGInstruction_Create();

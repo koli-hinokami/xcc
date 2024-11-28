@@ -118,8 +118,10 @@ void LnCompile(char* file){
 	SgParse(GLexed);
 	if(1){
 		fprintf(stderr,"L:  [M] Printing Rootnamespace \n");
+		printf("L:  [M] Printing Rootnamespace \n");
 		LfPrint_GNamespace(GRootnamespace);
 		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
+		printf("L:  [M] Done printing Rootnamespace \n");
 	};
 	// Symbolgen second pass
 	//SgUnresolvedtypes = mtList_Create();
@@ -132,9 +134,11 @@ void LnCompile(char* file){
 	fprintf(stderr,"L:  [M] Symbolgen second pass - compiling structures\n");
 	SgCompilestructures();
 	if(1){
-		fprintf(stderr,"L:  [M] Printing Rootnamespace \n");
+		fprintf(stderr,"L:  [M] Printing Rootnamespace postresolve\n");
+		printf("L:  [M] Printing Rootnamespace postresolve\n");
 		LfPrint_GNamespace(GRootnamespace);
-		fprintf(stderr,"L:  [M] Done printing Rootnamespace \n");
+		fprintf(stderr,"L:  [M] Done printing Rootnamespace postresolve\n");
+		printf("L:  [M] Done printing Rootnamespace postresolve\n");
 	};
 	SgNosearchfortypes = true;
 	// Symbolgen struct registration

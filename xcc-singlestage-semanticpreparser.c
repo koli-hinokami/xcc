@@ -415,7 +415,8 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 			return self->structsize;
 		case eGAtomictype_Enumeration:
 			// TODO: Enumeration with base type other that `int`
-			return 2;
+			return mtGType_Sizeof(self->complexbasetype);
+			//return 2;
 		case eGAtomictype_Unresolved:
 			printf("SPP:[F] mtGType_Sizeof(%s): Calculating size of an unresolved type \n",mtGType_ToString(self));
 #ifdef qvGIgnorefatals
@@ -650,9 +651,10 @@ void SppCompileenumeration_internal(tGType* enumtype, tLxNode* self, tGTargetUin
 void SppCompileenumeration(tGType* self){
 	ErfEnter_String("SppCompileenumeration");
 	assert(self);
-	assert(self->complexbasetype); // Enumeration's type
 	if(self->atomicbasetype!=eGAtomictype_Enumeration) return;
 	if(self->structure) return;
+	if(!self->precompiledenumeration) return; // just a ref
+	assert(self->complexbasetype); // Enumeration's type
 	self->structure = malloc(0); // get a tag
 	tGTargetUintmax position;
 	SppCompileenumeration_internal(

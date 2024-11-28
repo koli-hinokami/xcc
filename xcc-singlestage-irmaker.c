@@ -321,6 +321,21 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 				)
 			);
 		};	break;
+		case tSplexem_Postincrement: {
+			assert(false); // todo: handle sideeffects properly
+			retval = IgCompileExpression(self->left);
+			mtList_Prepend(&IgPendingsideeffects,
+				mtGInstruction_Join_Modify(
+					mtGInstruction_Deepclone(retval),
+					mtGInstruction_CreateSegmented(
+						tInstruction_Inplaceincrement,
+						meGSegment_Data, // TODO: Segmentation: Get segment using
+										 //        mtSpNode_GetSegment(self->right)
+						self->left->returnedtype->atomicbasetype
+					)
+				)
+			);
+		};	break;
 		case tSplexem_Shiftleft: {
 			if(self->right->type == tSplexem_Integerconstant){
 				retval = mtGInstruction_Join_Modify(
@@ -978,8 +993,10 @@ tGInstruction* IgCompileglobalvariable(
 			mtGType_ToString(type),self)
 	);
 	tGInstruction* retval = nullptr;
+	assert(type);
 	while(type->atomicbasetype==eGAtomictype_Enumeration)
-		type=type->complexbasetype;
+		assert(type), type=type->complexbasetype;
+	assert(type);
 	if(mtGType_IsScalar(type)){
 		// Scalar type. Compile as initializer
 		{	// Typeset cppreference page just for lulz

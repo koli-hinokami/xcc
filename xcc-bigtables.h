@@ -308,6 +308,7 @@ enum tTokentype {
 	tInstruction_Bitwisexor         = 1587,
 	tInstruction_Nearreturn         = 1588,
 	tInstruction_Farreturn          = 1589,
+	tInstruction_Inplaceincrement   = 1590, 
 	// v_ld_ind.T segment
 	// v_st_ind.T segment
 	//tToken_                       = 1792,         //      To be not used
@@ -1903,6 +1904,18 @@ char *TokenidtoName[]={
 	"?"                           ,// 1585
 	"?"                           ,// 1586
 	"?"                           ,// 1587
+	"?"                           ,// 1588
+	"?"                           ,// 1589
+	"?"                           ,// 1590
+	"?"                           ,// 1591
+	"?"                           ,// 1592
+	"?"                           ,// 1593
+	"?"                           ,// 1594
+	"?"                           ,// 1595
+	"?"                           ,// 1596
+	"?"                           ,// 1597
+	"?"                           ,// 1598
+	"?"                           ,// 1599
 };
 char *TokenidtoName_Compact[]={
 	"(nil)",// 0 ,
@@ -3495,7 +3508,7 @@ char *TokenidtoName_Compact[]={
 	"xor"                         ,// 1587
 	"ret_near"                    ,// 1588
 	"ret_far"                     ,// 1589
-	"?"                           ,// 1590
+	"inc_inplace"                 ,// 1590
 	"?"                           ,// 1591
 	"?"                           ,// 1592
 	"?"                           ,// 1593

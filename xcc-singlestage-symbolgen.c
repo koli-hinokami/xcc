@@ -18,13 +18,22 @@ void SgRegisterstructure(tGType* type){
 	);
 	mtList_Append(SgCompilablestructures,type); 
 	if(type->atomicbasetype!=eGAtomictype_Structure
-	 &&type->atomicbasetype!=eGAtomictype_Union) return;
+	 &&type->atomicbasetype!=eGAtomictype_Union
+	 &&type->atomicbasetype!=eGAtomictype_Enumeration) return;
 	if(type->unresolvedsymbol){
 		// Do we have fields declared?
 		if(type->precompiledstructure){
 			// Register as definition
 #ifdef qvGTrace
 			printf("SG: [T] SgRegisterstructure: registering structure definition \"%s\"\n",mtGType_ToString_Embeddable(type));
+#endif
+			mtGNamespace_Add(GStructuretypes,
+				mtGSymbol_CreateTypedef(type->unresolvedsymbol,type)
+			);
+		}else if(type->precompiledenumeration){ // Do we have enumeration declared?
+			// Register as definition
+#ifdef qvGTrace
+			printf("SG: [T] SgRegisterstructure: registering enumeration definition \"%s\"\n",mtGType_ToString_Embeddable(type));
 #endif
 			mtGNamespace_Add(GStructuretypes,
 				mtGSymbol_CreateTypedef(type->unresolvedsymbol,type)
@@ -55,6 +64,7 @@ void SgRegisterstructureTraverse(tGType* type){
 					(void(*)(void*))SgRegisterstructureTraverse
 				);
 			};
+		// fallthrough `↑ to `↓
 		case eGAtomictype_Enumeration:
 			SgRegisterstructure(type);
 			break;
@@ -529,6 +539,7 @@ void SgFindunresolvedtypes_Type(tGType* type){
 			break;
 		case eGAtomictype_Structure: // I still need to compile structures
 		case eGAtomictype_Union:     
+		case eGAtomictype_Enumeration: // found out necessity-of while in one of enumeration reworks
 			mtList_Foreach(type->precompiledstructure,(void(*)(void*))SgFindunresolvedtypes_LxNode);
 			SgRegisterstructureTraverse(type);
 		default:

@@ -652,7 +652,7 @@ tGType* LxParseBasetype(tLxFetcher* fetcher){
 				mtLxFetcher_Advance(fetcher);
 				type->complexbasetype = LxParseBasetype(fetcher);
 			}else{
-				type->complexbasetype = mtGType_CreateAtomic(eGAtomictype_Int);
+				type->complexbasetype = nullptr;//mtGType_CreateAtomic(eGAtomictype_Int);
 			};
 			// Try to recognize definition of fields
 			tLxFetcher* enumdefinition;
