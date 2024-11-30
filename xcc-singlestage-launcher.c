@@ -157,7 +157,7 @@ void LnCompile(char* file){
 	fprintf(stderr,"L:  [M] Semanticoptimizer\n");
 	GSecondaryast = SpOptimize(GSecondaryast);
 	// Compile
-	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
+	//for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 	switch(LnIr){
 		assert(false);
 		FILE* dstfile = nullptr;

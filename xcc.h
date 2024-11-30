@@ -3,6 +3,7 @@
 // Target types
 typedef uint16_t tGTargetNearpointer;
 typedef uint16_t tGTargetSizet;
+typedef int16_t  tGTargetPtrdifft;
 typedef uint8_t  tGTargetSegment;
 typedef int      tGTargetUintmax;
 //const tGTargetSizet GTargetStackframeArgumentsstart = 4;

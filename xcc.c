@@ -81,11 +81,13 @@ bool LnArgsSetflag(char* flag, intptr_t value){
 
 
 void runprogram(char* program, char** argv){
-	printf("Ln: [M] Running: ");	//a test mid-line comment
+	fprintf(stderr,"Ln: [M] Running: ");	//a test mid-line comment
 	for(int i=0;argv[i]!=0;i++){
 		printf("%s ",argv[i]);
+		fprintf(stderr,"%s ",argv[i]);
 	};
 	printf("\n");
+	fprintf(stderr,"\n");
 	{
 		int pid,err;
 		if(szLnRundirectory){
