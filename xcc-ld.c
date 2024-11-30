@@ -33,6 +33,7 @@ enum eAsmRelocationentrykind {
 	eAsmRelocationentrykind_Segmentstart = 1,
 	eAsmRelocationentrykind_Label        = 2,
 	eAsmRelocationentrykind_Position     = 3,
+	eAsmRelocationentrykind_Relative     = 4,
 };
 
 typedef struct {
@@ -256,6 +257,11 @@ tLdRelocation* mtLdRelocation_CreatePosition(){
 	self->kind = eAsmRelocationentrykind_Position;
 	return self;
 };
+tLdRelocation* mtLdRelocation_CreateRelative(){
+	tLdRelocation* self = malloc(sizeof(tLdRelocation));
+	self->kind = eAsmRelocationentrykind_Relative;
+	return self;
+};
 tLdRelocation* mtLdRelocation_CreateSegmentstart(int segment){
 	tLdRelocation* self = malloc(sizeof(tLdRelocation));
 	self->kind = eAsmRelocationentrykind_Segmentstart;
@@ -276,6 +282,9 @@ tGTargetNearpointer LdGetrelocationvalue(tLdRelocation* self){
 	switch(self->kind){
 		case eAsmRelocationentrykind_Position:
 			retval = LdCurrentposition;
+			break;
+		case eAsmRelocationentrykind_Relative:
+			retval = -LdCurrentposition;
 			break;
 		case eAsmRelocationentrykind_Segmentstart:
 			assert(self->segment<qiLdMaxsegments);
@@ -422,6 +431,13 @@ void LdFirstpassfile(int currentsegment, FILE* srcfile){
 						mtList_Append(
 							&relocs,
 							mtLdRelocation_CreatePosition()
+						);
+						break;
+					case eAsmRelocationentrykind_Relative:
+						// Inverted relative to current position in file
+						mtList_Append(
+							&relocs,
+							mtLdRelocation_CreateRelative()
 						);
 						break;
 					case eAsmRelocationentrykind_Segmentstart:
@@ -594,6 +610,13 @@ void LdSecondpassfile(int currentsegment, FILE* srcfile, FILE* dstfile){
 					case eAsmRelocationentrykind_Terminator:
 						// wat
 						assert(false);
+						break;
+					case eAsmRelocationentrykind_Relative:
+						// Relative to current position in file
+						mtList_Append(
+							&relocs,
+							mtLdRelocation_CreateRelative()
+						);
 						break;
 					case eAsmRelocationentrykind_Position:
 						// Relative to current position in file

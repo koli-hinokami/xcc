@@ -20,6 +20,7 @@ enum eAsmRelocationentrykind {
 	eAsmRelocationentrykind_Segmentstart = 1,
 	eAsmRelocationentrykind_Label        = 2,
 	eAsmRelocationentrykind_Position     = 3,
+	eAsmRelocationentrykind_Relative     = 4,
 };
 
 // -- Preprocessor constants --
@@ -158,6 +159,9 @@ void ObjdDumpfile(FILE* dstfile, char* srcfilename, FILE* srcfile){
 						break;
 					case eAsmRelocationentrykind_Position:
 						fprintf(dstfile," +$");
+						break;
+					case eAsmRelocationentrykind_Relative:
+						fprintf(dstfile," -$");
 						break;
 					default:
 						assert(false);
