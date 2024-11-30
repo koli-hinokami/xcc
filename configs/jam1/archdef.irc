@@ -211,6 +211,69 @@ opcode	v.inc_rmw.data.nearptr			: mov	tl,	a	\
 						| mov	tl,	a	\
 						| mov	th,	b	\
 						| mov	[tx],	c	
+opcode	v.preinc.data.uint8			: mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	a,	[tx]	\
+                                                | inc	a		\
+                                                | mov	[tx],	a	\
+                                                | mov	b,	0	
+opcode	v.preinc.data.int16			: mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	c,	[tx]	\
+                                                | inc	a		\
+                                                | incc	b		\
+                                                | mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	d,	[tx]	\
+                                                | inc	c		\
+                                                | incc	d		\
+                                                | mov	[tx],	d	\
+                                                | dec	a		\
+                                                | incc	b		\
+                                                | dec	b		\
+                                                | mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	[tx],	c	\
+                                                | mov	a,	c	\
+                                                | mov	b,	d	
+opcode	v.preinc.data.uint16			: mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	c,	[tx]	\
+                                                | inc	a		\
+                                                | incc	b		\
+                                                | mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	d,	[tx]	\
+                                                | inc	c		\
+                                                | incc	d		\
+                                                | mov	[tx],	d	\
+                                                | dec	a		\
+                                                | incc	b		\
+                                                | dec	b		\
+                                                | mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	[tx],	c	\
+                                                | mov	a,	c	\
+                                                | mov	b,	d	
+opcode	v.preinc.data.nearptr			: mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	c,	[tx]	\
+                                                | inc	a		\
+                                                | incc	b		\
+                                                | mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	d,	[tx]	\
+                                                | inc	c		\
+                                                | incc	d		\
+                                                | mov	[tx],	d	\
+                                                | dec	a		\
+                                                | incc	b		\
+                                                | dec	b		\
+                                                | mov	tl,	a	\
+                                                | mov	th,	b	\
+                                                | mov	[tx],	c	\
+                                                | mov	a,	c	\
+                                                | mov	b,	d	
 opcode	v.cjae.relative.uint16	#1		: sub a, c | sbb b, d | jae #1
 opcode	v.cjbe.relative.uint16	#1		: sub a, c | sbb b, d | jb #1 | or a, b | je #1
 opcode	v.cjb.relative.uint8	#1		: cmp a, c | jb #1
