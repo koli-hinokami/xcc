@@ -1163,6 +1163,7 @@ void AsmEmitByte(FILE* dst, uint8_t byte){
 	tok.arg = 0;
 	tok.disp = byte;
 	mtAsmBinarytoken_Emit(&tok, dst);
+	mtAsmBinarytoken_Subdryemit(&tok);
 };
 void AsmDryemitByte(uint8_t byte){
 	tAsmBinarytoken tok;
@@ -1173,6 +1174,7 @@ void AsmDryemitByte(uint8_t byte){
 	tok.arg = 0;
 	tok.disp = byte;
 	mtAsmBinarytoken_Dryemit(&tok);
+	mtAsmBinarytoken_Subdryemit(&tok);
 };
 // -- Instruction defining --
 
@@ -1408,10 +1410,10 @@ bool AsmInstructionfinderclojure(
 	} * clojureargs,
 	tAsmInstructiondefinition * item
 ){
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 	assert((void*)clojureargs->opcode>=(void*)0x100);
 	assert((void*)item->opcode>=(void*)0x100);
-	if(1)printf(
+	printf(
 		"ASM:[T] AsmInstructionfinderclojure[%s %p](%s %p %p %p): Entered \n",
 		clojureargs?clojureargs->opcode?:"":"",
 		clojureargs?clojureargs->args:0,
@@ -1422,7 +1424,7 @@ bool AsmInstructionfinderclojure(
 	);
 #endif
 	// Check opcode
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 	printf(
 			strcmp(item->opcode,clojureargs->opcode)==0
 		?	"ASM:[T] AsmInstructionfinderclojure: Opcode matches\n"
@@ -1438,7 +1440,7 @@ bool AsmInstructionfinderclojure(
 		i&&j;
 		i=i->next,j=j->next
 	){
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 		printf(
 			"ASM:[T] AsmInstructionfinderclojure: Iteration on tokens <%s> and <%s> \n",
 			mtAsmToken_ToString(i->item),mtAsmToken_ToString(j->item)
@@ -1467,14 +1469,14 @@ bool AsmInstructionfinderclojure(
 			tList /* <tAsmToken* owned> */ * list = mtList_Create();
 			assert(list);
 			AsmBoundparameters[argindex]=list;
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 			printf("ASM:[T] AsmInstructionfinderclojure: . Fetching argument %i until token <%s> \n",
 				argindex,
 				mtAsmToken_ToString(i->item)
 			);
 #endif
 			while(!mtAsmToken_Equals(matchtoken,j->item)){
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 				printf("ASM:[T] AsmInstructionfinderclojure: | Token <%s> against <%s> \n",
 					mtAsmToken_ToString(matchtoken),
 					mtAsmToken_ToString(j->item)
@@ -1484,7 +1486,7 @@ bool AsmInstructionfinderclojure(
 				j=j->next;
 				assert(j);
 			};
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 			printf("ASM:[T] AsmInstructionfinderclojure: ' Done \n");
 #endif
 		}else{
@@ -1504,7 +1506,7 @@ bool AsmInstructionfinderclojure(
 		return false; // constrait failed!
 	}
 	// Found it.
-#ifdef qvGTrace
+#ifdef qvGDeeptrace
 	printf("ASM:[T] AsmInstructionfinderclojure: Found instrdef, returning \n");
 #endif
 	return true;
@@ -1908,20 +1910,23 @@ int main(int argc, char** argv){
 		printf("ASM:[F] No architecture provided!"); 
 		ErfError();
 	}else{
-		FILE* archdeffile = fopen(
+		char* archdeffname = 
 			mtString_Join(
-				AsmConfigdir?:"/etc/xcc/",
+				AsmConfigdir?:"/etc/xcc",
 				mtString_Join(
-					AsmArchitecturename,
-					"/archdef.asm"
+					"/",
+					mtString_Join(
+						AsmArchitecturename,
+						"/archdef.asm"
+					)
 				)
-			),
-			"r"
-		);
+			);
+		FILE* archdeffile = fopen(archdeffname,"r");
 		if(!archdeffile){
 			printf(
-				"ASM:[F] Unable to open archdef for arch \"%s\": Error %i·%s\n",
+				"ASM:[F] Unable to open archdef for arch \"%s\" (path \"%s\"): Error %i·%s\n",
 				AsmArchitecturename,
+				archdeffname,
 				errno,
 				strerror(errno)
 			);
@@ -1980,7 +1985,7 @@ int main(int argc, char** argv){
 	AsmCurrentpass = eAsmCurrentpass_First;
 	iAsmRepeattimes = 1;
 	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
-	memset(AsmCurrentposition,0,sizeof(AsmCurrentdetuneposition));
+	memset(AsmCurrentdetuneposition,0,sizeof(AsmCurrentdetuneposition));
 	AsmCurrentsourceline = 1;
 #ifdef qvGDebug
 	printf("ASM:[D] First pass \n");
@@ -1990,7 +1995,7 @@ int main(int argc, char** argv){
 	ErfLeave();
 	// Interpass seek
 	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
-	memset(AsmCurrentposition,0,sizeof(AsmCurrentdetuneposition));
+	memset(AsmCurrentdetuneposition,0,sizeof(AsmCurrentdetuneposition));
 	if(fseek(AsmSourcestream,0,SEEK_SET)){
 		printf(
 			"ASM:[F] Unable to rewind source file to start: Error %i·%s\n",
@@ -2003,7 +2008,7 @@ int main(int argc, char** argv){
 	AsmCurrentpass = eAsmCurrentpass_Middle;
 	iAsmRepeattimes = 1;
 	memset(AsmCurrentposition,0,sizeof(AsmCurrentposition));
-	memset(AsmCurrentposition,0,sizeof(AsmCurrentdetuneposition));
+	memset(AsmCurrentdetuneposition,0,sizeof(AsmCurrentdetuneposition));
 	AsmCurrentsourceline = 1;
 #ifdef qvGDebug
 	printf("ASM:[D] Intermediate pass \n");
@@ -2024,10 +2029,10 @@ int main(int argc, char** argv){
 	// Label-sublabel debug
 #ifdef qvGDebug
 	for(tListnode *i = AsmLabels->first;i;i=i->next){tAsmLabel* j=i->item;
-		printf("ASM:[D] Label    %6i • %s\n",j->offset,j->name);
+		printf("ASM:[D] Label    %02i:%6i • %s\n",j->segment,j->offset,j->name);
 	}
 	for(tListnode *i = AsmSublabels->first;i;i=i->next){tAsmLabel* j=i->item;
-		printf("ASM:[D] Sublabel %6i • %s\n",j->offset,j->name);
+		printf("ASM:[D] Sublabel %02i:%6i • %s\n",j->segment,j->offset,j->name);
 	}
 #endif
 	// Sublabel merging
