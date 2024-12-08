@@ -81,6 +81,8 @@ bool LnArgsSetflag(char* flag, intptr_t value){
 
 
 void runprogram(char* program, char** argv){
+	fflush(stdout);
+	fflush(stderr);
 	fprintf(stderr,"Ln: [M] Running: ");	//a test mid-line comment
 	for(int i=0;argv[i]!=0;i++){
 		printf("%s ",argv[i]);
@@ -88,6 +90,8 @@ void runprogram(char* program, char** argv){
 	};
 	printf("\n");
 	fprintf(stderr,"\n");
+	fflush(stdout);
+	fflush(stderr);
 	{
 		int pid,err;
 		if(szLnRundirectory){

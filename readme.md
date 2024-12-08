@@ -2,22 +2,8 @@
 - if you can't read it in github just read from vim, made for 78 columns 
   monowidth utf-8 syntax=markdown
 
-# Forking and patch-accepting notes
-
-I want to keep xcc be developed mostly by me. For this reason, I won't be
-accepting a *lot* of patches. But I *will* be pulling bugfixes and bulk code
-I'm too bored to write.
-
-If you want to fork xcc and heavily modify, go ahead!
-
-# Current state of hiatus
-
-xcc currently is in hiatus due to main and before the hiatus the only 
-contributor of me, Koli Hinokami, getting tired with developing xcc.
-
-As for when xcc will go out of hiatus, I have *no* idea!
-For one, and for other I want to keep developing xcc singlehandedly with
-keeping things done by others away in xcc-contrib side of things.
+[![No Maintenance Intended](http://unmaintained.tech/badge.svg)](http://unmaintained.tech/)
+> Open Source is rewarding — but it can also be exhausting.
 
 # Information
 

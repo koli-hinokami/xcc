@@ -1964,15 +1964,15 @@ void IgDumpir(tGInstruction** code, FILE* file){
 						|| j->opcode.opr==tInstruction_Jumptrue
 						|| j->opcode.opr==tInstruction_Jumpfalse
 						|| j->opcode.opr==tInstruction_Loadaddress
-						|| j->opcode.opr==tInstruction_Comparejumpequal               
-						|| j->opcode.opr==tInstruction_Comparejumpnotequal            
-						|| j->opcode.opr==tInstruction_Comparejumpsignedlessthan      
-						|| j->opcode.opr==tInstruction_Comparejumpsignedlessequal     
-						|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterthan   
-						|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterequal  
-						|| j->opcode.opr==tInstruction_Comparejumpunsignedlessthan    
-						|| j->opcode.opr==tInstruction_Comparejumpunsignedlessequal   
-						|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterthan 
+						|| j->opcode.opr==tInstruction_Comparejumpequal
+						|| j->opcode.opr==tInstruction_Comparejumpnotequal
+						|| j->opcode.opr==tInstruction_Comparejumpsignedlessthan
+						|| j->opcode.opr==tInstruction_Comparejumpsignedlessequal
+						|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterthan
+						|| j->opcode.opr==tInstruction_Comparejumpsignedgreaterequal
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedlessthan
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedlessequal
+						|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterthan
 						|| j->opcode.opr==tInstruction_Comparejumpunsignedgreaterequal
 					){
 						if(j->jumptarget->label){
