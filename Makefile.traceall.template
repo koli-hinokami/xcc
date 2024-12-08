@@ -1,0 +1,2 @@
+# Makefile for xcc Retargetable C Crosscompiler - Trace *everything* template
+CCVARFLAGS += -DqvGTrace

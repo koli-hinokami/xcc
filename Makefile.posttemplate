@@ -81,14 +81,21 @@ xcc-singlestage: \
 	xcc-singlestage-fetcher.c \
 	xcc-singlestage-launcher.c
 
-stdlib: \
-	configs/jam1/crt0.obj \
-	configs/jam1/libc.obj
+stdlib: 
+	# Regenerate standard library for every architecture
+	cd configs;                                                              \
+	for i in * ; do                                                          \
+	echo Trying \""$$i"\";                                                   \
+	if [ -d "$$i" -a "$$i" != include ];                                     \
+	then (                                                                   \
+	echo Regenerating libc and crt0 for architecture "$$i" ;                 \
+	cd "$$i" ;                                                               \
+	../../xcc-assembler -c .. -a "$$i" -o crt0.obj crt0.asm >/dev/null ;         \
+	../../xcc-assembler -c .. -a "$$i" -o libc.obj libc.asm >/dev/null ;         \
+	)                                                                        \
+	fi;                                                                      \
+	done
 	
-configs/jam1/libc.obj: configs/jam1/math.asm
-configs/jam1/%.obj: configs/jam1/%.asm
-	xcc-assembler -a jam1 -o $@ $<
-
 %: %.c $(DEPS)
 	$(CC) $(CCFLAGS) $(CCVARFLAGS) -o $@ $< $(CCPOSTFLAGS)
 
