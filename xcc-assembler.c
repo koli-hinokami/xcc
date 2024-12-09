@@ -20,7 +20,9 @@ typedef enum AsmArgpOptiontags {
 typedef enum AsmConstraittype {
 	eAsmConstraittype_Null=0,
 	eAsmConstraittype_Nearref=1,
-	eAsmConstraittype_Shortref=2,
+	eAsmConstraittype_Shortref=2, // currently unused
+	eAsmConstraittype_Relref=3,
+	eAsmConstraittype_Segment=4,
 } eAsmConstraittype;
 
 typedef struct {
@@ -75,6 +77,7 @@ typedef struct {
 
 typedef struct sAsmConstrait {
 	eAsmConstraittype type;
+	intptr_t param;
 	int operandnr;
 	bool (*verifier)(struct sAsmConstrait * self, tGTargetNearpointer val);
 } tAsmConstrait;
@@ -1000,6 +1003,16 @@ tAsmConstrait* mtAsmConstrait_CreateExpr_Generic(
 		.verifier=nullptr,
 	});
 }
+tAsmConstrait* mtAsmConstrait_CreateExpr_Parametered(
+	eAsmConstraittype type, intptr_t param, int operandnr
+){
+	return mtAsmConstrait_Clone(&(tAsmConstrait){
+		.type=type,
+		.param=param,
+		.operandnr=operandnr,
+		.verifier=nullptr,
+	});
+}
 bool mtAsmConstrait_Verify(tAsmConstrait* self){
 	if(AsmCurrentpass==eAsmCurrentpass_First) return false; // When preparsing,
 		                                                    // all constraits
@@ -1012,6 +1025,8 @@ bool mtAsmConstrait_Verify(tAsmConstrait* self){
 	switch(self->type){
 		case eAsmConstraittype_Nearref:
 		case eAsmConstraittype_Shortref:
+		case eAsmConstraittype_Relref:
+		{
 			tList relocations[1] = {};
 			int flags = 0;
 			tGTargetPtrdifft val = AsmEvaulateexpression(
@@ -1034,10 +1049,31 @@ bool mtAsmConstrait_Verify(tAsmConstrait* self){
 				default: assert(false); exit(2);
 				case eAsmConstraittype_Nearref:  return flags && (val<120) && (val>-120);
 				case eAsmConstraittype_Shortref: return flags && (val<32760) && (val>-32760);
+				case eAsmConstraittype_Relref:   return flags && (val<self->param) && (val>-self->param);
 			}
-			break;
+		}	break;
+		case eAsmConstraittype_Segment: {
+			tList relocations[1] = {};
+			tGTargetPtrdifft val = AsmEvaulateexpression(
+				relocations,
+				AsmBoundparameters[self->operandnr]
+			);
+			for(tListnode* i=relocations->first;i;i=i->next){tAsmRelocationentry*j=i->item;
+				switch(j->kind){
+					case eAsmRelocationentrykind_Segmentstart:
+						if(j->segment!=self->param)
+							return false; // no fit here
+						break;
+					default:
+						assert(false); // Unsupported relocation
+				}
+			}
+			return true;
+		}	break;
 		default: assert(false); break;
 	}
+	ErfError_String2("ASM:[E] mtAsmConstrait_Verify: No value returned!\n");
+	return false;
 }
 bool mtAsmConstrait_VerifyInverted(tAsmConstrait* self){
 	return !mtAsmConstrait_Verify(self);
@@ -1273,18 +1309,68 @@ void AsmReadinstructiondefinition(FILE* src){
 								assert(token->type==eAsmTokentype_Number);
 								mtList_Append(constraits, 
 									mtAsmConstrait_CreateExpr_Generic(
-										eAsmConstraittype_Nearref,
+										eAsmConstraittype_Shortref,
 										token->number
 									)
 								);
 								//assert(false); // todo
-							}else if(strcmp(token->string,"shortref")==0){
+							}else if(strcmp(token->string,"nearref")==0){
 								mtAsmToken_Destroy(token);
 								token=mtAsmToken_Get(src);
 								assert(token->type==eAsmTokentype_Number);
 								mtList_Append(constraits, 
-									mtAsmConstrait_CreateExpr_Generic(
-										eAsmConstraittype_Shortref,
+									mtAsmConstrait_CreateExpr_Parametered(
+										eAsmConstraittype_Relref,
+										32000, // retargeting hook: nearref range
+										token->number
+									)
+								);
+								//assert(false); // todo
+							}else if(strcmp(token->string,"segment")==0){
+								mtAsmToken_Destroy(token);
+								// Read segment nr
+								token=mtAsmToken_Get(src);
+								int segnum;
+								if(token->type==eAsmTokentype_Identifier){
+									if(strcmp(token->string,".null"     )==0) {segnum= 0; goto doneseg; }
+									if(strcmp(token->string,".header"   )==0) {segnum= 1; goto doneseg; }
+									if(strcmp(token->string,".text"     )==0) {segnum= 2; goto doneseg; }
+									if(strcmp(token->string,".bss"      )==0) {segnum= 3; goto doneseg; }
+									if(strcmp(token->string,".zp"       )==0) {segnum= 4; goto doneseg; }
+									if(strcmp(token->string,".lowcode"  )==0) {segnum= 5; goto doneseg; }
+									if(strcmp(token->string,".lowdata"  )==0) {segnum= 6; goto doneseg; }
+									if(strcmp(token->string,".code"     )==0) {segnum= 7; goto doneseg; }
+									if(strcmp(token->string,".data"     )==0) {segnum= 8; goto doneseg; }
+									if(strcmp(token->string,".rodata"   )==0) {segnum= 9; goto doneseg; }
+									if(strcmp(token->string,".udata"    )==0) {segnum=10; goto doneseg; }
+									if(strcmp(token->string,".farcode"  )==0) {segnum=11; goto doneseg; }
+									if(strcmp(token->string,".fardata"  )==0) {segnum=12; goto doneseg; }
+									if(strcmp(token->string,".farrodata")==0) {segnum=13; goto doneseg; }
+									if(strcmp(token->string,".farbss"   )==0) {segnum=14; goto doneseg; }
+									if(strcmp(token->string,".lostack"  )==0) {segnum=15; goto doneseg; }
+									if(strcmp(token->string,".data_al"  )==0) {segnum=16; goto doneseg; }
+									if(strcmp(token->string,".constr"   )==0) {segnum=20; goto doneseg; }
+									if(strcmp(token->string,".destr"    )==0) {segnum=21; goto doneseg; }
+									doneseg:
+								}else{
+									if(token->type!=eAsmTokentype_Number)
+										ErfError_String2(mtString_Format(
+											"ASM:[E] AsmReadinstructiondefinition: constraited opcode: constraits: "              "\n"
+											"ASM:[E]                               constrait `segment`: "     "\n"
+											"ASM:[E]                               unrecognized token <%s>"   "\n"
+											,
+											mtAsmToken_ToString(token)
+										));
+									segnum = token->number;
+								}
+								mtAsmToken_Destroy(token);
+								// Read expr nr
+								token=mtAsmToken_Get(src);
+								assert(token->type==eAsmTokentype_Number);
+								mtList_Append(constraits, 
+									mtAsmConstrait_CreateExpr_Parametered(
+										eAsmConstraittype_Segment,
+										segnum,
 										token->number
 									)
 								);
