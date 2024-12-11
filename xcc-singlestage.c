@@ -22,6 +22,7 @@ tGNamespace* GRootnamespace;
 tSpNode* GSecondaryast;
 tGInstruction* GCompiled[/*segment*/meGSegment_Count];
 eGAtomictype LnTypetranslationmap[eGAtomictype_Count];
+tGTargetSizet LnSizeofmap[eGAtomictype_Count];
 tGTargetSizet LnNearpointersize = 2;
 tGTargetSizet LnFarpointersize = 4;
 char* LnOutputfile;
@@ -649,7 +650,7 @@ bool mtGType_Equals(tGType* self,tGType* type){
 };
 eGValuecategory mtGType_GetValuecategory(tGType /* modifies */ * self){
 #ifdef qvGTrace
-	printf("ss: [T] mtGType_GetValuecategory: entered \n");
+	//printf("ss: [T] mtGType_GetValuecategory: entered \n");
 #endif
 	assert(mtGType_GetBasetype(self));
 	return 
@@ -732,7 +733,17 @@ tGType /* gives ownership */ * mtGType_Warp(tGType /* takeown */ * self){
 	ErfLeave();
 	return temp;
 };
-char* mtGType_ToString(tGType * self){return mtGType_ToString_Embeddable(self);};
+char* mtGType_ToString(tGType * self){
+	char* s1;
+	if(!self) return mtString_Clone("(nil)");
+	switch(mtGType_GetValuecategory(self)){ // Value category
+		case eGValuecategory_Leftvalue:       s1="lvalue ";   break;
+		case eGValuecategory_Rightvalue:      s1="rvalue ";   break;
+		case eGValuecategory_Novalue:         s1="novalue ";  break;
+		default:                              s1="unkvalue "; break;
+	}
+	return mtString_Join(s1,mtGType_ToString_Embeddable(self));
+};
 //char* mtGType_ToString_Embeddable_Legacy(tGType* /* MfCcMmDynamic */ self){
 //	char *s1;
 //	char *s2;
@@ -1289,6 +1300,7 @@ tGInstruction* mtGInstruction_Clone(tGInstruction* self){
 	return memcpy(malloc(sizeof(tGInstruction)),self,sizeof(tGInstruction));
 };
 tGInstruction* mtGInstruction_Deepclone(tGInstruction* self){
+	assert(self);
 	//assert(self->jumptarget==nullptr); // Cloning trees is all nice and great,
 	//                                   // it's just recursive.
 	//                                   // Cloning directed graphs on the other
@@ -1306,7 +1318,8 @@ tGInstruction* mtGInstruction_Deepclone(tGInstruction* self){
 		.opcode = self->opcode,                       // tGOpcode opcode; 
 		.label = self->label,                         // char* label;
 		.comment = self->comment,                     // char* comment;
-		.next = mtGInstruction_Deepclone(self->next), // struct tGInstruction* next;
+		.next = self->next                            // struct tGInstruction* next;
+		        ?mtGInstruction_Deepclone(self->next):nullptr,
 		.jumptarget = self->jumptarget,               // struct tGInstruction* jumptarget;
 		                                              // // Primary IR
 		.immediate = self->immediate,                 // tGTargetUintmax immediate;

@@ -268,7 +268,8 @@ tGInstruction* IgCompileExpression(tSpNode* self){
 						self->left->returnedtype->atomicbasetype,
 						   self->returnedtype->valuecategory
 						 ==eGValuecategory_Leftvalue
-						?eGAtomictype_Nearpointer
+						?eGAtomictype_Nearpointer // TODO: Segmentation:
+						                          //       set proper segment
 						:self->returnedtype->atomicbasetype
 					)
 				);

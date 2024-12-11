@@ -406,7 +406,8 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 	assert(self);
 	printf("ss: [T] mtGType_Sizeof(): entered\n"); //mtGType_ToString(self));
 	if(mtGType_GetBasetype(self)->valuecategory==eGValuecategory_Leftvalue){
-		return 2;
+		assert(LnSizeofmap[eGAtomictype_Nearpointer]!=0);
+		return LnSizeofmap[eGAtomictype_Nearpointer];
 	};
 	switch(self->atomicbasetype){
 		case eGAtomictype_Void:
@@ -428,8 +429,14 @@ tGTargetSizet mtGType_Sizeof(tGType* self){
 		// Internal types
 		case eGAtomictype_Union: // Temporary type - gets converted to struct later on
 			return self->structsize;
-		case eGAtomictype_Nearpointer:     return 2;
-		case eGAtomictype_Farpointer:      return 4;
+		case eGAtomictype_Nearpointer:     
+			assert(LnSizeofmap[self->atomicbasetype]!=0);
+			return LnSizeofmap[self->atomicbasetype];
+			// return 2;
+		case eGAtomictype_Farpointer:      
+			assert(LnSizeofmap[self->atomicbasetype]!=0);
+			return LnSizeofmap[self->atomicbasetype];
+			// return 4;
 		case eGAtomictype_Array:
 			assert(self->arraysizepresent);
 			assert(self->dynamicarraysize==nullptr);

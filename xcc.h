@@ -1,4 +1,4 @@
-// -------------- Header file for XCC Retargetable C Compiler --------------
+// -------------- Header file for xcc Retargetable C Compiler --------------
 #include "xcc-bigtables.h"
 // Target types
 typedef uint16_t tGTargetNearpointer;
@@ -219,6 +219,8 @@ char* meGAtomictype_ToStringTable[] = {
 	"intnearptr"      ,
 	"intfarptr"       ,
 	"sizet"           ,
+	nullptr,
+	nullptr,
 };
 typedef struct tGOpcode { 
 	short opr;

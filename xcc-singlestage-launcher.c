@@ -149,8 +149,10 @@ void LnCompile(char* file){
 	GSecondaryast = SpParse(GLexed);
 	if(1){
 		fprintf(stderr,"L:  [M] Printing Secondary AST \n");
+		fprintf(stdout,"L:  [M] Printing Secondary AST \n");
 		LfPrint_SpNode(GSecondaryast);
 		fprintf(stderr,"L:  [M] Done printing Secondary AST \n");
+		fprintf(stdout,"L:  [M] Done printing Secondary AST \n");
 	};
 	//exit(4);
 	/// The question is where `struct`s go
@@ -209,8 +211,28 @@ void LnCompile(char* file){
 	}
 	for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 };
+char* LniFetchtoken(char** str){
+#ifdef qvGTrace
+	printf("Lni:[T] LniFetchtoken(char *(*(str == %p) == %p == \"%s\")) - entered\n",str,*str,*str);
+#endif
+	assert(**str); // no running on empty strings!
+	while(isspace(**str))
+		if(!*++*str)
+			ErfError_String2("Lni:[E] LniFetchtoken: Unable to separate token from string: string have ended!\n");
+	char* retval = *str; // that's our token
+	while(!isspace(**str))
+		if(!*++*str){
+			// We have reached the last token
+			--*str;
+			return retval;
+		};
+	**str=0;
+	++*str;
+	return retval;
+};
 void LnReadarchdef(char* name){
 	assert(name);
+	// TODO: Implement reading archdef from a folder other than `/etc/xcc`
 	name = mtString_Join(
 		"/etc/xcc/",
 		mtString_Join(
@@ -223,24 +245,45 @@ void LnReadarchdef(char* name){
 		ErfError_String2(mtString_Format("Ln: [E] No archdef \"%s\"\n",name));
 	// Read the archdef
 	while(fpeekc(archdeffile)!=EOF){
-		char* str = mtString_Create();
+		char* str = mtString_Create(); // currently read source line
 		// Read archdef line
 		while(fpeekc(archdeffile)!='\n'){mtString_Appendchar(&str, fgetc(archdeffile));} 
 		fgetc(archdeffile);
-		// Read directive
-		char* arg = mtString_FindcharFirst(str,' ');
-		*arg++ = 0;
-		// Handle directive
-		if(strcmp(str,"transform")==0){
-			char* newarg;
-			int srctype = strtol(arg,&newarg,0);
-			while(*newarg && isspace(*newarg)) newarg++;
-			assert(*newarg);
-			int dsttype = strtol(newarg,nullptr,0);
-			LnTypetranslationmap[srctype]=dsttype;
-		}else{
-			ErfError_String2(mtString_Format(
-				"Ln: [E] Unrecognized directive \"%s\"\n",str));
+		if(*str){
+			// Read directive
+			char* directive = LniFetchtoken(&str);
+			// Handle directive
+			if(strcmp(directive,"transform")==0){
+				char *temp[1] = {};
+				int srctype = strtol(LniFetchtoken(&str),temp,0); assert(*temp==nullptr);
+				int dsttype = strtol(LniFetchtoken(&str),temp,0); assert(*temp==nullptr);
+				LnTypetranslationmap[srctype]=dsttype;
+			}else if(strcmp(directive,"sizeof")==0){
+				char *temp[1] = {};
+				char* newstr=nullptr;
+				int srctype = strtol(newstr=LniFetchtoken(&str),temp,0); 
+				if(**temp!=0){ // fetched not a number
+					int j=0;
+					for(char** i = meGAtomictype_ToStringTable;;i++){
+						if(!*i) ErfError_String2(mtString_Format(
+							"Ln: [E] LnReadarchdef: `sizeof`: unrecognized type \"%s\"\n",newstr
+						));
+						if(strcmp(newstr,*i)==0){
+							srctype=j; break;
+						}
+						j++;
+					}
+				}
+				*temp=nullptr;
+				int dsttype = strtol(newstr=LniFetchtoken(&str),temp,0); 
+				if(**temp!=0) ErfError_String2(mtString_Format(
+					"Ln: [E] LnReadarchdef: `sizeof`: invalid type size nr~ \"%s\" (tail \"%s\")\n",newstr,temp
+				));
+				LnSizeofmap[srctype]=dsttype;
+			}else{
+				ErfError_String2(mtString_Format(
+					"Ln: [E] Unrecognized directive \"%s\"\n",directive));
+			}
 		}
 	};
 }
