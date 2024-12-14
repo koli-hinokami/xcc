@@ -1,7 +1,7 @@
 ; vim:ts=8:
 	; Jam-1 Runtime library
 	; (add libc functions here)
-	.include "/etc/xcc/jam1/math.asm"
+	.include "math.asm"
 	.segment 7
 puts:	.global ; {{{
 	pop	ab

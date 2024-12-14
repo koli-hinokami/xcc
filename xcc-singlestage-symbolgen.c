@@ -479,6 +479,8 @@ void SgParse(tLxNode* ast){
 			case tLexem_Breakstatement:
 			case tLexem_Continuestatement:
 			case tLexem_Structuremember:
+			case tLexem_Booleantrue:
+			case tLexem_Booleanfalse:
 				break;
 		};
 		default:

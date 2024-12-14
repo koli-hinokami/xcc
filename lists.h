@@ -199,8 +199,10 @@ void* mtList_Find(ptList self, void* item){
 	};
 };
 void* mtList_Find_Lambda(ptList self, bool(*lambda)(void* item)){
+#ifndef mtList_Picolists
 	assert(self);
 	assert(lambda);
+#endif
 	if(self->last == nullptr){ // List empty
 		return nullptr;
 	}else if(self->first == self->last){ // List contains one item
@@ -235,8 +237,10 @@ void* mtList_Find_Clojure(ptList self, bool(*func)(void* args,void* item), void*
 intptr_t mtList_Sum_Lambda(ptList self, intptr_t(*func)(void* item)){
 	intptr_t accum=0;
 	if(!self){
+#ifndef mtList_Picolists
 		fprintf(stderr,"ul: [E] lists.h: mtList_Sum_Lambda: how do I sum a list by lambda if there's no list??\n");
 		assert(self);
+#endif
 		return 0;
 	}else if(self->last == nullptr){ // List empty
 		return 0;
@@ -252,8 +256,10 @@ intptr_t mtList_Sum_Lambda(ptList self, intptr_t(*func)(void* item)){
 intptr_t mtList_Sum_Clojure(ptList self, intptr_t(*func)(void* args,void* item), void* args){
 	intptr_t accum=0;
 	if(!self){
+#ifndef mtList_Picolists
 		fprintf(stderr,"ul: [E] lists.h: mtList_Sum_Clojure: how do I sum a list by clojure if there's no list??\n");
 		assert(self);
+#endif
 		return 0;
 	}else if(self->last == nullptr){ // List empty
 		return 0;

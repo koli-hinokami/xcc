@@ -12,7 +12,7 @@
 ;             b = quotient high
 ;             d = remainder
 ;             57- 109 cycles!         (8086 is 80-90)
-Math_Divide_16_8:
+Math_Divide_16_8: .global
 	test b
 	mov tx,Math_Divide_8_8
 	jz tx       ; (8) if b is zero,  use the 8/8 version
