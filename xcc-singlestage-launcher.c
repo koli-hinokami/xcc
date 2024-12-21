@@ -158,6 +158,13 @@ void LnCompile(char* file){
 	/// The question is where `struct`s go
 	fprintf(stderr,"L:  [M] Semanticoptimizer\n");
 	GSecondaryast = SpOptimize(GSecondaryast);
+	if(1){
+		fprintf(stderr,"L:  [M] Printing optimized secondary AST \n");
+		fprintf(stdout,"L:  [M] Printing optimized secondary AST \n");
+		LfPrint_SpNode(GSecondaryast);
+		fprintf(stderr,"L:  [M] Done printing optimized secondary AST \n");
+		fprintf(stdout,"L:  [M] Done printing optimized secondary AST \n");
+	};
 	// Compile
 	//for(int i=0;i<meGSegment_Count;i++)GCompiled[i]=mtGInstruction_CreateCnop();
 	switch(LnIr){

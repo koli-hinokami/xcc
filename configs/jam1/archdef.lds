@@ -8,4 +8,6 @@ segment 7
 segment 8
 segment 9
 segment 10
+align 256
+segment 16 ; .data_al   - Page-aligned data. Mostly process table.
 symbol GEndofimage

@@ -5,7 +5,8 @@ typedef uint16_t tGTargetNearpointer;
 typedef uint16_t tGTargetSizet;
 typedef int16_t  tGTargetPtrdifft;
 typedef uint8_t  tGTargetSegment;
-typedef int      tGTargetUintmax;
+typedef unsigned tGTargetUintmax;
+typedef int      tGTargetIntmax;
 //const tGTargetSizet GTargetStackframeArgumentsstart = 4;
 
 // xcc types
@@ -247,6 +248,7 @@ typedef struct tGInstruction {
 	char* comment;
 	struct tGInstruction* next;
 	struct tGInstruction* jumptarget;
+	bool referenced;
 	// Primary IR
 	tGTargetUintmax immediate;
 	// Secondary IR
@@ -259,7 +261,7 @@ typedef struct { // tGTargetPointer
 	//  and offset in said bank.
 	eGSegment segment; 
 	tGTargetSegment bank;
-	tGTargetNearpointer offset;
+	tGTargetPtrdifft offset;
 	// Dynamic pointer - tGInstruction*:
 	tGInstruction* dynamicpointer;
 } tGTargetPointer;

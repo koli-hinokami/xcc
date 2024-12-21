@@ -1,8 +1,8 @@
 // ----------- Target configuration file for xcc ---------------
 
 
-const tGTargetSizet GTargetStackframeArgumentsstart = 4;
-const tGTargetSizet GTargetStackframeLocalsstart = 0; // -2;
+const tGTargetPtrdifft GTargetStackframeArgumentsstart = 4;
+const tGTargetPtrdifft GTargetStackframeLocalsstart = 0; // -2;
 // For finetuning stackframes, go into Semanticparser::Allocateargumentstorage,
 //                                                   ::Allocatelocalvarstorage,
 //                             and some place inside Semanticparser that

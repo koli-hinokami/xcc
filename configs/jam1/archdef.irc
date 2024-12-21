@@ -1,5 +1,6 @@
 ; vim:ts=8:
 	; Jam-1 archdef
+; <                          -- Base instructions --                         >
 opcode	irc.programprologue			: .extern Math_Multiply_16_16
 opcode	irc.programepilogue			: 
 opcode	irc.global				: .global
@@ -363,3 +364,66 @@ opcode	v.xor.relative.uint8			: xor a, c
 opcode	v.xor.relative.int16			: xor a, c | xor b, d
 opcode	v.xor.relative.uint16			: xor a, c | xor b, d
 opcode	v.xor.relative.nearptr			: xor a, c | xor b, d
+; <                               -- Fusions --                              >
+; Templation tip:
+; int8    
+; uint8   
+; int16   
+; uint16  
+; nearptr 
+fusion	v.pha.relative.int8    	v.const.relative.int8    v.lit.relative.int8    
+fusion	v.pha.relative.uint8   	v.const.relative.uint8   v.lit.relative.uint8   
+fusion	v.pha.relative.int16   	v.const.relative.int16   v.lit.relative.int16   
+fusion	v.pha.relative.uint16  	v.const.relative.uint16  v.lit.relative.uint16  
+fusion	v.pha.relative.nearptr 	v.const.relative.nearptr v.lit.relative.nearptr 
+fusion	v.lit.relative.int8    	v.plb.relative.int8    	v.const_b.relative.int8    
+fusion	v.lit.relative.uint8   	v.plb.relative.uint8   	v.const_b.relative.uint8   
+fusion	v.lit.relative.int16   	v.plb.relative.int16   	v.const_b.relative.int16   
+fusion	v.lit.relative.uint16  	v.plb.relative.uint16  	v.const_b.relative.uint16  
+fusion	v.lit.relative.nearptr 	v.plb.relative.nearptr 	v.const_b.relative.nearptr 
+fusion	v.lea.relative.nearptr 	v.call.relative.nearptr	v.call_abs.relative.nearptr 
+fusion	v.const.relative.nearptr v.indexfp.relative.nearptr v.lea_fp.relative.nearptr
+fusion	v.lit.relative.nearptr 	v.indexfp.relative.nearptr v.pha_lea_fp.relative.nearptr 
+fusion	v.lea.relative.nearptr 	v.ld.data.int8    v.lda.data.int8    
+fusion	v.lea.relative.nearptr 	v.ld.data.uint8   v.lda.data.uint8   
+fusion	v.lea.relative.nearptr 	v.ld.data.int16   v.lda.data.int16   
+fusion	v.lea.relative.nearptr 	v.ld.data.uint16  v.lda.data.uint16  
+fusion	v.lea.relative.nearptr 	v.ld.data.nearptr v.lda.data.nearptr 
+fusion	v.plb.relative.nearptr 	v.st.data.int8    v.plb_st.data.int8    
+fusion	v.plb.relative.nearptr 	v.st.data.uint8   v.plb_st.data.uint8   
+fusion	v.plb.relative.nearptr 	v.st.data.int16   v.plb_st.data.int16   
+fusion	v.plb.relative.nearptr 	v.st.data.uint16  v.plb_st.data.uint16  
+fusion	v.plb.relative.nearptr 	v.st.data.nearptr v.plb_st.data.nearptr 
+fusion	v.lea.relative.nearptr 	v.ld.relative.nearptr	v.lda.relative.nearptr 
+; <                          -- Fused operations --                          >
+opcode	v.lit.relative.int8		#1	: push a          | mov a, #1
+opcode	v.lit.relative.uint8		#1	: push a          | mov a, #1
+opcode	v.lit.relative.int16		#1	: push b | push a | mov ab, #1
+opcode	v.lit.relative.uint16		#1	: push b | push a | mov ab, #1
+opcode	v.lit.relative.nearptr		#1	: push b | push a | mov ab, #1
+opcode	v.const_b.relative.int8		#1	: mov c, #1
+opcode	v.const_b.relative.uint8	#1	: mov c, #1
+opcode	v.const_b.relative.int16	#1	: mov cd, #1
+opcode	v.const_b.relative.uint16	#1	: mov cd, #1
+opcode	v.const_b.relative.nearptr	#1	: mov cd, #1
+opcode	v.call_abs.relative.nearptr 	#1	: call #1
+opcode	v.lea_fp.relative.nearptr	#1	: mov ab, #1 | mov cd, si | add ab, cd
+opcode	v.pha_lea_fp.relative.nearptr	#1	: push ab | mov ab, #1 | mov cd, si | add ab, cd
+opcode	v.plb_st.data.nearptr			: pop	di		\
+						| stosb			\
+						| mov	[di],	b	
+opcode	v.plb_st.data.uint16			: pop	di		\
+						| stosb			\
+						| mov	[di],	b	
+opcode	v.plb_st.data.int16			: pop	di		\
+						| stosb			\
+						| mov	[di],	b	
+opcode	v.plb_st.data.uint8			: pop	tx		\
+						| mov	[tx],	a
+opcode	v.plb_st.data.int8			: pop	tx		\
+						| mov	[tx],	a
+opcode	v.lda.data.int8   		#1	: lda	#1
+opcode	v.lda.data.uint8  		#1	: lda	#1
+opcode	v.lda.data.int16  		#1	: lxa	#1
+opcode	v.lda.data.uint16 		#1	: lxa	#1
+opcode	v.lda.data.nearptr		#1	: lxa	#1

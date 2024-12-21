@@ -12,6 +12,7 @@ clean:
 	rm -f xcc-lispcompiler
 	rm -f xcc-lexer
 	rm -f xcc-ircompiler
+	rm -f xcc-irfuser
 	rm -f xcc-assembler
 run: build
 #	cpp ./xcc-singlestage.c -o ./xcc-singlestage.cpr
@@ -28,6 +29,7 @@ package:
 	cp ./xcc-preprocess   ./usr/local/bin
 	cp ./xcc-lispcompiler ./usr/local/bin
 	cp ./xcc-ircompiler   ./usr/local/bin
+	cp ./xcc-irfuser      ./usr/local/bin
 	cp ./xcc-assembler    ./usr/local/bin
 	cp ./xcc-ld           ./usr/local/bin
 	cp ./xcc-objdump      ./usr/local/bin
@@ -49,6 +51,7 @@ install:
 	cp ./xcc-embedder     /usr/local/bin
 	cp ./xcc-preprocess   /usr/local/bin
 	cp ./xcc-ircompiler   /usr/local/bin
+	cp ./xcc-irfuser      /usr/local/bin
 	cp ./xcc-assembler    /usr/local/bin
 	cp ./xcc-ld           /usr/local/bin
 	cp ./xcc-objdump      /usr/local/bin
@@ -65,6 +68,7 @@ xcc-all: xcc \
 	xcc-tokenizer \
 	xcc-lispcompiler \
 	xcc-ircompiler \
+	xcc-irfuser \
 	xcc-assembler \
 	xcc-ld \
 	xcc-objdump

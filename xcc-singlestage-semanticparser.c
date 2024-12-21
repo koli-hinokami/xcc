@@ -677,7 +677,21 @@ tSpNode* SpParse(tLxNode* self){ // Semantic parser primary driver
 						type=symbol->type;
 						ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Allocate storage");
 						// Allocate storage
-						if(SpCurrentfunction){
+						if(self->storage==eGStoragespecifier_Static){
+							ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Forcefully allocate globalvar storage: Delegated to IR Generator");
+							// Allocate global variable storage
+							assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
+							symbol->allocatedstorage=SpAllocateglobalvarstorage(
+								mtGType_Sizeof(
+									mtGType_SetValuecategory(
+										mtGType_Deepclone(
+											symbol->type
+										),
+										eGValuecategory_Rightvalue
+									)
+								)
+							);
+						}else if(SpCurrentfunction){
 							ErfUpdate_String("SpParse: tLexem_Variabledeclaration: Allocate localvar storage");
 							// Allocate local variable storage
 							assert(symbol->symbolkind==mtGSymbol_eType_Pointer);
@@ -2259,6 +2273,19 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 			self->constant=-self->constant;
 		};
 	};
+	if(0){	// Casting constant
+		if(
+			  self->type==tSplexem_Cast
+			&&self->left->type==tSplexem_Integerconstant
+			&&(  self->left->constant==0
+			   ||self->left->constant==1
+			   ||self->left->constant==-1
+			  )
+		){
+			self->left->returnedtype=self->returnedtype;
+			self=self->left;
+		};
+	};
 	{	// Multiply by 1
 		if(
 			  self->type==tSplexem_Multiplication
@@ -2266,6 +2293,15 @@ tSpNode* SpOptimize(tSpNode* self){ // Semanticoptimizer
 			&&self->right->constant==1
 		){
 			self=self->left;
+		};
+	};
+	{	// Multiply of 1
+		if(
+			  self->type==tSplexem_Multiplication
+			&&self->left->type==tSplexem_Integerconstant
+			&&self->left->constant==1
+		){
+			self=self->right;
 		};
 	};
 	{	// Multiply constant by constant

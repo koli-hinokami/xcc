@@ -72,9 +72,9 @@ struct argp_option IrcArgpOptions[] = {
 	{	
 		.name = "out",
 		.key = eIrcArgpOptiontags_Outputfile,
-		.arg = "outputfile.obj",
+		.arg = "outputfile.asm",
 		.flags = null,
-		.doc = "Output object file",
+		.doc = "Output assembly file",
 		.group = null,
 	},
 	{	// Terminator entry
@@ -93,13 +93,13 @@ struct argp IrcArgpParserstruct = {
 							     //    char *arg, // option's value
 							     //    struct argp_state *state
 							     //)
-	.args_doc = "file.asm"      // Usage
-	          "\n-o out.obj file",
+	.args_doc = "file.ir"        // Usage
+	          "\n-o out.asm file",
 	.doc = 
 		"IR Compiler for xcc."
 		"\n\v"
 		"If --output option isn't specified, extension is replaced with "
-		".obj (if present, otherwise created) to get output file name. "
+		".asm (if present, otherwise created) to get output file name. "
 		"\n",
 	                             // If non-zero, a string containing extra text
 	                             // to be printed before and after the options 
@@ -386,11 +386,11 @@ error_t IrcArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				IrcTargetfilename = mtString_Clone(IrcSourcefilename);
 				if(
 					  (mtString_FindcharLast(IrcTargetfilename,'.')!=nullptr)
-					&&(mtString_FindcharLast(IrcTargetfilename,'.')!=IrcSourcefilename)
+					&&(mtString_FindcharLast(IrcTargetfilename,'.')!=IrcSourcefilename) 
 				){
 					mtString_FindcharLast(IrcTargetfilename,'.')[0]=0;
 				};
-				mtString_Append(&IrcTargetfilename,".obj");
+				mtString_Append(&IrcTargetfilename,".asm");
 			};
 		default:
 			return ARGP_ERR_UNKNOWN;
@@ -472,6 +472,11 @@ void IrcReadinstructiondefinition(FILE* src){
 				mtList_Append(instruction->operands,mtIrcToken_Clone(token));
 				// Register instruction
 				mtList_Append(&IrcInstructionsdefined,instruction);
+			}else if(strcmp(token->string,"fusion")==0){
+				// This is not our directive!
+				while( (token=mtIrcToken_Get(src))->type!=eIrcTokentype_Newline){
+					mtIrcToken_Destroy(token);
+				};
 			}else{
 				printf("IRC:[F] IrcReadinstructiondefinition: Unrecoginzed identifier ");
 				printf("<%s>",

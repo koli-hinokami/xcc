@@ -57,6 +57,7 @@ tGType* mtGType_Clone(tGType* self);
 char* mtGSymbol_ToString(tGSymbol* self);
 void GError();
 tGType* mtGType_Transform(tGType /* modifies */ * self);
+char* mtGTargetPointer_ToString(tGTargetPointer* self);
 
 // ------------------------- Auxiliary functions --------------------------
 
@@ -192,7 +193,8 @@ void LfPrint_GSymbol(tGSymbol* self){
 		LfPrint_GNamespace(self->name_space);
 		return;
 	}else{
-		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		//snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s %i•%s\n",self,mtGType_ToString_Embeddable(self->type),self->symbolkind,self->name);
+		snprintf(buffer,4096,"Lf: [M] ¤ Symbol %p:%s\n",self,mtGSymbol_ToString(self));
 		LfWriteline(buffer);
 	};
 };
@@ -303,6 +305,14 @@ void LfiPrint_LxNode(char* pr,tLxNode* self){
 		//exit(6);
 		LfIndent(buffer);
 		if(self->returnedtype)LfiPrint_GType("t:",self->returnedtype);
+		if(self->type==tLexem_Variabledeclaration){
+			sprintf(buffer,"Lf: [M] ∙ s: ¤ Storage : %i•%s \n",self->storage,
+				self->storage==eGStoragespecifier_Auto  ?"auto":
+				self->storage==eGStoragespecifier_Static?"static":
+				                                         "unknown"
+			);
+			LfWriteline(buffer);
+		};
 		if(self->name_space){
 			sprintf(buffer,"Lf: [M] ∙ n: ¤ Namespace %p•%s ->%p \n",self->name_space,self->name_space->name,self->name_space->parentnamespace);
 			LfWriteline(buffer);
@@ -734,8 +744,8 @@ tGType /* gives ownership */ * mtGType_Warp(tGType /* takeown */ * self){
 	return temp;
 };
 char* mtGType_ToString(tGType * self){
-	char* s1;
 	if(!self) return mtString_Clone("(nil)");
+	char* s1 = nullptr;
 	switch(mtGType_GetValuecategory(self)){ // Value category
 		case eGValuecategory_Leftvalue:       s1="lvalue ";   break;
 		case eGValuecategory_Rightvalue:      s1="rvalue ";   break;
@@ -1060,7 +1070,8 @@ char* mtGSymbol_ToString(tGSymbol* self){
 		return mtString_Join(
 			 self->symbolkind==mtGSymbol_eType_Constant?          "const "
 			:self->symbolkind==mtGSymbol_eType_Namespace?         "namespace "
-			:self->symbolkind==mtGSymbol_eType_Pointer?           "declare "
+			:self->symbolkind==mtGSymbol_eType_Pointer?
+				mtString_Format("declare<%s> ",mtGTargetPointer_ToString(self->allocatedstorage))
 			:self->symbolkind==mtGSymbol_eType_Deferredevaulation?"declareexpr "
 			:self->symbolkind==mtGSymbol_eType_Typedef?           "typedef "
 			:"unknown",
@@ -1291,6 +1302,15 @@ tGTargetPointer* mtGTargetPointer_CreateStatic(eGSegment segment, tGTargetNearpo
 	i->segment=segment;
 	i->offset=offset;
 	return i;
+};
+char* mtGTargetPointer_ToString(tGTargetPointer* self){
+	if(!self){
+		return "(null)";
+	}else if(self->nonconstant){
+		return mtString_Format("dynamic %p",self->dynamicpointer);
+	}else{
+		return mtString_Format("static %i(%i):%i",(int)self->segment,(int)self->bank,(int)self->offset);
+	}
 };
 // --------------------------- class tGInstruction ---------------------------
 tGInstruction* mtGInstruction_Create(void){

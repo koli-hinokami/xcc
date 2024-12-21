@@ -917,7 +917,7 @@ error_t LdArgpParser(int optiontag,char* optionvalue,struct argp_state *state){
 				return ARGP_ERR_UNKNOWN;
 			}else{
 				LdListingfile = fopen(optionvalue,"w");
-				if(!LdTargetfile){
+				if(!LdListingfile){
 					printf("LD: [E] Unable to create listing file \"%s\": %i•%s\n",
 						optionvalue,errno,strerror(errno));
 					ErfError();

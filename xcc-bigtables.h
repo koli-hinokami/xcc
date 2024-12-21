@@ -3504,7 +3504,7 @@ char *TokenidtoName_Compact[]={
 	"constantshr"                 ,// 1577
 	"r2"                          ,// 1578
 	"mul"                         ,// 1579
-	"bitwiseand"                  ,// 1580
+	"and"                         ,// 1580
 	"negate"                      ,// 1581
 	"index"                       ,// 1582
 	"extern"                      ,// 1583

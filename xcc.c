@@ -83,7 +83,8 @@ bool LnArgsSetflag(char* flag, intptr_t value){
 void runprogram(char* program, char** argv){
 	fflush(stdout);
 	fflush(stderr);
-	fprintf(stderr,"Ln: [M] Running: ");	//a test mid-line comment
+	fprintf(stderr,"Ln: [M] Running: ");
+	fprintf(stdout,"Ln: [M] Running: ");
 	for(int i=0;argv[i]!=0;i++){
 		printf("%s ",argv[i]);
 		fprintf(stderr,"%s ",argv[i]);
@@ -259,10 +260,12 @@ void compile(char* file){ // Downs whatever was given to it to object file
 			extension="ir";
 		};
 	}
-	// IR Compiler and assembler currently are used by Singlestage compiler
-	// as well
 	if(strcmp(extension,"ir")==0){
-		parsefile2("xcc-ircompiler" ,filename,".ir" ,".asm",0); 
+		parsefile2("xcc-irfuser"     ,filename,".ir" ,".irf",0); 
+		extension="irf";
+	};
+	if(strcmp(extension,"irf")==0){
+		parsefile2("xcc-ircompiler" ,filename,".irf",".asm",0); 
 		extension="asm";
 	};
 	if(strcmp(extension,"asm")==0){

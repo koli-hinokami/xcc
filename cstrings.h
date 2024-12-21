@@ -107,6 +107,8 @@ char* mtString_Last(char* str){ // Doesn't modifies
 	return str+mtString_Length(str)-1;
 };
 char mtString_Getlast(char* str){
+	assert(str);
+	assert(mtString_Last(str));
 	return mtString_Last(str)[0];
 };
 char* mtString_Trimlast(char* str){ //Modifies `str`

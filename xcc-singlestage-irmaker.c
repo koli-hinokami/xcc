@@ -1901,6 +1901,21 @@ void IgDumpir(tGInstruction** code, FILE* file){
 		"; --------- Forth-like IR for xcc-ircompiler and linking assembler ----------\n"
 		"\tirc.programprologue\n"
 	);
+	// Reference count
+	for(int i=0;i<meGSegment_Count;i++){
+		if(	// the segment should be emmited
+			  i==meGSegment_Code
+			||i==meGSegment_Data
+			||i==meGSegment_Readonlydata
+			||i==meGSegment_Udata
+		){
+			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){ //foreach(instructions)
+				if(j->jumptarget)
+					j->jumptarget->referenced=true;
+			};
+		};
+	};
+	// Emitting itself
 	for(int i=0;i<meGSegment_Count;i++){
 		if(	// the segment should be emmited
 			  i==meGSegment_Code
@@ -1916,7 +1931,8 @@ void IgDumpir(tGInstruction** code, FILE* file){
 				:(assert(false),0)
 			);
 			for(tGInstruction* j=code[i];j!=nullptr;j=j->next){ //foreach(instructions)
-				fprintf(file,"l_%p:\t",j);
+				if(j->referenced) fprintf(file,"l_%p:",j);
+				fprintf(file,"\t");
 				if(j->opcode.opr == tInstruction_Extern){ // externing bypass
 					fprintf(file,"v.%s.%s.%s %s\t",
 						TokenidtoName_Compact[j->opcode.opr],

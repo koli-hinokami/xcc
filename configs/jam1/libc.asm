@@ -58,14 +58,18 @@ memset:	.global		; stdcall void ¤(void* area, uint8_t byte, size_t size) ; {{{
 	pop	di
 	pop	a
 	pop	cd
+	mov	b,	c
+	or	b,	d
+	jz	_r
 	mov	tx,	_l
-_l:
-	stosb
+_l:	stosb
 	dec	c
 	jnz	tx
+	test	d
+	jz	_r
 	dec	d
-	jnz	tx
-	ret
+	jnz	_l
+_r:	ret
 	; }}}
 strlen:	.global ; {{{
 	pop	ab
@@ -99,7 +103,6 @@ fixed16_mul:	.global	; stdcall fixed16 ¤(fixed16 a, fixed16 b) ; {{{
 	pop	ab
 	pop	cd
 	jmp	Math_Multiply_fp88_fp88
-	ret
 	; }}}
 fixed16_divide:	.global	; stdcall fixed16 ¤(fixed16 numerator, fixed16 denominator) ; {{{
 	pop	ab
