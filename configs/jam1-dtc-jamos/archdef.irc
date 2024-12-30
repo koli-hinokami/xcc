@@ -1,0 +1,320 @@
+; vim:ts=8:
+	; Jam-1 archdef
+; <                          -- Base instructions --                         >
+opcode	irc.programprologue			: .extern Math_Multiply_16_16 \
+						| .extern p_enter  \
+						| .extern p_literal_16 \
+						| .extern p_literal_fp_16 \
+						| .extern p_literal_8 \
+						| .extern p_literal2_16 \
+						| .extern p_literal2_8 \
+						| .extern p_push_16 \
+						| .extern p_push_8 \
+						| .extern p_execute \
+						| .extern p_drop_16 \
+						| .extern p_leave \
+						| .extern p_return \
+						| .extern p_returndispose \
+						| .extern p_indexfp \
+						| .extern p_read_16 \
+						| .extern p_read_8 \
+						| .extern p_read_abs_16 \
+						| .extern p_read_abs_8 \
+						| .extern p_read_fr_16 \
+						| .extern p_read_fr_8 \
+						| .extern p_write_16 \
+						| .extern p_write_8 \
+						| .extern p_shl1_16 \
+						| .extern p_shl1_8 \
+						| .extern p_shr1_16 \
+						| .extern p_shr1_8 \
+						| .extern p_sar1_16 \
+						| .extern p_sar1_8 \
+						| .extern p_add_16 \
+						| .extern p_add_8 \
+						| .extern p_sub_16 \
+						| .extern p_sub_8 \
+						| .extern p_and_16 \
+						| .extern p_and_8 \
+						| .extern p_or_16 \
+						| .extern p_or_8 \
+						| .extern p_xor_16 \
+						| .extern p_xor_8 \
+						| .extern p_zeroextend \
+						| .extern p_signextend \
+						| .extern p_mul_16 \
+						| .extern p_mul_8 \
+						| .extern p_addlit \
+						| .extern p_jmp \
+						| .extern p_cjae_16 \
+						| .extern p_cjae_8 \
+						| .extern p_cjb_16 \
+						| .extern p_cjb_8 \
+						| .extern p_cje_16 \
+						| .extern p_cje_8 \
+						| .extern p_cje_16 \
+						| .extern p_cje_8 \
+						| .extern p_cjge_16 \
+						| .extern p_cjge_8 \
+						| .extern p_cjl_16 \
+						| .extern p_cjl_8 \
+						| .extern p_preinc_16 \
+						| .extern p_preinc_8 \
+						| .extern p_predec_16 \
+						| .extern p_predec_8 \
+						| .extern p_postinc_16 \
+						| .extern p_postinc_8 \
+						| .extern p_postdec_16 \
+						| .extern p_postdec_8 \
+						| .extern p_negate_16 \
+						| .extern p_negate_8 \
+						
+opcode	irc.programepilogue			: 
+opcode	irc.global				: .global
+opcode	irc.segment			#1	: .segment #1
+opcode	v.extern.relative.void		#1	: .extern #1
+opcode	v.global.relative.void			: .global
+opcode	v.compilernop.relative.void		:
+opcode	v.enter.relative.void		#1	: jmp p_enter | dw #1
+opcode	v.lea.relative.nearptr		#1	: dw p_literal_16 | dw #1
+opcode	v.lea.relative.int16		#1	: dw p_literal_16 | dw #1
+opcode	v.lea.relative.uint16		#1	: dw p_literal_16 | dw #1
+opcode	v.lea.relative.int8		#1	: dw p_literal_8 | db #1
+opcode	v.lea.relative.uint8		#1	: dw p_literal_8 | db #1
+opcode	v.const.relative.void		#1	: 
+opcode	v.const.relative.nearptr	#1	: dw p_literal_16 | dw #1
+opcode	v.const.relative.int16		#1	: dw p_literal_16 | dw #1
+opcode	v.const.relative.uint16		#1	: dw p_literal_16 | dw #1
+opcode	v.const.relative.int8		#1	: dw p_literal_8 | db #1
+opcode	v.const.relative.uint8		#1	: dw p_literal_8 | db #1
+opcode	v.pha.relative.nearptr		#1	: dw p_push_16
+opcode	v.pha.relative.int16		#1	: dw p_push_16
+opcode	v.pha.relative.uint16		#1	: dw p_push_16
+opcode	v.pha.relative.int8		#1	: dw p_push_8
+opcode	v.pha.relative.uint8		#1	: dw p_push_8
+opcode	v.plb.relative.nearptr		#1	: 
+opcode	v.plb.relative.int16		#1	: 
+opcode	v.plb.relative.uint16		#1	: 
+opcode	v.plb.relative.int8		#1	: 
+opcode	v.plb.relative.uint8		#1	: 
+opcode	v.push.relative.void		#1	: 
+opcode	v.push.relative.nearptr		#1	: dw p_push_16
+opcode	v.push.relative.int16		#1	: dw p_push_16
+opcode	v.push.relative.uint16		#1	: dw p_push_16
+opcode	v.push.relative.int8		#1	: dw p_push_8
+opcode	v.push.relative.uint8		#1	: dw p_push_8
+opcode	v.call.relative.nearptr			: dw p_execute
+opcode	v.call_abs.relative.nearptr		: dw #1
+opcode	v.drop.relative.void		#1	:
+opcode	v.drop.relative.nearptr		#1	: 
+opcode	v.drop.relative.int16		#1	: 
+opcode	v.drop.relative.uint16		#1	: 
+opcode	v.drop.relative.int8		#1	: 
+opcode	v.drop.relative.uint8		#1	: 
+opcode	v.prereturn.relative.void	#1	: 
+opcode	v.prereturn.relative.nearptr	#1	: 
+opcode	v.prereturn.relative.int16	#1	: 
+opcode	v.prereturn.relative.uint16	#1	: 
+opcode	v.prereturn.relative.int8	#1	: 
+opcode	v.prereturn.relative.uint8	#1	: 
+opcode	v.leave.relative.void			: ; dw p_leave ; on p_returndispose!
+opcode	v.return.relative.void		#1	: dw p_returndispose | dw #1
+opcode	v.return.relative.nearptr	#1	: dw p_returndispose | dw #1
+opcode	v.return.relative.int16		#1	: dw p_returndispose | dw #1
+opcode	v.return.relative.uint16	#1	: dw p_returndispose | dw #1
+opcode	v.return.relative.int8		#1	: dw p_returndispose | dw #1
+opcode	v.return.relative.uint8		#1	: dw p_returndispose | dw #1
+opcode	v.indexfp.relative.nearptr	#1	: dw p_indexfp
+opcode	v.ld.data.nearptr		#1	: dw p_read_16
+opcode	v.ld.data.int16			#1	: dw p_read_16
+opcode	v.ld.data.uint16		#1	: dw p_read_16
+opcode	v.ld.data.int8			#1	: dw p_read_8
+opcode	v.ld.data.uint8			#1	: dw p_read_8
+opcode	v.st.data.nearptr		#1	: dw p_write_16
+opcode	v.st.data.int16			#1	: dw p_write_16
+opcode	v.st.data.uint16		#1	: dw p_write_16
+opcode	v.st.data.int8			#1	: dw p_write_8
+opcode	v.st.data.uint8			#1	: dw p_write_8
+opcode	v.preinc.data.nearptr			: dw p_preinc_16
+opcode	v.preinc.data.int16			: dw p_preinc_16
+opcode	v.preinc.data.uint16			: dw p_preinc_16
+opcode	v.preinc.data.int8			: dw p_preinc_8
+opcode	v.preinc.data.uint8			: dw p_preinc_8
+opcode	v.postinc.data.nearptr			: dw p_postinc_16
+opcode	v.postinc.data.int16			: dw p_postinc_16
+opcode	v.postinc.data.uint16			: dw p_postinc_16
+opcode	v.postinc.data.int8			: dw p_postinc_8
+opcode	v.postinc.data.uint8			: dw p_postinc_8
+opcode	v.predec.data.nearptr			: dw p_predec_16
+opcode	v.predec.data.int16			: dw p_predec_16
+opcode	v.predec.data.uint16			: dw p_predec_16
+opcode	v.predec.data.int8			: dw p_predec_8
+opcode	v.predec.data.uint8			: dw p_predec_8
+opcode	v.postdec.data.nearptr			: dw p_postdec_16
+opcode	v.postdec.data.int16			: dw p_postdec_16
+opcode	v.postdec.data.uint16			: dw p_postdec_16
+opcode	v.postdec.data.int8			: dw p_postdec_8
+opcode	v.postdec.data.uint8			: dw p_postdec_8
+opcode	v.d.relative.int8		#1	: db #1
+opcode	v.d.relative.uint8		#1	: db #1
+opcode	v.d.relative.int16		#1	: dw #1
+opcode	v.d.relative.uint16		#1	: dw #1
+opcode	v.d.relative.nearptr		#1	: dw #1
+opcode	v.r.relative.int8			: db 0
+opcode	v.r.relative.uint8			: db 0
+opcode	v.r.relative.int16			: dw 0
+opcode	v.r.relative.uint16			: dw 0
+opcode	v.r.relative.nearptr			: dw 0
+opcode	v.r2.relative.int8		#1	: .times #1 db 0
+opcode	v.r2.relative.uint8		#1	: .times #1 db 0
+opcode	v.r2.relative.int16		#1	: .times #1 dw 0
+opcode	v.r2.relative.uint16		#1	: .times #1 dw 0
+opcode	v.r2.relative.nearptr		#1	: .times #1 dw 0
+opcode	v.constantshl.relative.int8	#1	: .times #1 dw p_shl1_8
+opcode	v.constantshl.relative.uint8	#1	: .times #1 dw p_shl1_8
+opcode	v.constantshl.relative.int16	#1	: .times #1 dw p_shl1_16
+opcode	v.constantshl.relative.uint16	#1	: .times #1 dw p_shl1_16
+opcode	v.constantshr.relative.int8	#1	: .times #1 dw p_sar1_8
+opcode	v.constantshr.relative.uint8	#1	: .times #1 dw p_shr1_8
+opcode	v.constantshr.relative.int16	#1	: .times #1 dw p_sar1_16
+opcode	v.constantshr.relative.uint16	#1	: .times #1 dw p_shr1_16
+opcode	v.negate.relative.nearptr		: dw p_negate_16
+opcode	v.negate.relative.int16			: dw p_negate_16
+opcode	v.negate.relative.uint16		: dw p_negate_16
+opcode	v.negate.relative.int8			: dw p_negate_8
+opcode	v.negate.relative.uint8			: dw p_negate_8
+opcode	v.and.relative.nearptr		#1	: dw p_and_16
+opcode	v.and.relative.int16		#1	: dw p_and_16
+opcode	v.and.relative.uint16		#1	: dw p_and_16
+opcode	v.and.relative.int8		#1	: dw p_and_8
+opcode	v.and.relative.uint8		#1	: dw p_and_8
+opcode	v.or.relative.nearptr		#1	: dw p_or_16
+opcode	v.or.relative.int16		#1	: dw p_or_16
+opcode	v.or.relative.uint16		#1	: dw p_or_16
+opcode	v.or.relative.int8		#1	: dw p_or_8
+opcode	v.or.relative.uint8		#1	: dw p_or_8
+opcode	v.xor.relative.nearptr		#1	: dw p_xor_16
+opcode	v.xor.relative.int16		#1	: dw p_xor_16
+opcode	v.xor.relative.uint16		#1	: dw p_xor_16
+opcode	v.xor.relative.int8		#1	: dw p_xor_8
+opcode	v.xor.relative.uint8		#1	: dw p_xor_8
+opcode	v.sub.relative.nearptr		#1	: dw p_sub_16
+opcode	v.sub.relative.int16		#1	: dw p_sub_16
+opcode	v.sub.relative.uint16		#1	: dw p_sub_16
+opcode	v.sub.relative.int8		#1	: dw p_sub_8
+opcode	v.sub.relative.uint8		#1	: dw p_sub_8
+opcode	v.add.relative.nearptr		#1	: dw p_add_16
+opcode	v.add.relative.int16		#1	: dw p_add_16
+opcode	v.add.relative.uint16		#1	: dw p_add_16
+opcode	v.add.relative.int8		#1	: dw p_add_8
+opcode	v.add.relative.uint8		#1	: dw p_add_8
+opcode	v.cast.int16.nearptr		#1	: 
+opcode	v.cast.int16.int16		#1	: 
+opcode	v.cast.int16.uint16		#1	: 
+opcode	v.cast.int16.int8		#1	: 
+opcode	v.cast.int16.uint8		#1	: 
+opcode	v.cast.uint16.nearptr		#1	: 
+opcode	v.cast.uint16.int16		#1	: 
+opcode	v.cast.uint16.uint16		#1	: 
+opcode	v.cast.uint16.int8		#1	: 
+opcode	v.cast.uint16.uint8		#1	: 
+opcode	v.cast.uint8.nearptr		#1	: dw p_zeroextend
+opcode	v.cast.uint8.int16		#1	: dw p_zeroextend
+opcode	v.cast.uint8.uint16		#1	: dw p_zeroextend
+opcode	v.mul.relative.nearptr		#1	: dw p_mul_16
+opcode	v.index.relative.nearptr	#1	: dw p_addlit | dw #1
+opcode	v.index.relative.int16		#1	: dw p_addlit | dw #1
+opcode	v.index.relative.uint16		#1	: dw p_addlit | dw #1
+opcode	v.index.relative.int8		#1	: dw p_addlit | dw #1
+opcode	v.index.relative.uint8		#1	: dw p_addlit | dw #1
+opcode	v.jmp.relative.void		#1	: dw p_jmp | dw #1
+;opcode	v.cje.relative.nearptr		#1	: dw p_cje_16 | dw #1
+;opcode	v.cje.relative.int16		#1	: dw p_cje_16 | dw #1
+;opcode	v.cje.relative.uint16		#1	: dw p_cje_16 | dw #1
+;opcode	v.cje.relative.int8		#1	: dw p_cje_8 | dw #1
+;opcode	v.cje.relative.uint8		#1	: dw p_cje_8 | dw #1
+;opcode	v.cjae.relative.nearptr		#1	: dw p_cjae_16 | dw #1
+;opcode	v.cjge.relative.int16		#1	: dw p_cjge_16 | dw #1
+;opcode	v.cjae.relative.uint16		#1	: dw p_cjae_16 | dw #1
+;opcode	v.cjge.relative.int8		#1	: dw p_cjge_8 | dw #1
+;opcode	v.cjae.relative.uint8		#1	: dw p_cjae_8 | dw #1
+;opcode	v.cjb.relative.nearptr		#1	: dw p_cjb_16 | dw #1
+;opcode	v.cjl.relative.int16		#1	: dw p_cjl_16 | dw #1
+;opcode	v.cjb.relative.uint16		#1	: dw p_cjb_16 | dw #1
+;opcode	v.cjl.relative.int8		#1	: dw p_cjl_8 | dw #1
+;opcode	v.cjb.relative.uint8		#1	: dw p_cjb_8 | dw #1
+opcode	v.cjae.relative.uint16	#1		: dw p_cjae_16	 | dw #1
+opcode	v.cjbe.relative.uint16	#1		: dw p_cjbe_16	 | dw #1
+opcode	v.cjb.relative.uint8	#1		: dw p_cjb_8	 | dw #1
+opcode	v.cjb.relative.uint16	#1		: dw p_cjb_16	 | dw #1
+opcode	v.cjb.relative.nearptr	#1		: dw p_cjb_16	 | dw #1
+opcode	v.cjl.relative.int16	#1		: dw p_cjl_16	 | dw #1
+opcode	v.cjl.relative.nearptr	#1		: dw p_cjl_16	 | dw #1
+opcode	v.cjge.relative.int16	#1		: dw p_cjge_16	 | dw #1
+opcode	v.cje.relative.int16	#1		: dw p_cje_16	 | dw #1
+opcode	v.cje.relative.uint16	#1		: dw p_cje_16	 | dw #1
+opcode	v.cje.relative.nearptr	#1		: dw p_cje_16	 | dw #1
+opcode	v.cjne.relative.int16	#1		: dw p_cjne_16	 | dw #1
+opcode	v.cjne.relative.uint16	#1		: dw p_cjne_16	 | dw #1
+opcode	v.cjne.relative.nearptr	#1		: dw p_cjne_16	 | dw #1
+opcode	v.cje.relative.int8	#1		: dw p_cje_8	 | dw #1
+opcode	v.cje.relative.uint8	#1		: dw p_cje_8	 | dw #1
+opcode	v.cjne.relative.int8	#1		: dw p_cjne_8	 | dw #1
+opcode	v.cjne.relative.uint8	#1		: dw p_cjne_8	 | dw #1
+opcode	v.tjnz.relative.int8	#1		: dw p_tjnz_8	 | dw #1
+opcode	v.tjnz.relative.uint8	#1		: dw p_tjnz_8	 | dw #1
+opcode	v.tjnz.relative.int16	#1		: dw p_tjnz_16	 | dw #1
+opcode	v.tjnz.relative.uint16	#1		: dw p_tjnz_16	 | dw #1
+opcode	v.tjnz.relative.nearptr	#1		: dw p_tjnz_16	 | dw #1
+opcode	v.tjz.relative.int8	#1		: dw p_tjz_8	 | dw #1
+opcode	v.tjz.relative.uint8	#1		: dw p_tjz_8	 | dw #1
+opcode	v.tjz.relative.int16	#1		: dw p_tjz_16	 | dw #1
+opcode	v.tjz.relative.uint16	#1		: dw p_tjz_16	 | dw #1
+opcode	v.tjz.relative.nearptr	#1		: dw p_tjz_16	 | dw #1
+
+fusion	v.plb.relative.int8	v.add.relative.int8	v.add.relative.int8	
+fusion	v.plb.relative.uint8	v.add.relative.uint8	v.add.relative.uint8	
+fusion	v.plb.relative.int16	v.add.relative.int16	v.add.relative.int16	
+fusion	v.plb.relative.uint16	v.add.relative.uint16	v.add.relative.uint16	
+fusion	v.plb.relative.nearptr	v.add.relative.nearptr	v.add.relative.nearptr	
+fusion	v.pha.relative.int16	v.const.relative.int16  	v.lit.relative.int16	
+fusion	v.pha.relative.int16	v.const.relative.uint16 	v.lit.relative.uint16	
+fusion	v.pha.relative.int16	v.const.relative.nearptr	v.lit.relative.nearptr	
+fusion	v.pha.relative.uint16	v.const.relative.int16  	v.lit.relative.int16	
+fusion	v.pha.relative.uint16	v.const.relative.uint16 	v.lit.relative.uint16	
+fusion	v.pha.relative.uint16	v.const.relative.nearptr	v.lit.relative.nearptr	
+fusion	v.pha.relative.nearptr	v.const.relative.int16  	v.lit.relative.int16	
+fusion	v.pha.relative.nearptr	v.const.relative.uint16 	v.lit.relative.uint16	
+fusion	v.pha.relative.nearptr	v.const.relative.nearptr	v.lit.relative.nearptr	
+fusion	v.pha.relative.uint8	v.const.relative.int8  	v.lit.relative.int8	
+fusion	v.pha.relative.uint8	v.const.relative.uint8 	v.lit.relative.uint8	
+fusion	v.pha.relative.int8	v.const.relative.int8  	v.lit.relative.int8	
+fusion	v.pha.relative.int8	v.const.relative.uint8 	v.lit.relative.uint8	
+fusion	v.lea.relative.nearptr	v.ld.data.nearptr	v.ld_abs.data.nearptr	
+fusion	v.lea.relative.nearptr	v.ld.data.int16		v.ld_abs.data.int16	
+fusion	v.lea.relative.nearptr	v.ld.data.uint16	v.ld_abs.data.uint16	
+fusion	v.lea.relative.nearptr	v.ld.data.int8		v.ld_abs.data.int8	
+fusion	v.lea.relative.nearptr	v.ld.data.uint8		v.ld_abs.data.uint8	
+fusion	v.const.relative.nearptr	v.indexfp.relative.nearptr	v.const_fp.relative.nearptr	
+fusion	v.const_fp.relative.nearptr	v.ld.data.nearptr	v.ld_abs.frame.nearptr	
+fusion	v.const_fp.relative.nearptr	v.ld.data.int16		v.ld_abs.frame.int16	
+fusion	v.const_fp.relative.nearptr	v.ld.data.uint16	v.ld_abs.frame.uint16	
+fusion	v.const_fp.relative.nearptr	v.ld.data.int8		v.ld_abs.frame.int8	
+fusion	v.const_fp.relative.nearptr	v.ld.data.uint8		v.ld_abs.frame.uint8	
+
+opcode	v.lit.relative.nearptr		#1	: dw p_literal2_16 | dw #1
+opcode	v.lit.relative.int16		#1	: dw p_literal2_16 | dw #1
+opcode	v.lit.relative.uint16		#1	: dw p_literal2_16 | dw #1
+opcode	v.lit.relative.int8		#1	: dw p_literal2_8  | db #1
+opcode	v.lit.relative.uint8		#1	: dw p_literal2_8  | db #1
+opcode	v.ld_abs.data.nearptr		#1	: dw p_read_abs_16 | dw #1
+opcode	v.ld_abs.data.int16		#1	: dw p_read_abs_16 | dw #1
+opcode	v.ld_abs.data.uint16		#1	: dw p_read_abs_16 | dw #1
+opcode	v.ld_abs.data.int8		#1	: dw p_read_abs_8  | dw #1
+opcode	v.ld_abs.data.uint8		#1	: dw p_read_abs_8  | dw #1
+opcode	v.ld_abs.frame.nearptr		#1	: dw p_read_fr_16 | dw #1
+opcode	v.ld_abs.frame.int16		#1	: dw p_read_fr_16 | dw #1
+opcode	v.ld_abs.frame.uint16		#1	: dw p_read_fr_16 | dw #1
+opcode	v.ld_abs.frame.int8		#1	: dw p_read_fr_8  | dw #1
+opcode	v.ld_abs.frame.uint8		#1	: dw p_read_fr_8  | dw #1
+opcode	v.const_fp.relative.nearptr	#1	: dw p_literal_fp_16 | dw #1
