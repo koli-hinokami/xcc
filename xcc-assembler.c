@@ -1141,7 +1141,7 @@ bool AsmLabelfinderclojure(char* name, tAsmLabel* label){
 };
 void dumplabel(void* l){
 	tAsmLabel* label=l;
-	printf(" %s %i %i\n",label->name,label->offset,label->segment);
+	printf("ASM:[T] Defined label %20s at %i:%i\n",label->name,label->segment,label->offset);
 }
 tGTargetNearpointer AsmGetlabelsegment(char* name){
 	if(!
@@ -1174,8 +1174,8 @@ tGTargetNearpointer AsmGetlabelvalue(char* name){
 			name
 		)
 	){
-		printf("ASM:[E] AsmGetlabelvalue: Undefined label \"%s\"\n",name);
 		mtList_Foreach(AsmLabels,dumplabel);
+		printf("ASM:[E] AsmGetlabelvalue: Undefined label \"%s\"\n",name);
 		ErfError();
 		return 0;
 	};

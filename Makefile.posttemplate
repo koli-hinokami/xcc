@@ -94,9 +94,9 @@ stdlib:
 	then (                                                                   \
 	echo Regenerating libc and crt0 for architecture "$$i" ;                 \
 	cd "$$i" ;                                                               \
-	../../xcc-assembler -c .. -a "$$i" -o crt0.obj crt0.asm >/dev/null ;         \
-	../../xcc-assembler -c .. -a "$$i" -o libc.obj libc.asm >/dev/null ;         \
-	)                                                                        \
+	../../xcc-assembler -c .. -a "$$i" -o crt0.obj crt0.asm >libcrebuildlog.txt || exit $? ;         \
+	../../xcc-assembler -c .. -a "$$i" -o libc.obj libc.asm >libcrebuildlog.txt || exit $? ;         \
+	) || exit $?;                                                            \
 	fi;                                                                      \
 	done
 	
