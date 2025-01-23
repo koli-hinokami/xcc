@@ -2,18 +2,18 @@
 
 # Namespaces
 
- *	U	User (from xccsuite perspective's! it's supposed to be xcc's namespace
- 		      but others are used here, so not much symbols are in U)
- *	G	Global (libc and xccsuite!)
- *	L	(in logs) singlestage Launcher 
- *	Ln	Launcher - frontend and singlestage
- *	Tk	Tokenizer
- *	Lx	Lexer
- *	Sg	Symbolgen
- *	Sp	Semantic Parser
- *	Ig	IR Generator
- *	Cg	Code Generator
- *	Lf	Logging Facilities
+ *  U   User (from xccsuite perspective's! it's supposed to be xcc's namespace
+              but others are used here, so not much symbols are in U)
+ *  G   Global (libc and xccsuite!)
+ *  L   (in logs) singlestage Launcher 
+ *  Ln  Launcher - frontend and singlestage
+ *  Tk  Tokenizer
+ *  Lx  Lexer
+ *  Sg  Symbolgen
+ *  Sp  Semantic Parser
+ *  Ig  IR Generator
+ *  Cg  Code Generator
+ *  Lf  Logging Facilities
 
 # Overall architecture
 
@@ -247,6 +247,47 @@ Intended to do some optimizations that won't be as easily doable on IR.
 # IR Generator
 
 Compiles Secondary AST into IR. 
+
+# IR Fuser
+
+A solution to the problem of very suboptimal code generation.
+
+A program, which takes IR as input and outputs same IR, but
+with some instructions fused into ones that are implemented more
+optimally than source IR instructions in target assembly.
+
+Quirks:
+    Because of lookahead of one instruction and no more,
+    it is not possible to fuse three or more instructions without
+    a fuse of two first instr~s present.
+Control flow:
+    xcc-irfuser spins in a loop, iterating over instructions
+    in source file.
+    When instruction in fuse buffer is fuseable with the 
+    newly-fetched instruction, fuse buffer is set to the fused
+    instruction and parsing continues.
+    Elseways (instruction in fuse buffer is not fuseable), instr~
+    in fuse buffer is emitted, fuse buffer is set to the 
+    newly-fetched instruction and parsing continues.
+    Between parsing iterations there obviously is a fetch of new
+    instr.
+    ```c-pseudocode
+    void main(){
+        instr fusebuffer;
+        while(!eof){
+            instr newinstr = fetchinstr();
+            if(fuseable(fusebuffer,newinstr)){
+                fusebuffer=fuse(fusebuffer,newinstr);
+            }else{
+                emit(fusebuffer);
+                fusebuffer=newinstr;
+            }
+        }
+    }
+    ```
+Data structures:
+    Fusemap: dictionary<pair<instr>, instr>
+        Describes which instructions are fused to which.
 
 # IR Compiler
 
